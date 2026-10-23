@@ -86,6 +86,8 @@ def summarize_base_motion(samples):
         "planar_speed_rms_m_per_s": _rms(math.hypot(*row[:2]) for row in velocity),
         "planar_speed_peak_m_per_s": max(math.hypot(*row[:2]) for row in velocity),
         "linear_velocity_rms_m_per_s_xyz": [_rms(row[j] for row in velocity) for j in range(3)],
+        "linear_velocity_mean_m_per_s_xyz": [math.fsum(row[j] for row in velocity)/len(velocity) for j in range(3)],
+        "xy_displacement_abs_peak_m_xy": [max(abs(row[j]) for row in displacement) for j in range(2)],
         "xy_displacement_peak_m": max(math.hypot(*row) for row in displacement),
         "yaw_drift_abs_peak_rad": max(abs(value) for value in yaw),
         "end_per_environment": [final[key] for key in sorted(final)],

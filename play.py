@@ -97,6 +97,7 @@ def main():
         else:
             print("Zero actions: mechanism inspection only; this is not a trained balancing policy.")
         observations, _ = env.reset()
+        motion_origin_xy = env.root_states[0, :2].clone()
         governor = CommandGovernor(env.commands.clone(),
                                    linear_acceleration=args.linear_acceleration,
                                    yaw_acceleration=args.yaw_acceleration)
@@ -137,6 +138,7 @@ def main():
                         break
                     if keyboard.process_events(env.gym.query_viewer_action_events(env.viewer)):
                         observations, _ = env.reset()
+                        motion_origin_xy.copy_(env.root_states[0, :2])
                         governor.reset(env.commands.clone())
                         keyboard.reset_leg_length(args.command[3])
                         manual_resets += 1
@@ -162,6 +164,8 @@ def main():
                 completed_steps = step + 1
                 reset_indices = dones.nonzero(as_tuple=False).flatten().cpu().tolist()
                 resets += len(reset_indices)
+                if 0 in reset_indices:
+                    motion_origin_xy.copy_(env.root_states[0, :2])
                 for index in reset_indices:
                     timeout_flags = infos.get("time_outs")
                     is_timeout = timeout_flags is not None and bool(timeout_flags[index].item())
@@ -187,6 +191,18 @@ def main():
                     print("{}={:.1f} simulation_speed={:.2f}x real time".format(
                         "viewer_fps" if env.viewer is not None else "steps_per_second",
                         steps_per_second, steps_per_second*env.dt), flush=True)
+                    displacement_xy_cm = 100*(env.root_states[0, :2]-motion_origin_xy)
+                    print("env0 displacement since reset world X/Y={:+.2f}/{:+.2f}cm; "
+                          "body vx/vy={:+.4f}/{:+.4f}m/s".format(
+                              *displacement_xy_cm.cpu().tolist(),
+                              *env.lin_vel[0, :2].cpu().tolist()), flush=True)
+                    if args.event_log is not None:
+                        event_log.emit("motion_sample", step=completed_steps, sim_time_s=completed_steps*env.dt,
+                                       environment_index=0, position_origin_world_xy_m=motion_origin_xy,
+                                       displacement_world_xy_m=env.root_states[0, :2]-motion_origin_xy,
+                                       base_linear_velocity_body_m_per_s=env.lin_vel[0],
+                                       yaw_rad=env.yaw[0], pitch_rad=env.pitch[0], roll_rad=env.roll[0],
+                                       command=env.commands[0], physical_failure_resets=physical_failures)
                     interval_started, interval_step = now, completed_steps
                     if keyboard is not None:
                         print("Leg target={:.1f}cm measured L/R={:.1f}/{:.1f}cm".format(

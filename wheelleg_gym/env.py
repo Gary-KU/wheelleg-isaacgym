@@ -62,6 +62,7 @@ class WheelLegGymEnv:
                  leg_feedforward_force=0.0,
                  heading_kp=0.0, heading_kd=0.0, wheel_control="policy", wheel_pitch_damping=0.,
                  wheel_balance_scale=1.,
+                 physics_solver="tgs", wheel_friction=1.,
                  physics_threads=4, viewer_show_collisions=False,
                  viewer_width=None, viewer_height=None,
                  terrain="plane", observe_terrain=False, stair_level=0, stair_min_level=0,
@@ -110,6 +111,10 @@ class WheelLegGymEnv:
             raise ValueError("leg_feedforward_force requires a hip PD controller")
         if any(not math.isfinite(value) or value < 0 for value in (heading_kp, heading_kd)):
             raise ValueError("Require finite heading_kp >= 0 and heading_kd >= 0")
+        if physics_solver not in ("tgs", "pgs"):
+            raise ValueError("physics_solver must be tgs or pgs")
+        if not math.isfinite(wheel_friction) or wheel_friction < 0:
+            raise ValueError("wheel_friction must be finite and nonnegative")
         if wheel_control not in ("policy", "heading"):
             raise ValueError("wheel_control must be policy or heading")
         if not math.isfinite(wheel_pitch_damping) or wheel_pitch_damping < 0:
@@ -169,6 +174,7 @@ class WheelLegGymEnv:
         self.heading_kp, self.heading_kd = float(heading_kp), float(heading_kd)
         self.wheel_control, self.wheel_pitch_damping = wheel_control, float(wheel_pitch_damping)
         self.wheel_balance_scale = float(wheel_balance_scale)
+        self.physics_solver, self.wheel_friction = physics_solver, float(wheel_friction)
         self.default_command = torch.tensor(command, device=self.device, dtype=torch.float32)
         self.closed = False
         self.gym = gymapi.acquire_gym()
@@ -194,7 +200,7 @@ class WheelLegGymEnv:
         p.gravity = gymapi.Vec3(0.0, 0.0, -9.81)
         p.use_gpu_pipeline = self.device.startswith("cuda")
         p.physx.use_gpu = p.use_gpu_pipeline
-        p.physx.solver_type = 1
+        p.physx.solver_type = 1 if self.physics_solver == "tgs" else 0
         p.physx.num_position_iterations = 32
         p.physx.num_velocity_iterations = 4
         p.physx.num_threads = self.physics_threads
@@ -297,6 +303,13 @@ class WheelLegGymEnv:
             for shape in shapes:
                 shape.friction = 1.0
                 shape.restitution = 0.0
+            if self.wheel_friction != 1.:
+                # Shape counts need not equal body counts; only tire materials change.
+                ranges = self.gym.get_actor_rigid_body_shape_indices(env, actor)
+                for name in ("L_lun", "R_lun"):
+                    span = ranges[self.body_names.index(name)]
+                    for shape in shapes[span.start:span.start+span.count]:
+                        shape.friction = self.wheel_friction
             self.gym.set_actor_rigid_shape_properties(env, actor, shapes)
             self.envs.append(env)
             self.actors.append(actor)

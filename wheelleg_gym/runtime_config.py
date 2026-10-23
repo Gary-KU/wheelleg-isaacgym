@@ -20,7 +20,7 @@ TRAIN_ENVIRONMENT_FIELDS = (
     "tracking_penalties", "stability_rewards", "support_rewards", "observe_leg_lengths",
     "command_resample_seconds", "linear_acceleration", "yaw_acceleration",
     "zero_command_fraction", "initial_leg_length", "leg_control", "leg_kp", "leg_kd", "leg_feedforward_force",
-    "heading_kp", "heading_kd", "wheel_control", "wheel_pitch_damping", "wheel_balance_scale",
+    "heading_kp", "heading_kd", "wheel_control", "wheel_pitch_damping", "wheel_balance_scale", "physics_solver", "wheel_friction",
     "terrain", "observe_terrain", "stair_level", "stair_min_level", "stair_max_level", "stair_curriculum", "hip_target_scale",
     "stair_episode_seconds",
 )
@@ -28,7 +28,7 @@ INFERENCE_ENVIRONMENT_FIELDS = (
     "seed", "physics_dt", "closure_stiffness", "closure_damping",
     "observe_leg_lengths", "linear_acceleration", "yaw_acceleration", "initial_leg_length",
     "leg_control", "leg_kp", "leg_kd", "leg_feedforward_force", "heading_kp", "heading_kd",
-    "wheel_control", "wheel_pitch_damping", "wheel_balance_scale",
+    "wheel_control", "wheel_pitch_damping", "wheel_balance_scale", "physics_solver", "wheel_friction",
     "terrain", "observe_terrain", "stair_level", "stair_min_level", "stair_max_level", "hip_target_scale",
     "stair_episode_seconds",
 )

@@ -45,6 +45,10 @@ def common_parser(description, num_envs):
                         help="Additional pitch-rate damping in Nm s/rad in heading wheel mode")
     parser.add_argument("--wheel-balance-scale", type=float, default=1.,
                         help="Scale learned wheel balance differential in heading wheel mode; steering is independent")
+    parser.add_argument("--physics-solver", choices=("tgs", "pgs"), default="tgs",
+                        help="PhysX solver; tgs retains the original training physics")
+    parser.add_argument("--wheel-friction", type=float, default=1.,
+                        help="Tire contact friction coefficient only; original value 1.0")
     initial = parser.add_mutually_exclusive_group()
     initial.add_argument("--initial-leg-length", type=float,
                          help="Optional consistent initial leg pose in metres; changes initialization, not the controller")
@@ -118,6 +122,10 @@ def validate_common(parser, args):
         parser.error("--leg-feedforward-force must be nonnegative and finite")
     if args.leg_feedforward_force and args.leg_control not in ("hip_pd", "hip_target"):
         parser.error("--leg-feedforward-force requires a hip PD controller")
+    if args.physics_solver not in ("tgs", "pgs"):
+        parser.error("--physics-solver must be tgs or pgs")
+    if not math.isfinite(args.wheel_friction) or args.wheel_friction < 0:
+        parser.error("--wheel-friction must be finite and nonnegative")
     for name in ("heading_kp", "heading_kd", "wheel_pitch_damping"):
         if not math.isfinite(getattr(args, name)) or getattr(args, name) < 0:
             parser.error("--{} must be nonnegative and finite".format(name.replace("_", "-")))
@@ -180,6 +188,8 @@ def environment_kwargs(args):
         wheel_control=args.wheel_control,
         wheel_pitch_damping=args.wheel_pitch_damping,
         wheel_balance_scale=args.wheel_balance_scale,
+        physics_solver=args.physics_solver,
+        wheel_friction=args.wheel_friction,
         closure_stiffness=args.closure_stiffness,
         closure_damping=args.closure_damping,
         physics_dt=args.physics_dt,

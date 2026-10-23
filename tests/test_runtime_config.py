@@ -51,6 +51,20 @@ class RuntimeConfigurationTests(unittest.TestCase):
         self.assertFalse(actual.observe_leg_lengths)
         self.assertFalse(actual.stability_rewards)
 
+    def test_contact_settings_restore_and_explicit_arguments_override_in_all_modes(self):
+        saved = checkpoint()
+        saved["environment_config"].update(physics_solver="pgs", wheel_friction=2.)
+        for mode in ("train", "play", "evaluate"):
+            with self.subTest(mode=mode):
+                _, args, explicit = arguments(mode=mode)
+                actual = resolve_runtime_args(args, explicit, saved, mode)
+                self.assertEqual((actual.physics_solver, actual.wheel_friction), ("pgs", 2.))
+                parser, args, explicit = arguments(["--allow-approximate-loop", "--physics-solver", "tgs", "--wheel-friction", "1"], mode=mode)
+                actual = resolve_runtime_args(args, explicit, saved, mode)
+                validate_common(parser, actual)
+                values = environment_kwargs(actual)
+                self.assertEqual((values["physics_solver"], values["wheel_friction"]), ("tgs", 1.))
+
     def test_stability_profile_covers_motion_and_appropriate_noise(self):
         _, args, explicit = arguments(["--profile", "stability"])
         actual = resolve_runtime_args(args, explicit)

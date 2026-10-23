@@ -141,6 +141,8 @@ class SupportStatisticsTests(unittest.TestCase):
         motion = result["base_motion"]
         self.assertAlmostEqual(motion["planar_speed_rms_m_per_s"], 0.05/math.sqrt(2))
         self.assertAlmostEqual(motion["xy_displacement_peak_m"], 0.05)
+        self.assertEqual(motion["xy_displacement_abs_peak_m_xy"], [0.03, 0.04])
+        self.assertEqual(motion["linear_velocity_mean_m_per_s_xyz"], [0.015, 0.02, 0.1])
         self.assertEqual(motion["yaw_drift_abs_peak_rad"], 0.04)
         self.assertEqual(motion["end_per_environment"][0]["xy_displacement_world_m"], [0, 0])
         self.assertTrue(screen(result)["engineering_screen_passed"])

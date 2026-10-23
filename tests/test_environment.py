@@ -159,5 +159,22 @@ class EnvironmentTests(unittest.TestCase):
             env.support_rewards = previous
 
 
+class ContactSettingsTests(unittest.TestCase):
+    def test_optional_contact_settings_select_real_solver_and_only_tire_materials(self):
+        candidate = WheelLegGymEnv(
+            num_envs=1, sim_device="cpu", headless=True, allow_approximate_loop=True,
+            physics_threads=0, physics_solver="pgs", wheel_friction=2.)
+        try:
+            self.assertEqual(candidate.gym.get_sim_params(candidate.sim).physx.solver_type, 0)
+            shapes = candidate.gym.get_actor_rigid_shape_properties(candidate.envs[0], candidate.actors[0])
+            spans = candidate.gym.get_actor_rigid_body_shape_indices(candidate.envs[0], candidate.actors[0])
+            for name, span in zip(candidate.body_names, spans):
+                expected = 2. if name in ("L_lun", "R_lun") else 1.
+                for shape in shapes[span.start:span.start+span.count]:
+                    self.assertAlmostEqual(shape.friction, expected)
+        finally:
+            candidate.close()
+
+
 if __name__ == "__main__":
     unittest.main()
