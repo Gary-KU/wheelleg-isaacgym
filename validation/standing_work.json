@@ -1,0 +1,111 @@
+{
+  "experiment_dir": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/logs/standing_support_20261022_093823",
+  "checkpoint": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/logs/standing_support_20261022_093823/input/standing_hold.pt",
+  "source_checkpoint": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/logs/hybrid_support_20261021_234236/input/hybrid_start.pt",
+  "controller": "hip_pd_plus_radial_support_and_heading_feedback",
+  "leg_feedforward_force_n_per_leg": 22.4649,
+  "supported_mass_estimate_kg": 4.58,
+  "leg_kp": 80.0,
+  "leg_kd": 4.0,
+  "initial_leg_length_m": 0.08,
+  "target_leg_length_m": 0.08,
+  "new_rl_training_updates": 0,
+  "reference": "https://github.com/clearlab-sustech/Wheel-Legged-Gym",
+  "status": "static_and_crouch_rise_passed_forward_kick_position_hold_failed",
+  "heading_kp": 2.0,
+  "heading_kd": 0.1,
+  "training_started": false,
+  "cpu_tests": {
+    "tests_run": 158,
+    "skipped": 1,
+    "result": "passed",
+    "log": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/validation/standing_final_tests.log"
+  },
+  "evaluation": {
+    "standing_hold_60s": {
+      "report": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/logs/standing_support_20261022_093823/evaluation/standing_hold_60s.json",
+      "simulated_seconds": 60.0,
+      "screening_passed": true,
+      "physical_failures": 0,
+      "failed_checks": [],
+      "leg_length_mean_m_left_right": [
+        0.08034747533243278,
+        0.08012108669198792
+      ],
+      "pitch_rms_deg": 0.6726502844284067,
+      "roll_rms_deg": 0.09238267927483197,
+      "xy_displacement_peak_m": 0.015944875472803665,
+      "yaw_drift_peak_deg": 2.556750707455586
+    },
+    "standing_hold_rise_20s": {
+      "report": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/logs/standing_support_20261022_093823/evaluation/standing_hold_rise_20s.json",
+      "simulated_seconds": 20.0,
+      "screening_passed": true,
+      "physical_failures": 0,
+      "failed_checks": [],
+      "leg_length_mean_m_left_right": [
+        0.08028590001993709,
+        0.08018043912119335
+      ],
+      "pitch_rms_deg": 0.6959947194516204,
+      "roll_rms_deg": 0.017437424015027254,
+      "xy_displacement_peak_m": 0.0344212496797466,
+      "yaw_drift_peak_deg": 2.7956973568789714
+    },
+    "standing_hold_forward_kick_20s": {
+      "report": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/logs/standing_support_20261022_093823/evaluation/standing_hold_forward_kick_20s.json",
+      "simulated_seconds": 20.0,
+      "screening_passed": false,
+      "physical_failures": 0,
+      "failed_checks": [
+        "stationary_xy_displacement"
+      ],
+      "leg_length_mean_m_left_right": [
+        0.08025444576309787,
+        0.08021164101858934
+      ],
+      "pitch_rms_deg": 0.9803116303358332,
+      "roll_rms_deg": 0.058044460026897206,
+      "xy_displacement_peak_m": 0.07148140249693043,
+      "yaw_drift_peak_deg": 2.829943756336694
+    },
+    "standing_hold_lateral_kick_20s": {
+      "report": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/logs/standing_support_20261022_093823/evaluation/standing_hold_lateral_kick_20s.json",
+      "simulated_seconds": 20.0,
+      "screening_passed": true,
+      "physical_failures": 0,
+      "failed_checks": [],
+      "leg_length_mean_m_left_right": [
+        0.08036586449378066,
+        0.08010270556641949
+      ],
+      "pitch_rms_deg": 0.6492909431596173,
+      "roll_rms_deg": 0.09766226955431691,
+      "xy_displacement_peak_m": 0.015944875472803665,
+      "yaw_drift_peak_deg": 2.552092870976934
+    }
+  },
+  "known_limitations": [
+    "Wheel policy preserved, hip policy output remains zero; no new RL training.",
+    "Forward +0.15m/s kick at5s: no fall, but about7cm displacement exceeds5cm stationary tolerance.",
+    "No fallen-body self-righting, arbitrary driving or larger disturbance guarantee.",
+    "Compliant spring/damper five-bar closure remains approximate."
+  ],
+  "source_sha256": {
+    "wheelleg_gym/env.py": "625aaa2156fa84a20678f8fad6597f193e0189261f3a8f2a10bee928096784fc",
+    "wheelleg_gym/leg_control.py": "491baa5fcea9129c75aa0982c1d061ede63f00d23678114d341d7730205ee74f",
+    "wheelleg_gym/runtime_config.py": "cc5a219a6bba02cc34366551d2e8364e25abe38f0ca5d65fe2f3860eb28b802c",
+    "tools/evaluate_support.py": "80de28eebedb93f02c447aaa6c5fbadb8cf8d4e0a95fcfdd03a6ca0afc3c598f",
+    "wheelleg_gym/support_metrics.py": "fe8495ab1e4b5e426ccd44eb6d8be58134cd479dd921fa33957828f26fe7e648",
+    "stand.sh": "3a8f5807ebfeb4a8ad9546e185cbb6100c29cfb71d7c46e382d024261fa34263"
+  },
+  "gpu_smoke": {
+    "report": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/logs/standing_support_20261022_093823/evaluation/standing_hold_gpu_smoke_2s.json",
+    "device": "cuda:0",
+    "num_envs": 8,
+    "simulated_seconds_per_env": 2.0,
+    "finite_outputs": true,
+    "physical_failures": 0,
+    "scope": "GPU compatibility smoke only, not a replacement for long-duration validation"
+  }
+}

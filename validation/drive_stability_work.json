@@ -1,0 +1,75 @@
+{
+  "snapshot_time_local": "2026-10-22T14:32:26",
+  "status": "yaw_fixed_static_pitch_wobble_not_resolved",
+  "training_started": false,
+  "stair_training_running": false,
+  "checkpoint": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/logs/standing_support_20261022_093823/input/standing_hold.pt",
+  "checkpoint_weights_changed": false,
+  "default_play_script": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/stand.sh",
+  "default_controller": {
+    "wheel_control": "heading",
+    "heading_kp": 6.0,
+    "heading_kd": 0.6,
+    "wheel_balance_scale": 1.0,
+    "wheel_pitch_damping": 0.0,
+    "hip_pd": [
+      80.0,
+      4.0
+    ],
+    "radial_support_force_per_leg_n": 22.4649,
+    "per_joint_torque_limit_nm": 9.0,
+    "heading_reference_error_bound_rad": 0.35
+  },
+  "changes": [
+    "Retain RL wheel drive differential, replace learned common steering effort with explicit heading/yaw-rate feedback.",
+    "Reserve torque headroom for balance before steering.",
+    "Bound accumulated yaw reference error to prevent long residual turns after saturated commands.",
+    "Legacy wheel_control=policy remains the default for existing checkpoints and stair workflows."
+  ],
+  "validation": {
+    "baseline_report": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/logs/drive_stability_20261022/baseline_stand_seq28.json",
+    "selected_report": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/logs/drive_stability_20261022/heading6_d06_seq28.json",
+    "phase_comparison": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/logs/drive_stability_20261022/heading_gain_comparison_seq28.json",
+    "simulated_seconds_each": 28,
+    "physical_failures_before": 0,
+    "physical_failures_after": 0,
+    "forward_yaw_rms_deg_before": 10.782208998998266,
+    "forward_yaw_rms_deg_after": 0.149,
+    "backward_yaw_rms_deg_before": 4.246543723610345,
+    "backward_yaw_rms_deg_after": 0.087,
+    "turn_target_rad_per_s": 2.0,
+    "turn_actual_last_second_rad_per_s": [
+      1.976,
+      -1.977
+    ],
+    "note": "Finite single-seed flat driving evaluation; not arbitrary-terrain robustness."
+  },
+  "static_pitch_status": {
+    "quality": "not_resolved",
+    "rejected_scaling_report": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/validation/pitch_drive_scale_125_final60_heading6_20261022.json",
+    "reason": "Scale 1.25 lowers pitch STD but increases 60-second XY drift; not enabled by default. Damping, filtering and alternate static feedback also lacked a clear overall improvement.",
+    "observed_scale1_pitch_std_deg": 0.3824,
+    "observed_scale125_pitch_std_deg": 0.3214,
+    "observed_scale1_xy_peak_m": 0.01568,
+    "observed_scale125_xy_peak_m": 0.05922
+  },
+  "tests": {
+    "log": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/validation/drive_stability_tests.log",
+    "total": 213,
+    "passed": 212,
+    "skipped": 1,
+    "failed": 0
+  },
+  "viewer": {
+    "process_id_at_launch": 56638,
+    "event_log": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/validation/drive_stability_keyboard.jsonl",
+    "note": "Running keyboard playback was opened with the selected heading controller; no learning in the viewer."
+  },
+  "source_sha256": {
+    "stand.sh": "d3eb221b46c3842e5019106c379d3f9e2a60376d284bfcdcfc8931bfa871e326",
+    "wheelleg_gym/wheel_control.py": "38d676ab82cc7e4efe9feb7e4aff59b8a3cb2de2e7254302548e6ed8bc4dd92d",
+    "wheelleg_gym/env.py": "82e19d5bc199dc9c6fb626b410e14dcff8d06250cbb715a41d4139d1e00850ce",
+    "wheelleg_gym/cli.py": "2d5793b65bdc00d6ea9351aed8b6a3df8182ca07fdabc27d0378bcfcd16b2d6e",
+    "wheelleg_gym/runtime_config.py": "9ef84dcd455cb914d65c09d1767e6f70d39ddb02cb9a654ec091494d88510c4c"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "launcher": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/stand.sh",
+  "forward_target_m_per_s": 0.6,
+  "yaw_target_rad_per_s": 2.0,
+  "yaw_acceleration_rad_per_s2": 4.0,
+  "leg_range_m": [
+    0.06,
+    0.2
+  ],
+  "leg_rate_m_per_simulated_s": 0.02,
+  "physics_threads": 0,
+  "viewer_pixels": [
+    1280,
+    720
+  ],
+  "physics_dt_s": 0.0005,
+  "control_dt_s": 0.02,
+  "hip_pd_hz": 2000,
+  "policy_hz": 50,
+  "status": "higher_stance_and_fast_spin_short_tests_passed_viewer_optimized",
+  "tests": {
+    "tests_run": 164,
+    "skipped": 1,
+    "result": "passed",
+    "log": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/validation/faster_viewer_final_tests.log"
+  },
+  "reports": {
+    "higher_stance_20cm_validation": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/validation/higher_stance_20cm_validation.json",
+    "higher_stance_geometry_extended": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/validation/higher_stance_geometry_extended.json",
+    "spin_20_at_height20cm": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/validation/spin_20_at_height20cm.json",
+    "viewer_perf_optimized": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/validation/viewer_perf_optimized.json",
+    "viewer_perf_final_visual": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/validation/viewer_perf_final_visual.json"
+  },
+  "launch_event_log": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/validation/faster_viewer_launch.jsonl",
+  "source_sha256": {
+    "stand.sh": "f9c590e044d5e9a90d3df8551e714512f153f02c93cca4e331cd1455073b2b37",
+    "play.py": "ca187812c97c64fc5bae6578ddf137e50001d63834323641aa748e7736de9cc7",
+    "wheelleg_gym/config.py": "c5b5551e10077442d7bb1b7cae3a399ac50a85e1d62ae1064c1d8668d3083e65",
+    "wheelleg_gym/constraints.py": "0fba26d360bc44584bef873c0d4b8f586ce12e8b5a39e8fef001f4066fd529ef",
+    "wheelleg_gym/env.py": "0bf552ce92a75fb4c7478dad93781582d00ad1731d6b0244f2b584d443f6433d",
+    "wheelleg_gym/keyboard.py": "b831fbd55308755d43d955b7619686aada6537663e0e30e382e3159bdefe0898"
+  },
+  "known_limits": [
+    "No new RL training. Fastspin/highstance testsare finite,notunrestrictedhighspeeddrivingproof.",
+    "Closure remains compliant spring-damper approximation; physical joint hard limits unchanged.",
+    "Original training random leg range remains.06-.15m."
+  ]
+}

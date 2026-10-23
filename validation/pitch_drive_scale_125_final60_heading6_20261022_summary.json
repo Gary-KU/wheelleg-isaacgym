@@ -1,0 +1,185 @@
+{
+  "seconds": 60.0,
+  "kick": 0,
+  "start_length": 0.08,
+  "heading_kp": 6.0,
+  "heading_kd": 0.6,
+  "wall_seconds": 51.72267787599958,
+  "variants": [
+    {
+      "name": "drive_scale_1.0",
+      "kd": 0,
+      "alpha": 1,
+      "drive_scale": 1.0,
+      "failures": 0,
+      "pitch_rms_deg": 0.6997616010227415,
+      "pitch_std_deg": 0.382367183929735,
+      "roll_rms_deg": 0.03270111128559681,
+      "yaw_peak_deg": 0.7333444978578695,
+      "pitch_peak_deg": 1.4068682779740633,
+      "pitch_rate_rms": 0.07999611745874459,
+      "planar_velocity_rms": 0.012042686084309242,
+      "displacement_peak_m": 0.015678275745926572,
+      "forward_displacement_peak_m": 0.015674592927098274,
+      "forward_velocity_rms": 0.011908480614343901,
+      "final_xy_displacement_m": [
+        0.011172458529472351,
+        -0.0023984925355762243
+      ],
+      "final_xy_displacement_norm_m": 0.011427011684425389,
+      "final_velocity_world_xy_m_per_s": [
+        0.0048017860390245914,
+        0.0001489085261709988
+      ],
+      "leg_length_mean_m": [
+        0.08023941515307677,
+        0.08022850962845902
+      ],
+      "leg_length_std_mm": [
+        0.0401724511879601,
+        0.03790005554089921
+      ],
+      "leg_length_min_m": [
+        0.08016462624073029,
+        0.08010813593864441
+      ],
+      "leg_length_max_m": [
+        0.0803823173046112,
+        0.08030575513839722
+      ],
+      "leg_length_error_rmse_mm": [
+        0.2427621085697344,
+        0.23163131158909642
+      ],
+      "passive_limit_min_margin_rad": [
+        0.2755439877510071,
+        0.2771875858306885,
+        0.2750037908554077,
+        0.2763323187828064
+      ],
+      "active_torque_rms_nm_per_joint": [
+        1.521558049693324,
+        1.503782597131883,
+        1.508292346490859,
+        1.528402185758866,
+        0.2851380679974237,
+        0.2849631283059343
+      ],
+      "active_torque_peak_nm_per_joint": [
+        1.68808114528656,
+        1.6650036573410034,
+        1.6782463788986206,
+        1.6882861852645874,
+        1.0330357551574707,
+        1.0478532314300537
+      ],
+      "active_torque_saturation_fraction": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "wheel_contact_fraction_over1N": [
+        1.0,
+        1.0
+      ],
+      "nonwheel_contact_fraction_over1N": 0.0,
+      "torque_rms": 0.28505061157205747,
+      "torque_diff_rms": 0.2828296868904284,
+      "dominant_pitch_frequency_hz": 0.5087719298245614,
+      "loop_peak_mm": 1.3591517927125096
+    },
+    {
+      "name": "drive_scale_1.25",
+      "kd": 0,
+      "alpha": 1,
+      "drive_scale": 1.25,
+      "failures": 0,
+      "pitch_rms_deg": 0.5850451148502632,
+      "pitch_std_deg": 0.32139958227843324,
+      "roll_rms_deg": 0.03720861747624173,
+      "yaw_peak_deg": 0.7224457570983506,
+      "pitch_peak_deg": 1.2142966438542544,
+      "pitch_rate_rms": 0.08003442083900249,
+      "planar_velocity_rms": 0.012207049178758238,
+      "displacement_peak_m": 0.05921682629497155,
+      "forward_displacement_peak_m": 0.05921316146850586,
+      "forward_velocity_rms": 0.012069467800691116,
+      "final_xy_displacement_m": [
+        0.05865049362182617,
+        -0.0006431590882129967
+      ],
+      "final_xy_displacement_norm_m": 0.05865401994489912,
+      "final_velocity_world_xy_m_per_s": [
+        -0.011790016666054726,
+        7.449303666362539e-05
+      ],
+      "leg_length_mean_m": [
+        0.08023894715727421,
+        0.08022372818045449
+      ],
+      "leg_length_std_mm": [
+        0.037338639351648405,
+        0.03928208339243244
+      ],
+      "leg_length_min_m": [
+        0.08016155660152435,
+        0.08010527491569519
+      ],
+      "leg_length_max_m": [
+        0.0803835541009903,
+        0.08029834181070328
+      ],
+      "leg_length_error_rmse_mm": [
+        0.24184688949428074,
+        0.2271505685775965
+      ],
+      "passive_limit_min_margin_rad": [
+        0.2755129337310791,
+        0.2771599292755127,
+        0.275016188621521,
+        0.2764050364494324
+      ],
+      "active_torque_rms_nm_per_joint": [
+        1.5185834364192283,
+        1.5054197402535094,
+        1.5123735979007167,
+        1.5275917816487037,
+        0.3017133511720883,
+        0.30048746534128434
+      ],
+      "active_torque_peak_nm_per_joint": [
+        1.7094180583953857,
+        1.6798367500305176,
+        1.6785354614257812,
+        1.7057034969329834,
+        1.024574875831604,
+        1.060639500617981
+      ],
+      "active_torque_saturation_fraction": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "wheel_contact_fraction_over1N": [
+        1.0,
+        1.0
+      ],
+      "nonwheel_contact_fraction_over1N": 0.0,
+      "torque_rms": 0.3011010321326722,
+      "torque_diff_rms": 0.29938307868195124,
+      "dominant_pitch_frequency_hz": 1.719298245614035,
+      "loop_peak_mm": 1.3678820105269551
+    }
+  ],
+  "trace_omitted": {
+    "samples": 3000,
+    "reason": "Repository summary retains all aggregate metrics; raw per-step traces remain local.",
+    "local_source": "pitch_drive_scale_125_final60_heading6_20261022.json"
+  }
+}

@@ -1,0 +1,227 @@
+{
+  "snapshot_time_local": "2026-10-22T12:26:43+08:00",
+  "snapshot_not_live_monitor": true,
+  "experiment_dir": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/logs/stair_training_20261022_103417",
+  "status": "stage4_training_completed_no_active_training",
+  "active_training": null,
+  "completed_stages": [
+    {
+      "directory": "stage1",
+      "new_updates": 50,
+      "final_iteration": 50
+    },
+    {
+      "directory": "stage2",
+      "new_updates": 100,
+      "start_iteration": 50,
+      "final_iteration": 150
+    },
+    {
+      "directory": "stage3",
+      "new_updates_completed": 39,
+      "start_iteration": 80,
+      "final_iteration": 119,
+      "last_saved_iteration": 110,
+      "status": "interrupted_intentionally",
+      "reason": "Replace body-motion progress/velocity rewards and body-projected terrain reference; restart from evaluated model_80."
+    },
+    {
+      "directory": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/logs/stair_training_20261022_103417/stage4",
+      "prepared_checkpoint": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/logs/stair_training_20261022_103417/input/stage4_start.pt",
+      "console_log": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/logs/stair_training_20261022_103417/stage4.console.log",
+      "start_iteration": 80,
+      "planned_new_updates": 400,
+      "planned_end_iteration": 480,
+      "num_envs": 512,
+      "sim_device": "cuda:0",
+      "samples_per_update": 12800,
+      "initial_level": 1,
+      "minimum_level": 1,
+      "maximum_level": 4,
+      "hip_noise_std": 0.25,
+      "wheel_noise_std": 0.02,
+      "ppo_epochs": 2,
+      "ppo_mini_batches": 4,
+      "environment_revision": "wheel_progress_and_wheel_ground_reference_v2",
+      "quality": "Completed planned updates; not stable on level 1. Final deterministic screening has zero course crossings and 24 pitch failures.",
+      "progress_file": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/logs/stair_training_20261022_103417/stage4/progress.json",
+      "status": "completed",
+      "new_updates_completed": 400,
+      "final_iteration": 480,
+      "last_saved_iteration": 480,
+      "training_summary_file": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/logs/stair_training_20261022_103417/stage4/training_summary.json",
+      "final_checkpoint": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/logs/stair_training_20261022_103417/stage4/model_480.pt"
+    }
+  ],
+  "terrain": {
+    "course": "four_up_platform_four_down",
+    "finish_x_m": 3.8,
+    "nominal_riser_heights_m": [
+      0.01,
+      0.02,
+      0.035,
+      0.05,
+      0.07
+    ],
+    "harder_levels": "variable tread widths/heights; levels 3 and 4 have split left/right heights",
+    "curriculum": "Promote only after real wheel-contact course completion; demote on early physical failure, bounded by min_level."
+  },
+  "observation_size": 252,
+  "hip_action": "clipped normalized target-angle residual, scale 0.2 rad; PD 80/4 plus approximate 22.4649 N radial load feedforward per leg",
+  "torque_limit_nm": 9,
+  "closure_model": "external-force spring-damper approximation, finite stiffness",
+  "reward_and_observation_corrections": {
+    "progress_and_stall": "mean wheel-center world X, not base motion",
+    "velocity_reward": "world XY finite difference of mean wheel center over the 0.02 s control period",
+    "terrain_height_reference": "mean queried ground height below the two wheel centers",
+    "reset_teleports": "excluded by pre-reset measurements and snapshots"
+  },
+  "verified_demo": {
+    "checkpoint": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/logs/stair_training_20261022_103417/evaluation/verified_level0.pt",
+    "policy_source": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/logs/stair_training_20261022_103417/stage2/model_80.pt",
+    "policy_iteration": 80,
+    "heading_kp": 6,
+    "heading_kd": 0.3,
+    "nominal_riser_height_m": 0.01,
+    "report": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/logs/stair_training_20261022_103417/evaluation/verified_level0_wheel_reference.json",
+    "seconds_per_environment": 26,
+    "num_envs": 4,
+    "course_crossings": 4,
+    "physical_failures": 0,
+    "timeouts": 0,
+    "screen_passed": true,
+    "pitch_peak_rad": 0.26170670986175537,
+    "closure_error_peak_m": 0.0014680147869512439,
+    "scope": "Finite deterministic level-0 screening only, with explicit heading feedback. Not proof of general complex-stair robustness."
+  },
+  "historical_level1_failure": {
+    "report": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/logs/stair_training_20261022_103417/stage2_model80_heading6_level1.json",
+    "note": "Before the wheel-progress/terrain-reference correction; retained as historical evidence.",
+    "course_crossings": 0,
+    "physical_failures": 22
+  },
+  "tests": {
+    "log": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/validation/stairs_final_tests.log",
+    "total": 202,
+    "passed": 201,
+    "skipped": 1,
+    "failed": 0
+  },
+  "entry_points": {
+    "view_verified_course": "./stairs.sh",
+    "start_new_training_run": "./train_stairs.sh",
+    "guide": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/docs/STAIRS.md"
+  },
+  "source_sha256": {
+    "wheelleg_gym/env.py": "6106614b8915b8e3e41dc8bb27336b63c17f771f605db2629771c6967afe61ad",
+    "wheelleg_gym/terrain.py": "112bf57f9cbbf1c44abe3ecd6d1fcf1b3354f1961255248658e6c7f9552715bf",
+    "wheelleg_gym/stair_rewards.py": "1acac89a2fbfd3813074e088ba8584c188a931ac716743091e25bbf5fe36ddfa",
+    "wheelleg_gym/runtime_config.py": "f94c3232cb447cc353f6de5040d5f801cbd835b8b3f9b347d075452b6faeb7d1"
+  },
+  "early_stage4_level1_screen": {
+    "report": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/logs/stair_training_20261022_103417/stage4_model90_level1.json",
+    "checkpoint_iteration": 90,
+    "new_updates_since_start": 10,
+    "summary": {
+      "course_crossings": 0,
+      "physical_failures": 16,
+      "time_limit_resets": 0,
+      "environments_with_course_crossing": 0,
+      "max_progress_m": 0.4081292152404785,
+      "highest_ground_height_m": 0.0,
+      "pitch_abs_peak_rad": 0.6947222352027893
+    },
+    "screen_passed": false
+  },
+  "latest_fixed_level1_evaluation": {
+    "report": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/logs/stair_training_20261022_103417/stage4_model480_level1.json",
+    "checkpoint": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/logs/stair_training_20261022_103417/stage4/model_480.pt",
+    "checkpoint_iteration": 480,
+    "new_training_updates_since_start": 400,
+    "num_envs": 4,
+    "seconds_per_env": 26.0,
+    "summary": {
+      "course_crossings": 0,
+      "environments_with_course_crossing": 0,
+      "physical_failures": 24,
+      "time_limit_resets": 0,
+      "max_progress_m": 0.4064478874206543,
+      "highest_ground_height_m": 0.0,
+      "pitch_abs_peak_rad": 0.7015066146850586
+    },
+    "termination_reason_counts": {
+      "pitch": 24,
+      "roll": 0,
+      "nonfinite": 0,
+      "geometry": 0,
+      "loop": 0,
+      "lane": 0,
+      "stalled": 0,
+      "base_contact": 0
+    },
+    "screen_passed": false,
+    "quality": "Level 1 is not stable: zero complete crossings, 24 pitch failures, zero timeouts in four environments over 26 simulated seconds each."
+  },
+  "training_event_audit_at_iteration_318": {
+    "completed_courses_total": 0,
+    "completed_courses_last_100_updates": 0,
+    "highest_level": 1,
+    "historical_max_progress_m": 2.63094,
+    "last_100_updates_max_progress_m": 1.13964,
+    "source": "TensorBoard event records; includes stochastic exploration, not deterministic evaluation."
+  },
+  "training_event_audit_at_iteration_425": {
+    "completed_courses_total": 0,
+    "highest_level": 1,
+    "historical_max_progress_m": 3.41583,
+    "last_100_updates_mean_progress_m": 1.61598,
+    "source": "TensorBoard event records including stochastic exploration; not deterministic pass rate."
+  },
+  "training_running": false,
+  "active_training_pid": null,
+  "active_training_job": null,
+  "current_training_state_note": "The planned stage4 run completed naturally at iteration 480. No training is running at this snapshot; manual playback is separate from training.",
+  "historical_fixed_level1_evaluations": [
+    {
+      "report": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/logs/stair_training_20261022_103417/stage4_model420_level1.json",
+      "checkpoint_iteration": 420,
+      "new_training_updates_since_start": 340,
+      "num_envs": 4,
+      "seconds_per_env": 26,
+      "summary": {
+        "course_crossings": 0,
+        "environments_with_course_crossing": 0,
+        "physical_failures": 9,
+        "time_limit_resets": 0,
+        "max_progress_m": 0.4069032669067383,
+        "highest_ground_height_m": 0.0,
+        "pitch_abs_peak_rad": 0.6638861298561096
+      },
+      "termination_reason_counts": {
+        "pitch": 4,
+        "roll": 0,
+        "nonfinite": 0,
+        "geometry": 0,
+        "loop": 0,
+        "lane": 0,
+        "stalled": 5,
+        "base_contact": 0
+      },
+      "screen_passed": false
+    }
+  ],
+  "final_training_summary_audit": {
+    "source": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/logs/stair_training_20261022_103417/stage4/training_summary.json",
+    "start_iteration": 80,
+    "first_new_iteration": 81,
+    "completed_iteration": 480,
+    "new_updates_completed": 400,
+    "completed_courses_total": 0,
+    "highest_level": 1.0,
+    "historical_max_progress_m": 3.4158267974853516,
+    "historical_max_progress_iteration": 418,
+    "last_100_updates_completed_courses": 0,
+    "last_100_updates_mean_progress_m": 2.2553635954856874,
+    "interpretation": "Training data include stochastic exploration and are not a deterministic pass rate. The entire 400-update run recorded zero complete courses; use the final fixed-level evaluation for model quality."
+  }
+}

@@ -1,0 +1,125 @@
+{
+  "schema_version": 1,
+  "source_usd": "IsaacLab/Robot_USD/Robot_Model.usd",
+  "urdf": "urdf/Robot_Model.urdf",
+  "units": "m, kg, s, rad",
+  "root_body": "base_link",
+  "coordinate_system": "X forward, Y left, Z up; all local constraints use exported URDF link frames",
+  "default_root_pose": {
+    "pos": [
+      0,
+      0,
+      0.25
+    ],
+    "quat_xyzw": [
+      0,
+      0,
+      0,
+      1
+    ]
+  },
+  "default_joint_positions": {
+    "L_F_Joint1": 0.0,
+    "L_F_Joint2": 0.0,
+    "L_lun_Joint": 0.0,
+    "L_H_Joint1": 0.0,
+    "L_H_Joint2": 0.0,
+    "R_F_Joint1": 0.0,
+    "R_F_Joint2": 0.0,
+    "R_lun_Joint": 0.0,
+    "R_H_Joint1": 0.0,
+    "R_H_Joint2": 0.0
+  },
+  "active_joints": [
+    "L_F_Joint1",
+    "L_H_Joint1",
+    "R_F_Joint1",
+    "R_H_Joint1",
+    "L_lun_Joint",
+    "R_lun_Joint"
+  ],
+  "passive_joints": [
+    "L_F_Joint2",
+    "L_H_Joint2",
+    "R_F_Joint2",
+    "R_H_Joint2"
+  ],
+  "constraints": [
+    {
+      "name": "L_lun_Joint2",
+      "type": "revolute",
+      "body0": "L_H_Link2",
+      "local_pos0": [
+        0.11824575811624527,
+        -0.1077878400683403,
+        -0.013500158675014973
+      ],
+      "local_axis0": [
+        6.304079084381209e-06,
+        1.1801344888891825e-06,
+        -0.9999999999794331
+      ],
+      "local_rot0_wxyz": [
+        3.1520416996127252e-06,
+        -3.6562391869233234e-06,
+        0.9999999999881743,
+        5.900557198331883e-07
+      ],
+      "body1": "L_lun",
+      "local_pos1": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "local_axis1": [
+        0.0,
+        0.0,
+        -1.0
+      ],
+      "local_rot1_wxyz": [
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ]
+    },
+    {
+      "name": "R_lun_Joint2",
+      "type": "revolute",
+      "body0": "R_H_Link2",
+      "local_pos0": [
+        -0.11824353039264679,
+        -0.10778925567865372,
+        -0.006001174449920654
+      ],
+      "local_axis0": [
+        1.3403907641732367e-05,
+        -9.693849729784296e-06,
+        0.9999999998631824
+      ],
+      "local_rot0_wxyz": [
+        0.9999999999592075,
+        4.8469005376160656e-06,
+        6.701971414894985e-06,
+        -3.629898173892065e-06
+      ],
+      "body1": "R_lun",
+      "local_pos1": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "local_axis1": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "local_rot1_wxyz": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  ]
+}

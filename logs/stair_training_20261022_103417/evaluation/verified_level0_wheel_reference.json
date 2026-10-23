@@ -1,0 +1,386 @@
+{
+  "checkpoint": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/logs/stair_training_20261022_103417/evaluation/verified_level0.pt",
+  "checkpoint_iteration": 80,
+  "checkpoint_has_new_rl_updates": true,
+  "checkpoint_initialization_provenance": {
+    "source_checkpoint": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/logs/standing_support_20261022_093823/input/standing_hold.pt",
+    "source_iteration": 0,
+    "source_total_steps": 0,
+    "seed": 42,
+    "source_observations": 198,
+    "target_observations": 252,
+    "frame_count": 6,
+    "source_features_per_frame": 33,
+    "target_features_per_frame": 42,
+    "appended_terrain_features_per_frame": 9,
+    "terrain_input_weights": "zero; old features preserve their within-frame order",
+    "hip_action_meaning": "clipped normalized target-angle residual, scaled by hip_target_scale radians",
+    "wheel_action_meaning": "original learned wheel torque outputs, unchanged",
+    "hip_actor_output_rows": "zero",
+    "hip_target_scale_rad": 0.2,
+    "new_rl_training_updates": 0,
+    "description": "New stair task and new hip action meaning: 198-to-252-D actor input expansion preserves actor hidden/wheel initialization; hip target-residual outputs start at zero. Critic, optimizer, noise and counters reset. This is an untrained stair warm start, not an equivalent old controller or a trained stair policy.",
+    "source_initialization_provenance": {
+      "source_checkpoint": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/logs/stability_optimization_20261021_215150/training/model_994.pt",
+      "source_iteration": 994,
+      "source_total_steps": 11526400,
+      "seed": 42,
+      "hip_std": 1.0,
+      "description": "Hip position PD + approximate radial load feedforward + bounded wheel heading/rate feedback + RL torque residual. Hip actor outputs remain zero; learned wheel policy initialization retained. No new RL training.",
+      "controller": "hip_pd_plus_radial_support_and_heading_feedback",
+      "leg_kp": 80.0,
+      "leg_kd": 4.0,
+      "leg_feedforward_force": 22.4649,
+      "reference": "https://github.com/clearlab-sustech/Wheel-Legged-Gym",
+      "supported_mass_estimate_kg": 4.58,
+      "prepared_from": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/logs/hybrid_support_20261021_234236/input/hybrid_start.pt",
+      "heading_kp": 2.0,
+      "heading_kd": 0.1,
+      "heading_correction_limit_nm": 1.0,
+      "support_feedforward_hz": 50,
+      "hip_pd_hz": 2000
+    }
+  },
+  "num_envs": 4,
+  "requested_steps": 1300,
+  "completed_steps": 1300,
+  "simulated_seconds_per_env": 26.0,
+  "control_dt_s": 0.02,
+  "wall_seconds": 36.09343336599977,
+  "finite_outputs": true,
+  "physical_failure_resets": 0,
+  "time_limit_resets": 0,
+  "reported_course_crossings": 4,
+  "verified_course_crossings": 4,
+  "terminal_event_counts_per_environment": {
+    "reported_successes": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "physical_failures": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "time_limit_resets": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "termination_reason_counts": {
+    "pitch": 0,
+    "roll": 0,
+    "nonfinite": 0,
+    "geometry": 0,
+    "loop": 0,
+    "lane": 0,
+    "stalled": 0,
+    "base_contact": 0
+  },
+  "nonfinite_step": null,
+  "command": [
+    0.25,
+    0.0,
+    0.0,
+    0.14
+  ],
+  "resolved_environment": {
+    "num_envs": 4,
+    "sim_device": "cpu",
+    "headless": true,
+    "seed": 42,
+    "initial_leg_length": 0.14,
+    "leg_control": "hip_target",
+    "leg_kp": 80.0,
+    "leg_kd": 4.0,
+    "hip_target_scale": 0.2,
+    "terrain": "stairs",
+    "observe_terrain": true,
+    "stair_level": 0,
+    "stair_min_level": 0,
+    "stair_max_level": 4,
+    "stair_episode_seconds": 24.0,
+    "stair_curriculum": false,
+    "leg_feedforward_force": 22.4649,
+    "heading_kp": 6.0,
+    "heading_kd": 0.3,
+    "closure_stiffness": 50000.0,
+    "closure_damping": 25.0,
+    "physics_dt": 0.0005,
+    "physics_threads": 0,
+    "command": [
+      0.25,
+      0.0,
+      0.0,
+      0.14
+    ],
+    "random_commands": false,
+    "forward_speed_range": [
+      -2.0,
+      2.0
+    ],
+    "yaw_speed_range": [
+      -6.283185307179586,
+      6.283185307179586
+    ],
+    "leg_length_range": [
+      0.06,
+      0.15
+    ],
+    "tracking_penalties": false,
+    "stability_rewards": false,
+    "support_rewards": false,
+    "observe_leg_lengths": true,
+    "command_resample_seconds": 0.0,
+    "linear_acceleration": 0.5,
+    "yaw_acceleration": 2.0,
+    "zero_command_fraction": 0.2,
+    "allow_approximate_loop": true
+  },
+  "terrain_level": 0,
+  "curriculum_enabled": false,
+  "deterministic_policy": true,
+  "initial_state_perturbations": false,
+  "time_limit_disabled": false,
+  "episode_time_limit_seconds": 24.0,
+  "course_finish_x_relative_to_origin_m": 3.8,
+  "level_nominal_step_height_m": 0.009999999776482582,
+  "summary": {
+    "samples": 5200,
+    "num_envs_with_samples": 4,
+    "course_crossings": 4,
+    "reported_successes": 4,
+    "unverified_successes": 0,
+    "physical_failures": 0,
+    "time_limit_resets": 0,
+    "completed_attempts": 4,
+    "course_success_fraction_completed_attempts": 1.0,
+    "environments_with_course_crossing": 4,
+    "max_progress_m": 3.8083391189575195,
+    "highest_ground_height_m": 0.03999999910593033,
+    "forward_velocity_body_mean_m_per_s": 0.18872221998830074,
+    "forward_velocity_tracking_rmse_m_per_s": 0.10452232726633737,
+    "pitch_rms_rad": 0.07576809433300732,
+    "roll_rms_rad": 0.03450280398178174,
+    "pitch_abs_peak_rad": 0.26170670986175537,
+    "roll_abs_peak_rad": 0.07899393886327744,
+    "leg_length_mean_m_left_right": [
+      0.1361652191556417,
+      0.14524278577130575
+    ],
+    "leg_length_tracking_rmse_m_left_right": [
+      0.0038593099471656476,
+      0.005300700802250179
+    ],
+    "passive_limit_margin_min_rad": 0.7564283609390259,
+    "passive_near_limit_fraction": 0.0,
+    "applied_torque_endpoint_rms_nm_per_joint": [
+      1.8699483467702156,
+      1.8030878103772674,
+      1.7124907519982875,
+      1.8157746414776577,
+      0.8868909817752989,
+      0.8149287835542256
+    ],
+    "applied_torque_substep_peak_nm_per_joint": [
+      4.380361557006836,
+      4.640840530395508,
+      3.930075168609619,
+      4.305718898773193,
+      6.219326972961426,
+      3.8349807262420654
+    ],
+    "applied_torque_substep_saturation_fraction_per_joint": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "closure_error_peak_m": 0.0014680147869512439,
+    "both_wheels_contact_fraction_over_1n": 0.9878846153846154,
+    "nonwheel_contact_fraction_over_1n": 0.0,
+    "termination_reason_counts": {
+      "base_contact": 0,
+      "geometry": 0,
+      "lane": 0,
+      "loop": 0,
+      "nonfinite": 0,
+      "pitch": 0,
+      "roll": 0,
+      "stalled": 0
+    },
+    "per_environment": [
+      {
+        "environment_index": 0,
+        "samples": 1300,
+        "course_crossings": 1,
+        "reported_successes": 1,
+        "unverified_successes": 0,
+        "physical_failures": 0,
+        "time_limit_resets": 0,
+        "completed_attempts": 1,
+        "course_success_fraction_completed_attempts": 1.0,
+        "max_progress_m": 3.8079285621643066,
+        "max_best_progress_m": 3.8079285621643066,
+        "highest_ground_height_m": 0.03999999910593033,
+        "base_height_min_m": 0.20071738958358765,
+        "base_height_max_m": 0.242653951048851,
+        "final_progress_m": 1.1332342624664307,
+        "final_sample_terminated": false
+      },
+      {
+        "environment_index": 1,
+        "samples": 1300,
+        "course_crossings": 1,
+        "reported_successes": 1,
+        "unverified_successes": 0,
+        "physical_failures": 0,
+        "time_limit_resets": 0,
+        "completed_attempts": 1,
+        "course_success_fraction_completed_attempts": 1.0,
+        "max_progress_m": 3.8069982528686523,
+        "max_best_progress_m": 3.8069982528686523,
+        "highest_ground_height_m": 0.03999999910593033,
+        "base_height_min_m": 0.2008143812417984,
+        "base_height_max_m": 0.24267426133155823,
+        "final_progress_m": 1.1111068725585938,
+        "final_sample_terminated": false
+      },
+      {
+        "environment_index": 2,
+        "samples": 1300,
+        "course_crossings": 1,
+        "reported_successes": 1,
+        "unverified_successes": 0,
+        "physical_failures": 0,
+        "time_limit_resets": 0,
+        "completed_attempts": 1,
+        "course_success_fraction_completed_attempts": 1.0,
+        "max_progress_m": 3.8082058429718018,
+        "max_best_progress_m": 3.8082058429718018,
+        "highest_ground_height_m": 0.03999999910593033,
+        "base_height_min_m": 0.20071278512477875,
+        "base_height_max_m": 0.2426586002111435,
+        "final_progress_m": 1.1219338178634644,
+        "final_sample_terminated": false
+      },
+      {
+        "environment_index": 3,
+        "samples": 1300,
+        "course_crossings": 1,
+        "reported_successes": 1,
+        "unverified_successes": 0,
+        "physical_failures": 0,
+        "time_limit_resets": 0,
+        "completed_attempts": 1,
+        "course_success_fraction_completed_attempts": 1.0,
+        "max_progress_m": 3.8083391189575195,
+        "max_best_progress_m": 3.8083391189575195,
+        "highest_ground_height_m": 0.03999999910593033,
+        "base_height_min_m": 0.1996237188577652,
+        "base_height_max_m": 0.24270226061344147,
+        "final_progress_m": 0.9751186370849609,
+        "final_sample_terminated": false
+      }
+    ]
+  },
+  "screening": {
+    "stair_climbing_screen_passed": true,
+    "checks": {
+      "all_requested_steps": true,
+      "all_environment_samples_recorded": true,
+      "finite_outputs": true,
+      "all_environments_actually_crossed_course": true,
+      "no_unverified_success_events": true,
+      "no_physical_failures": true,
+      "no_time_limit_resets": true
+    },
+    "quality_status": "fixed_level_course_crossings_observed",
+    "interpretation": "A pass requires real course crossings in every tested environment. Survival, reward, or partial progress alone never count as stair-climbing success. Fixed-level finite evaluation does not establish general stair robustness."
+  },
+  "course_crossing_events": [
+    {
+      "step": 961,
+      "environment_index": 0,
+      "terrain_level": 0,
+      "episode_seconds": 19.22,
+      "independently_verified": true,
+      "episode_peak_ground_height_m": 0.03999999910593033,
+      "required_peak_ground_height_m": 0.03499999910593033,
+      "terminal_wheel_x_m": [
+        3.8134865760803223,
+        3.802370309829712
+      ],
+      "terminal_wheel_clearance_error_m": [
+        0.0003978833556175232,
+        -0.0008397847414016724
+      ]
+    },
+    {
+      "step": 963,
+      "environment_index": 2,
+      "terrain_level": 0,
+      "episode_seconds": 19.26,
+      "independently_verified": true,
+      "episode_peak_ground_height_m": 0.03999999910593033,
+      "required_peak_ground_height_m": 0.03499999910593033,
+      "terminal_wheel_x_m": [
+        3.8138561248779297,
+        3.802555561065674
+      ],
+      "terminal_wheel_clearance_error_m": [
+        0.0006411522626876831,
+        -0.0009544230997562408
+      ]
+    },
+    {
+      "step": 970,
+      "environment_index": 1,
+      "terrain_level": 0,
+      "episode_seconds": 19.400000000000002,
+      "independently_verified": true,
+      "episode_peak_ground_height_m": 0.03999999910593033,
+      "required_peak_ground_height_m": 0.03499999910593033,
+      "terminal_wheel_x_m": [
+        3.8127174377441406,
+        3.8012781143188477
+      ],
+      "terminal_wheel_clearance_error_m": [
+        0.0006112530827522278,
+        -0.0008088089525699615
+      ]
+    },
+    {
+      "step": 994,
+      "environment_index": 3,
+      "terrain_level": 0,
+      "episode_seconds": 19.88,
+      "independently_verified": true,
+      "episode_peak_ground_height_m": 0.03999999910593033,
+      "required_peak_ground_height_m": 0.03499999910593033,
+      "terminal_wheel_x_m": [
+        3.8140392303466797,
+        3.802638053894043
+      ],
+      "terminal_wheel_clearance_error_m": [
+        0.0006797760725021362,
+        -0.0010311715304851532
+      ]
+    }
+  ],
+  "diagnostic_sources": {
+    "pose_and_contacts": "Pre-reset snapshots; automatic-reset pose never substitutes for terminal measurements",
+    "summary_sampling": "Finite physical samples only; raw terminal event counts also include a non-finite failing step",
+    "success": "Environment completion flag plus independent terminal wheel positions, clearance, wheel contact, no nonwheel support, lane containment and same-episode elevated terrain traversal",
+    "torque_rms": "Control-period endpoint commands, not all physics-substep RMS",
+    "torque_peak_and_saturation": "All physics substeps within each control period",
+    "contacts": "Net contact vector norm >1N; contact direction is not a measured normal-force decomposition"
+  }
+}

@@ -1,0 +1,734 @@
+{
+  "source_sha256": "b756bc3cf706c403e0e69f3abb2f55ab0a53dad79e322623735e60d5abe717e1",
+  "num_bodies": 11,
+  "num_tree_joints": 10,
+  "num_loop_joints": 2,
+  "total_mass_kg": 5.8399999886751175,
+  "max_source_body_position_error_m": 1.7154631683320496e-08,
+  "max_source_body_axis_vector_error": 1.2675911120415615e-07,
+  "loop_checks": [
+    {
+      "name": "L_lun_Joint2",
+      "anchor_error_m": 1.53313669835721e-08,
+      "axis_dot": 0.9999999999999928,
+      "world_anchor0": [
+        -2.395987762915386e-07,
+        0.10850016132860502,
+        -0.1820338368416064
+      ],
+      "world_anchor1": [
+        -2.3234075857692105e-07,
+        0.1085001586699596,
+        -0.18203382360137993
+      ]
+    },
+    {
+      "name": "R_lun_Joint2",
+      "anchor_error_m": 8.706036370514573e-09,
+      "axis_dot": 0.9999999999999958,
+      "world_anchor0": [
+        -3.907854715268222e-06,
+        -0.10850097122971897,
+        -0.18203595234960857
+      ],
+      "world_anchor1": [
+        -3.903216587095026e-06,
+        -0.10850097755797981,
+        -0.18203594857655264
+      ]
+    }
+  ],
+  "bodies": {
+    "base_link": {
+      "mass_kg": 4.0,
+      "center_of_mass": [
+        -2.9950999760330888e-06,
+        0.0,
+        -2.7409998892835574e-06
+      ],
+      "inertia": [
+        [
+          0.011935000344352398,
+          0.0,
+          5.653799945734899e-07
+        ],
+        [
+          0.0,
+          0.015177999623119831,
+          0.0
+        ],
+        [
+          5.653799945734897e-07,
+          0.0,
+          0.02069400060997757
+        ]
+      ],
+      "source_principal_inertia": [
+        0.01193500030785799,
+        0.015177999623119831,
+        0.020694000646471977
+      ],
+      "usd_body_from_urdf_body": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat_wxyz": [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "source_world_pos": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "L_F_Link1": {
+      "mass_kg": 0.05999999865889549,
+      "center_of_mass": [
+        0.004530999809503555,
+        0.03988400101661682,
+        5.980600042976292e-11
+      ],
+      "inertia": [
+        [
+          6.929599347301904e-05,
+          6.17580014790694e-08,
+          0.0
+        ],
+        [
+          6.17580014790694e-08,
+          5.1916003195635805e-06,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          6.46659973426722e-05
+        ]
+      ],
+      "source_principal_inertia": [
+        6.929605297045782e-05,
+        5.191540822124807e-06,
+        6.46659973426722e-05
+      ],
+      "usd_body_from_urdf_body": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat_wxyz": [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "source_world_pos": [
+        0.04399999976158142,
+        0.10249999910593033,
+        0.0
+      ]
+    },
+    "L_F_Link2": {
+      "mass_kg": 0.08500000089406967,
+      "center_of_mass": [
+        -0.0030048999469727278,
+        0.004164299927651882,
+        0.08996199816465378
+      ],
+      "inertia": [
+        [
+          7.085400202992558e-05,
+          3.469900765821048e-10,
+          7.50049997667827e-09
+        ],
+        [
+          3.469900765821046e-10,
+          6.943100167487471e-05,
+          -2.8777999616537455e-06
+        ],
+        [
+          7.500499976678268e-09,
+          -2.877799961653746e-06,
+          1.5531000817398578e-06
+        ]
+      ],
+      "source_principal_inertia": [
+        7.085400284267962e-05,
+        6.95527924108319e-05,
+        1.4313085330286412e-06
+      ],
+      "usd_body_from_urdf_body": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat_wxyz": [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "source_world_pos": [
+        0.11824608594179153,
+        0.10249973833560944,
+        -0.074246346950531
+      ]
+    },
+    "L_lun": {
+      "mass_kg": 0.6299999952316284,
+      "center_of_mass": [
+        6.383799861649187e-16,
+        -1.9428999545635786e-16,
+        -0.019461000338196754
+      ],
+      "inertia": [
+        [
+          0.0005185999907553196,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0005185999907553196,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0008963500149548054
+        ]
+      ],
+      "source_principal_inertia": [
+        0.0005185999907553196,
+        0.0005185999907553196,
+        0.0008963500149548054
+      ],
+      "usd_body_from_urdf_body": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat_wxyz": [
+          0.0,
+          0.0,
+          1.0,
+          0.0
+        ]
+      },
+      "source_world_pos": [
+        -2.384185791015625e-07,
+        0.1085001677274704,
+        -0.18203383684158325
+      ]
+    },
+    "L_H_Link1": {
+      "mass_kg": 0.05999999865889549,
+      "center_of_mass": [
+        -0.030925000086426735,
+        -0.030925000086426735,
+        0.0034117999020963907
+      ],
+      "inertia": [
+        [
+          3.3735001439429144e-05,
+          -2.9365998820133313e-05,
+          3.896600547574751e-08
+        ],
+        [
+          -2.936599882013332e-05,
+          3.3734995055348346e-05,
+          3.896600959691533e-08
+        ],
+        [
+          3.8966005475747514e-08,
+          3.8966009596915334e-08,
+          6.716300670449177e-05
+        ]
+      ],
+      "source_principal_inertia": [
+        6.310099706752226e-05,
+        4.3689510675903875e-06,
+        6.716305506415665e-05
+      ],
+      "usd_body_from_urdf_body": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat_wxyz": [
+          0.0,
+          0.0,
+          1.0,
+          0.0
+        ]
+      },
+      "source_world_pos": [
+        -0.04399999976158142,
+        0.0949999988079071,
+        0.0
+      ]
+    },
+    "L_H_Link2": {
+      "mass_kg": 0.08500000089406967,
+      "center_of_mass": [
+        0.06422699987888336,
+        -0.0585470013320446,
+        -0.003000000026077032
+      ],
+      "inertia": [
+        [
+          3.052299751607338e-05,
+          3.1666001427750115e-05,
+          0.0
+        ],
+        [
+          3.166600142775012e-05,
+          3.5858000789175414e-05,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          6.625500100199133e-05
+        ]
+      ],
+      "source_principal_inertia": [
+        1.412342953699408e-06,
+        6.496865535154939e-05,
+        6.625500100199133e-05
+      ],
+      "usd_body_from_urdf_body": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat_wxyz": [
+          0.0,
+          0.0,
+          1.0,
+          0.0
+        ]
+      },
+      "source_world_pos": [
+        -0.11824599653482437,
+        0.0949999988079071,
+        -0.07424599677324295
+      ]
+    },
+    "R_F_Link1": {
+      "mass_kg": 0.05999999865889549,
+      "center_of_mass": [
+        -0.030925000086426735,
+        -0.030925000086426735,
+        0.0034117999020963907
+      ],
+      "inertia": [
+        [
+          3.373499505535198e-05,
+          -2.936599882013036e-05,
+          3.896601204869999e-08
+        ],
+        [
+          -2.936599882013035e-05,
+          3.3735001439431454e-05,
+          3.8966007799570705e-08
+        ],
+        [
+          3.896601204869999e-08,
+          3.896600779957071e-08,
+          6.716300670448586e-05
+        ]
+      ],
+      "source_principal_inertia": [
+        4.3689510675903875e-06,
+        6.310099706752226e-05,
+        6.716305506415665e-05
+      ],
+      "usd_body_from_urdf_body": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat_wxyz": [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "source_world_pos": [
+        0.04399999976158142,
+        -0.0949999988079071,
+        0.0
+      ]
+    },
+    "R_F_Link2": {
+      "mass_kg": 0.08500000089406967,
+      "center_of_mass": [
+        0.06422699987888336,
+        -0.0585470013320446,
+        -0.003000000026077032
+      ],
+      "inertia": [
+        [
+          3.052299751607338e-05,
+          3.1666001427750115e-05,
+          0.0
+        ],
+        [
+          3.166600142775012e-05,
+          3.5858000789175414e-05,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          6.625500100199133e-05
+        ]
+      ],
+      "source_principal_inertia": [
+        1.412342953699408e-06,
+        6.496865535154939e-05,
+        6.625500100199133e-05
+      ],
+      "usd_body_from_urdf_body": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat_wxyz": [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "source_world_pos": [
+        0.11824599653482437,
+        -0.09499973058700562,
+        -0.07424599677324295
+      ]
+    },
+    "R_lun": {
+      "mass_kg": 0.6299999952316284,
+      "center_of_mass": [
+        6.383799861649187e-16,
+        -1.9428999545635786e-16,
+        -0.019461000338196754
+      ],
+      "inertia": [
+        [
+          0.0005185999907553196,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0005185999907553196,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0008963500149548054
+        ]
+      ],
+      "source_principal_inertia": [
+        0.0005185999907553196,
+        0.0005185999907553196,
+        0.0008963500149548054
+      ],
+      "usd_body_from_urdf_body": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat_wxyz": [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "source_world_pos": [
+        -3.904104232788086e-06,
+        -0.10850097984075546,
+        -0.18203595280647278
+      ]
+    },
+    "R_H_Link1": {
+      "mass_kg": 0.05999999865889549,
+      "center_of_mass": [
+        0.004530999809503555,
+        -0.03988400101661682,
+        -5.980600042976292e-11
+      ],
+      "inertia": [
+        [
+          6.929599347301904e-05,
+          -6.17580014790694e-08,
+          0.0
+        ],
+        [
+          -6.17580014790694e-08,
+          5.1916003195635805e-06,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          6.46659973426722e-05
+        ]
+      ],
+      "source_principal_inertia": [
+        6.929605297045782e-05,
+        5.191540822124807e-06,
+        6.46659973426722e-05
+      ],
+      "usd_body_from_urdf_body": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat_wxyz": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "source_world_pos": [
+        -0.04399999976158142,
+        -0.10249999910593033,
+        0.0
+      ]
+    },
+    "R_H_Link2": {
+      "mass_kg": 0.08500000089406967,
+      "center_of_mass": [
+        -0.06655699759721756,
+        -0.06066799908876419,
+        -0.0030048999469727278
+      ],
+      "inertia": [
+        [
+          3.261400019715021e-05,
+          -3.3939002483387636e-05,
+          -5.549001466307189e-09
+        ],
+        [
+          -3.393900248338764e-05,
+          3.8370007767819245e-05,
+          -5.058300506962283e-09
+        ],
+        [
+          -5.549001466307189e-09,
+          -5.058300506962283e-09,
+          7.085400202992958e-05
+        ]
+      ],
+      "source_principal_inertia": [
+        1.4311929135146784e-06,
+        6.955281423870474e-05,
+        7.085400284267962e-05
+      ],
+      "usd_body_from_urdf_body": {
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "quat_wxyz": [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "source_world_pos": [
+        -0.11824661493301392,
+        -0.10249973088502884,
+        -0.07424580305814743
+      ]
+    }
+  },
+  "meshes": [
+    {
+      "source": "/Robot_Model/base_link/visuals/base_link/mesh",
+      "file": "meshes/base_link_visual.obj",
+      "kind": "visual",
+      "vertices": 1224,
+      "triangles": 408
+    },
+    {
+      "source": "/Robot_Model/base_link/collisions/base_link/mesh",
+      "file": "meshes/base_link_visual.obj",
+      "kind": "collision",
+      "vertices": 1224,
+      "triangles": 408
+    },
+    {
+      "source": "/Robot_Model/L_F_Link1/visuals/L_F_Link1/mesh",
+      "file": "meshes/L_F_Link1_visual.obj",
+      "kind": "visual",
+      "vertices": 8742,
+      "triangles": 2914
+    },
+    {
+      "source": "/Robot_Model/L_F_Link1/collisions/L_F_Link1/mesh",
+      "file": "meshes/L_F_Link1_visual.obj",
+      "kind": "collision",
+      "vertices": 8742,
+      "triangles": 2914
+    },
+    {
+      "source": "/Robot_Model/L_F_Link2/visuals/L_F_Link2/mesh",
+      "file": "meshes/L_F_Link2_visual.obj",
+      "kind": "visual",
+      "vertices": 3012,
+      "triangles": 1004
+    },
+    {
+      "source": "/Robot_Model/L_F_Link2/collisions/L_F_Link2/mesh",
+      "file": "meshes/L_F_Link2_visual.obj",
+      "kind": "collision",
+      "vertices": 3012,
+      "triangles": 1004
+    },
+    {
+      "source": "/Robot_Model/L_lun/visuals/L_lun/mesh",
+      "file": "meshes/L_lun_visual.obj",
+      "kind": "visual",
+      "vertices": 2406,
+      "triangles": 802
+    },
+    {
+      "source": "/Robot_Model/L_lun/collisions/L_lun/mesh",
+      "file": "meshes/L_lun_visual.obj",
+      "kind": "collision",
+      "vertices": 2406,
+      "triangles": 802
+    },
+    {
+      "source": "/Robot_Model/L_H_Link1/visuals/L_H_Link1/mesh",
+      "file": "meshes/L_H_Link1_visual.obj",
+      "kind": "visual",
+      "vertices": 6156,
+      "triangles": 2052
+    },
+    {
+      "source": "/Robot_Model/L_H_Link1/collisions/L_H_Link1/mesh",
+      "file": "meshes/L_H_Link1_visual.obj",
+      "kind": "collision",
+      "vertices": 6156,
+      "triangles": 2052
+    },
+    {
+      "source": "/Robot_Model/L_H_Link2/visuals/L_H_Link2/mesh",
+      "file": "meshes/L_H_Link2_visual.obj",
+      "kind": "visual",
+      "vertices": 2232,
+      "triangles": 744
+    },
+    {
+      "source": "/Robot_Model/L_H_Link2/collisions/L_H_Link2/mesh",
+      "file": "meshes/L_H_Link2_visual.obj",
+      "kind": "collision",
+      "vertices": 2232,
+      "triangles": 744
+    },
+    {
+      "source": "/Robot_Model/R_F_Link1/visuals/R_F_Link1/mesh",
+      "file": "meshes/R_F_Link1_visual.obj",
+      "kind": "visual",
+      "vertices": 6156,
+      "triangles": 2052
+    },
+    {
+      "source": "/Robot_Model/R_F_Link1/collisions/R_F_Link1/mesh",
+      "file": "meshes/R_F_Link1_visual.obj",
+      "kind": "collision",
+      "vertices": 6156,
+      "triangles": 2052
+    },
+    {
+      "source": "/Robot_Model/R_F_Link2/visuals/R_F_Link2/mesh",
+      "file": "meshes/R_F_Link2_visual.obj",
+      "kind": "visual",
+      "vertices": 2232,
+      "triangles": 744
+    },
+    {
+      "source": "/Robot_Model/R_F_Link2/collisions/R_F_Link2/mesh",
+      "file": "meshes/R_F_Link2_visual.obj",
+      "kind": "collision",
+      "vertices": 2232,
+      "triangles": 744
+    },
+    {
+      "source": "/Robot_Model/R_lun/visuals/R_lun/mesh",
+      "file": "meshes/R_lun_visual.obj",
+      "kind": "visual",
+      "vertices": 2406,
+      "triangles": 802
+    },
+    {
+      "source": "/Robot_Model/R_lun/collisions/R_lun/mesh",
+      "file": "meshes/R_lun_visual.obj",
+      "kind": "collision",
+      "vertices": 2406,
+      "triangles": 802
+    },
+    {
+      "source": "/Robot_Model/R_H_Link1/visuals/R_H_Link1/mesh",
+      "file": "meshes/R_H_Link1_visual.obj",
+      "kind": "visual",
+      "vertices": 8742,
+      "triangles": 2914
+    },
+    {
+      "source": "/Robot_Model/R_H_Link1/collisions/R_H_Link1/mesh",
+      "file": "meshes/R_H_Link1_visual.obj",
+      "kind": "collision",
+      "vertices": 8742,
+      "triangles": 2914
+    },
+    {
+      "source": "/Robot_Model/R_H_Link2/visuals/R_H_Link2/mesh",
+      "file": "meshes/R_H_Link2_visual.obj",
+      "kind": "visual",
+      "vertices": 3012,
+      "triangles": 1004
+    },
+    {
+      "source": "/Robot_Model/R_H_Link2/collisions/R_H_Link2/mesh",
+      "file": "meshes/R_H_Link2_visual.obj",
+      "kind": "collision",
+      "vertices": 3012,
+      "triangles": 1004
+    }
+  ],
+  "conversion_notes": [
+    "URDF frames moved to incoming child-joint frames; geometry, COM, inertia and closure frames transformed together.",
+    "Source angular limits converted from degrees to radians.",
+    "No source position drives exported; runtime controls the six active joints and leaves four knee joints passive.",
+    "Finite effort/velocity limits match source Python actuator config: 9 Nm, 30 rad/s legs, 45 rad/s wheels.",
+    "Visual and collision geometry exported as triangles at original metre scale; identical meshes share files."
+  ]
+}

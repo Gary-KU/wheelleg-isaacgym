@@ -1,0 +1,21 @@
+{
+  "source_checkpoint": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/logs/stair_training_20261022_103417/stage2/model_80.pt",
+  "source_sha256": "24a3c191c62ee515737f9f0f69522f041bce2f1a0002fd026b098ed318bb8719",
+  "source_iteration": 80,
+  "source_weights_changed": "only exploration std; actor and critic unchanged at initialization",
+  "reason": "Restart from evaluated model_80 actor/critic after replacing base-motion progress reward and terrain ground reference with wheel-center measurements. Increase hip exploration to sample meaningful leg changes.",
+  "planned_new_updates": 400,
+  "planned_end_iteration": 480,
+  "num_envs": 512,
+  "stair_min_level": 1,
+  "notes": "This is a training start, not a policy that has passed level 1.",
+  "prepared_from": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/logs/stair_training_20261022_103417/input/stage3_start.pt",
+  "prepared_from_sha256": "6b3ce0a669b55ef50cc87707745f57017d24893948d9b8e388c2011b8570eb5e",
+  "hip_exploration_std": 0.25,
+  "wheel_exploration_std": 0.02,
+  "environment_revision": "wheel_progress_and_wheel_ground_reference_v2",
+  "reward_progress": "signed world X displacement of the mean of both wheel centers",
+  "reward_velocity": "world XY velocity of both wheel centers, averaged",
+  "terrain_reference": "mean terrain height beneath both wheel centers",
+  "preceding_run": "stage3 interrupted at iteration 119; last fully saved checkpoint 110; retained as historical"
+}
