@@ -16,6 +16,7 @@
 | 6 | [constraints.py](../wheelleg_gym/constraints.py) | 树形 URDF 如何通过外力近似闭合 |
 | 7 | [training.py](../wheelleg_gym/training.py) | 收集 rollout、PPO 更新、权重保存 |
 | 8 | [play.py](../play.py)、[evaluate.py](../evaluate.py) | 策略推理、键盘输入与评估 |
+| 抬轮 | [WHEEL_LIFT.md](WHEEL_LIFT.md)、[lift.py](../lift.py)、[wheel_lift.py](../wheelleg_gym/wheel_lift.py) | 先站稳、预倾换重心、短暂收腿、落轮恢复；现有 RL + 显式控制 |
 | 阶梯 | [STAIRS.md](STAIRS.md)、[terrain.py](../wheelleg_gym/terrain.py)、[stair_rewards.py](../wheelleg_gym/stair_rewards.py) | 五档地形、252维输入、髋角动作与完整课程判据 |
 
 先看本项目的封装，再按需要深入 `third_party/rsl_rl/`，其中保留了原组件和许可证。

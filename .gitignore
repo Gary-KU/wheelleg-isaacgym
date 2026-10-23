@@ -45,3 +45,4 @@ core.*
 !/validation/viewer_height_spin_work.json
 !/validation/pitch_drive_scale_125_final60_heading6_20261022_summary.json
 !/validation/lateral_drift_work.json
+!/validation/wheel_lift_work.json

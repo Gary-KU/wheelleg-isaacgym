@@ -8,12 +8,16 @@ from .kinematics import inverse_symmetric
 
 
 def hip_targets(leg_lengths):
-    """Symmetric five-bar targets in LF, LH, RF, RH joint coordinates."""
-    if leg_lengths.ndim != 1:
-        raise ValueError("leg_lengths must have shape [N]")
+    """LF,LH,RF,RH targets from shared [N] or independent [N,2] lengths."""
+    if leg_lengths.ndim == 1:
+        phi1, _ = inverse_symmetric(leg_lengths)
+        angle = phi1-3*math.pi/4
+        return torch.stack((angle, -angle, -angle, angle), dim=-1)
+    if leg_lengths.ndim != 2 or leg_lengths.shape[1] != 2:
+        raise ValueError("leg_lengths must have shape [N] or [N,2] (left,right)")
     phi1, _ = inverse_symmetric(leg_lengths)
-    angle = phi1-3*math.pi/4
-    return torch.stack((angle, -angle, -angle, angle), dim=-1)
+    left, right = (phi1-3*math.pi/4).unbind(-1)
+    return torch.stack((left, -left, -right, right), dim=-1)
 
 
 def hip_pd_torques(positions, velocities, targets, kp=80.0, kd=4.0):
@@ -63,7 +67,7 @@ def _radial_leg_jacobian(phi1, phi4):
 
 
 def hip_support_torques(positions, force_per_leg):
-    """Return unclipped LF,LH,RF,RH torques for a scalar radial support force.
+    """Return LF,LH,RF,RH torques for scalar or independent [N,2] leg loads.
 
     Virtual work gives tau = (dL/dq)^T F, so positive force extends each leg.
     This approximates the supported mass as a load along each leg. It is not
@@ -73,11 +77,17 @@ def hip_support_torques(positions, force_per_leg):
     """
     if positions.ndim != 2 or positions.shape[1] != 4:
         raise ValueError("Hip positions must have shape [N,4]")
-    force = float(force_per_leg)
-    if not math.isfinite(force) or force < 0:
-        raise ValueError("force_per_leg must be a finite scalar >= 0")
-    if force == 0:
-        return torch.zeros_like(positions)
+    if isinstance(force_per_leg, torch.Tensor):
+        force = force_per_leg.to(device=positions.device, dtype=positions.dtype)
+        if force.shape != (positions.shape[0], 2) or not bool(torch.isfinite(force).all()) or bool((force < 0).any()):
+            raise ValueError("Support force tensor must be finite nonnegative [N,2] (left,right)")
+        force = torch.repeat_interleave(force, 2, dim=-1)
+    else:
+        force = float(force_per_leg)
+        if not math.isfinite(force) or force < 0:
+            raise ValueError("force_per_leg must be a finite scalar >= 0")
+        if force == 0:
+            return torch.zeros_like(positions)
     left = _radial_leg_jacobian(3*math.pi/4+positions[:, 0],
                                 math.pi/4+positions[:, 1])
     # Right phi1 is RH and phi4 is RF; return the actual action joint order.

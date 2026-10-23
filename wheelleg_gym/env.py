@@ -42,6 +42,7 @@ class WheelLegGymEnv:
     """
 
     num_obs = (OBSERVATION_HISTORY_FRAMES + 1) * OBSERVATION_BASE_FRAME_SIZE
+    _physics_step_callback = None
     num_privileged_obs = None
     num_actions = NUM_ACTIONS
 
@@ -221,6 +222,9 @@ class WheelLegGymEnv:
         if self.terrain_model is not None:
             self.terrain_model.add_to_sim(self.gym, self.sim)
 
+    def _create_robot_asset(self, options):
+        return self.gym.load_asset(self.sim, str(ASSET_ROOT), self.metadata["urdf"], options)
+
     def _load_robot(self, stiffness, damping):
         """导入树形 URDF，设置力矩关节，并创建额外闭环外力模型。"""
         options = gymapi.AssetOptions()
@@ -236,7 +240,7 @@ class WheelLegGymEnv:
         options.angular_damping = 0.0
         options.max_linear_velocity = 100.0
         options.max_angular_velocity = 100.0
-        self.asset = self.gym.load_asset(self.sim, str(ASSET_ROOT), self.metadata["urdf"], options)
+        self.asset = self._create_robot_asset(options)
         if self.asset is None:
             raise RuntimeError("Could not load the converted robot URDF")
         self.body_names = self.gym.get_asset_rigid_body_names(self.asset)
@@ -589,6 +593,24 @@ class WheelLegGymEnv:
             "base_contact": contact_norm[:, self.body_names.index("base_link")] > 20.0,
         }
 
+    def _hip_targets(self):
+        """Default shared leg length; a task may provide independent left/right targets."""
+        return hip_targets(self.commands[:, 3])
+
+    def _leg_support_bias(self):
+        return (hip_support_torques(self.dof_state[:, self.action_indices[:4], 0],
+                                    self.leg_feedforward_force)
+                if self.leg_feedforward_force else None)
+
+    def _hip_pd_torques(self, targets):
+        return hip_pd_torques(self.dof_state[:, self.action_indices[:4], 0],
+                              self.dof_state[:, self.action_indices[:4], 1],
+                              targets, self.leg_kp, self.leg_kd)
+
+    def _extra_step_info(self):
+        """Task diagnostics captured before automatic physical resets."""
+        return {}
+
     def step(self, actions):
         """执行一个控制周期，保留终止前诊断，并自动重置终止机器人。"""
         if self.closed:
@@ -617,25 +639,22 @@ class WheelLegGymEnv:
                             +self.heading_kd*(self.ang_vel[:, 2]-self.commands[:, 2])).clamp(-1.0, 1.0)
             effort[:, 4:] -= heading_bias[:, None]
         self.torques[:, self.action_indices] = effort.clamp(-TORQUE_LIMIT, TORQUE_LIMIT)
-        targets = hip_targets(self.commands[:, 3]) if self.leg_control in ("hip_pd", "hip_target") else None
+        targets = self._hip_targets() if self.leg_control in ("hip_pd", "hip_target") else None
         if self.leg_control == "hip_target":
             targets = (targets+self.hip_target_scale*self.actions[:, :4].clamp(-1, 1)).clamp(self.hip_lower, self.hip_upper)
         # A slowly varying load feedforward uses the measured five-bar Jacobian
         # once per 50Hz control period; the stabilizing PD still runs at 2kHz.
-        support_bias = (hip_support_torques(self.dof_state[:, self.action_indices[:4], 0],
-                                          self.leg_feedforward_force)
-                        if self.leg_feedforward_force else None)
+        support_bias = self._leg_support_bias()
         torque_peak = (torch.zeros_like(self.actions) if targets is not None
                        else self.torques[:, self.action_indices].abs().clone())
         saturation_sum = torch.zeros_like(self.actions)
         peak_error = torch.zeros_like(self.last_step_loop_error)
+        physics_callback = self._physics_step_callback
         for _ in range(self.decimation):
             if targets is not None:
                 # The learned residual is held at 50Hz; physical feedback is
                 # recomputed at every physics step using freshly read DOF state.
-                pd = hip_pd_torques(self.dof_state[:, self.action_indices[:4], 0],
-                                    self.dof_state[:, self.action_indices[:4], 1],
-                                    targets, self.leg_kp, self.leg_kd)
+                pd = self._hip_pd_torques(targets)
                 total = effort.clone()
                 total[:, :4] += pd
                 if support_bias is not None:
@@ -655,6 +674,8 @@ class WheelLegGymEnv:
             self.gym.refresh_rigid_body_state_tensor(self.sim)
             if targets is not None:
                 self.gym.refresh_dof_state_tensor(self.sim)
+            if physics_callback is not None:
+                physics_callback()
             peak_error = torch.maximum(peak_error, self.closure.errors(self.rb_states))
         self._refresh()
         self.last_step_loop_error.copy_(peak_error)
@@ -726,6 +747,7 @@ class WheelLegGymEnv:
                         terrain_success_count=self.stair_success_count.clone(),
                         pre_reset_wheel_states=self.rb_states[:, self.wheel_indices].clone(),
                         pre_reset_contact_forces=self.contact_forces.clone())
+        info.update(self._extra_step_info())
         ids = dones.nonzero(as_tuple=False).flatten()
         self.last_actions.copy_(self.actions)
         self.last_applied_torques.copy_(self.torques[:, self.action_indices])
