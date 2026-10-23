@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import xml.etree.ElementTree as ET
 import unittest
+from types import SimpleNamespace
 
 import isaacgym  # extension before torch
 import torch
@@ -16,6 +17,7 @@ from wheelleg_gym.wheel_lift import (
     WheelLiftEnv,
     validate_spherical_tread,
     sagittal_wheel_observations,
+    WheelLiftKeyboard,
 )
 from wheelleg_gym.env import ASSET_ROOT
 
@@ -197,6 +199,77 @@ class SensorFixture:
 
 
 class LiftGateTests(unittest.TestCase):
+    def test_manual_wait_does_not_time_out_and_one_press_starts_only_one_side(self):
+        env = SensorFixture()
+        c = AlternatingWheelLift(env, interactive=True)
+        for _ in range(1300):
+            c.before_step()
+            c.after_step(env.info(), torch.zeros(1, dtype=torch.bool))
+        self.assertEqual(c.states[0]["mode"], "settle")
+        self.assertFalse(c.events)
+        c.request_once()
+        c.before_step()
+        self.assertEqual(c.states[0]["mode"], "preload")
+        self.assertFalse(c.pending_once)
+        c.request_once()  # an in-progress action cannot queue another lift
+        self.assertFalse(c.pending_once)
+
+    def test_pause_finishes_landing_and_recovery_without_starting_the_next_side(self):
+        env, c = self.start_lift()
+        c.interactive = True
+        c.set_running(False)
+        env.roll.zero_()
+        for _ in range(200):
+            c.before_step()
+            c.after_step(env.info(), torch.zeros(1, dtype=torch.bool))
+        self.assertEqual(c.states[0]["mode"], "settle")
+        self.assertEqual(len(c.attempts), 1)
+        self.assertEqual(c.states[0]["side"], 1)
+        torch.testing.assert_close(env.lift_lengths, torch.full((1, 2), 0.1))
+
+    def test_keyboard_binding_and_press_edges_do_not_repeat_held_keys(self):
+        class Receiver:
+            running = False
+            requests = 0
+
+            def request_once(self):
+                self.requests += 1
+
+            def set_running(self, running):
+                self.running = running
+
+        receiver = Receiver()
+        keyboard = WheelLiftKeyboard(receiver)
+        bindings = []
+        gym = SimpleNamespace(
+            subscribe_viewer_keyboard_event=lambda *x: bindings.append(x)
+        )
+        api = SimpleNamespace(KEY_N=1, KEY_SPACE=2)
+        keyboard.bind(gym, "viewer", api)
+        self.assertEqual(
+            bindings, [("viewer", 1, "lift_next"), ("viewer", 2, "lift_toggle")]
+        )
+
+        def event(action, value):
+            return SimpleNamespace(action=action, value=value)
+
+        keyboard.process_events([event("lift_next", 1), event("lift_next", 1)])
+        self.assertEqual(receiver.requests, 1)
+        keyboard.process_events([event("lift_next", 0), event("lift_next", 1)])
+        self.assertEqual(receiver.requests, 1)  # X11 held-key repeat pair
+        keyboard.process_events([event("lift_next", 0)])
+        keyboard.process_events([])
+        keyboard.process_events([])
+        keyboard.process_events([event("lift_next", 1)])
+        self.assertEqual(receiver.requests, 2)
+        keyboard.process_events([event("lift_toggle", 1), event("lift_toggle", 1)])
+        self.assertTrue(receiver.running)
+        keyboard.process_events([event("lift_toggle", 0)])
+        keyboard.process_events([])
+        keyboard.process_events([])
+        keyboard.process_events([event("lift_toggle", 1)])
+        self.assertFalse(receiver.running)
+
     def start_lift(self):
         env = SensorFixture()
         controller = AlternatingWheelLift(env, cycles=1)

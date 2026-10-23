@@ -34,7 +34,11 @@ def main():
     parser.add_argument(
         "--wheel-observations", choices=("original", "sagittal"), default="original"
     )
-    parser.add_argument("--seconds", type=float, default=60.0)
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--keyboard", dest="keyboard", action="store_true")
+    mode.add_argument("--auto", dest="keyboard", action="store_false")
+    parser.set_defaults(keyboard=None)
+    parser.add_argument("--seconds", type=float)
     parser.add_argument("--length", type=float, default=0.10)
     parser.add_argument("--shortening", type=float, default=0.035)
     parser.add_argument("--retract", type=float, default=0.02)
@@ -49,6 +53,12 @@ def main():
     parser.add_argument("--report", type=Path)
     parser.add_argument("--record-trace", action="store_true")
     args = parser.parse_args()
+    if args.keyboard is None:
+        args.keyboard = not args.headless
+    if args.keyboard and (args.headless or args.num_envs != 1):
+        parser.error("Keyboard wheel lifts require a viewer and --num-envs 1")
+    if args.seconds is None:
+        args.seconds = 300.0 if args.keyboard else 60.0
     if not args.checkpoint.is_file():
         parser.error("Checkpoint does not exist")
     try:
@@ -63,6 +73,7 @@ def main():
         AlternatingWheelLift,
         WheelLiftEnv,
         sagittal_wheel_observations,
+        WheelLiftKeyboard,
     )
     from wheelleg_gym.training import make_policy, viewer_is_closed
 
@@ -133,7 +144,8 @@ def main():
                         "lean",
                     )
                 },
-                airborne_seconds=args.airborne_seconds
+                airborne_seconds=args.airborne_seconds,
+                interactive=args.keyboard
             )
         except ValueError as error:
             parser.error(str(error))
@@ -147,6 +159,13 @@ def main():
         policy.load_state_dict(checkpoint["model_state_dict"], strict=True)
         policy.eval()
         observations, _ = env.reset()
+        keyboard = WheelLiftKeyboard(controller) if args.keyboard else None
+        if keyboard is not None:
+            keyboard.bind(env.gym, env.viewer, isaacgym.gymapi)
+            print(
+                "键盘抬轮：先点击仿真窗口；N=下一侧（动作中不排队），空格=连续/落稳后暂停。方向键不用于本入口。",
+                flush=True,
+            )
         started = time.perf_counter()
         failures = timeouts = completed = event_cursor = 0
         trace = []
@@ -164,6 +183,10 @@ def main():
             for step in range(steps):
                 if viewer_is_closed(env):
                     break
+                if keyboard is not None:
+                    keyboard.process_events(
+                        env.gym.query_viewer_action_events(env.viewer)
+                    )
                 observations = controller.before_step()
                 wheel_observations = (
                     sagittal_wheel_observations(observations)
@@ -266,7 +289,11 @@ def main():
             finite and completed == steps and timeouts == 0 and collision_scope_passed
         )
         if not summary["engineering_screen_passed"]:
-            summary["status"] = "needs_improvement"
+            summary["status"] = (
+                "interactive_session"
+                if args.keyboard and finite and failures == 0
+                else "needs_improvement"
+            )
         report = dict(
             summary=summary,
             resolved_environment=kwargs,
@@ -302,6 +329,7 @@ def main():
             collision_scope_passed=collision_scope_passed,
             events=controller.events,
             new_training_updates=0,
+            keyboard_enabled=args.keyboard,
             wheel_policy_observation_adapter=args.wheel_observations,
             wheel_collision=args.wheel_collision,
             user_velocity_command=[0.0, 0.0, 0.0],

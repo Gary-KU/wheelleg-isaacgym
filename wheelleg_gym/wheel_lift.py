@@ -216,6 +216,46 @@ def smoothstep(value):
     return value * value * (3.0 - 2.0 * value)
 
 
+class WheelLiftKeyboard:
+    """Viewer press edges only; holding N must not queue repeated lifts."""
+
+    KEYS = {"lift_next": "KEY_N", "lift_toggle": "KEY_SPACE"}
+
+    def __init__(self, controller):
+        self.controller = controller
+        self.pressed = set()
+        self.releasing = {}
+
+    def bind(self, gym, viewer, gymapi):
+        for action, key in self.KEYS.items():
+            gym.subscribe_viewer_keyboard_event(viewer, getattr(gymapi, key), action)
+
+    def process_events(self, events):
+        # X11 autorepeat can emit release+press pairs for a held key. Coalesce
+        # each poll and require two polls without a press before rearming it.
+        values = {}
+        for event in events:
+            if event.action not in self.KEYS:
+                continue
+            values[event.action] = event.value > 0
+        for action in list(self.releasing):
+            self.releasing[action] -= 1
+            if self.releasing[action] == 0:
+                self.pressed.discard(action)
+                del self.releasing[action]
+        for action, down in values.items():
+            if not down:
+                self.releasing[action] = 2
+                continue
+            self.releasing.pop(action, None)
+            if action not in self.pressed:
+                self.pressed.add(action)
+                if action == "lift_next":
+                    self.controller.request_once()
+                else:
+                    self.controller.set_running(not self.controller.running)
+
+
 class AlternatingWheelLift:
     """Settle -> short retract/hold/lower -> recover; alternate only after recovery."""
 
@@ -233,7 +273,8 @@ class AlternatingWheelLift:
         cycles=3,
         lean=0.012,
         clearance=0.003,
-        airborne_seconds=0.04
+        airborne_seconds=0.04,
+        interactive=False
     ):
         values = (
             length,
@@ -294,6 +335,26 @@ class AlternatingWheelLift:
         self.max_displacement = 0.0
         self.nonwheel_contact_steps = 0
         self.parking_velocity = torch.zeros(env.num_envs, device=env.device)
+        self.interactive = bool(interactive)
+        self.running = not self.interactive
+        self.pending_once = False
+
+    def request_once(self):
+        """No queue while moving; a fresh press may request the next side at rest."""
+        if self.interactive and all(s["mode"] == "settle" for s in self.states):
+            self.pending_once = True
+            self.events.append(dict(event="keyboard_next_requested", time_s=self.time))
+        else:
+            self.events.append(dict(event="keyboard_next_ignored", time_s=self.time))
+
+    def set_running(self, running):
+        if not self.interactive:
+            return
+        self.running = bool(running)
+        self.pending_once = False
+        self.events.append(
+            dict(event="keyboard_continuous", running=self.running, time_s=self.time)
+        )
 
     def _stable(self, measurements):
         e = self.env
@@ -336,7 +397,11 @@ class AlternatingWheelLift:
         state["count"] += 1
         state["side"] = 1 - state["side"]
         state.update(
-            mode="done" if state["count"] >= 2 * self.cycles else "settle",
+            mode=(
+                "done"
+                if not self.interactive and state["count"] >= 2 * self.cycles
+                else "settle"
+            ),
             stable=0.0,
             wait_start=self.time,
         )
@@ -368,6 +433,10 @@ class AlternatingWheelLift:
                 self.events.append(dict(event="safety_return", env=i, time_s=self.time))
             if state["mode"] in ("settle", "recover"):
                 state["stable"] = state["stable"] + e.dt if stable[i] else 0.0
+                allowed = self.running or self.pending_once
+                if state["mode"] == "settle" and not allowed:
+                    # Waiting for a human is not a failed stability gate.
+                    state["wait_start"] = self.time
                 if (
                     state["mode"] == "recover"
                     and state["stable"] + 1e-9 >= self.recovery
@@ -375,9 +444,11 @@ class AlternatingWheelLift:
                     self._finish_attempt(i, state["attempt"].get("safety_abort", False))
                 elif (
                     state["mode"] == "settle"
+                    and allowed
                     and self.time >= self.settle
                     and state["stable"] + 1e-9 >= self.recovery
                 ):
+                    self.pending_once = False
                     state.update(mode="preload", start=self.time, stable=0.0)
                     self.events.append(
                         dict(
@@ -597,4 +668,7 @@ class AlternatingWheelLift:
                 "settle_forward_position_tolerance_m": 0.025,
             },
             "interpretation": "Short in-place lift/recover pulses only; not sustained one-wheel standing or forward walking.",
+            "interactive": self.interactive,
+            "continuous_enabled": self.running,
+            "single_lift_pending": self.pending_once,
         }

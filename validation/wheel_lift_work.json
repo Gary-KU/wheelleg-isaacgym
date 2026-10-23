@@ -2,7 +2,7 @@
   "date": "2026-10-23",
   "task": "In-place alternating short wheel lifts after standing and landing gates",
   "new_training_updates": 0,
-  "entry": "./lift.sh",
+  "entry": "./lift.sh --auto",
   "results": [
     {
       "summary": {
@@ -1303,5 +1303,1207 @@
         "/tmp/wheelleg-lift-viewer-340.png"
       ]
     }
+  },
+  "original_automatic_protocol_source_commit": "214590114f7c078d410c4c45b042ba7807cbd298",
+  "keyboard_delivery": {
+    "date": "2026-10-23",
+    "entry": "./lift.sh",
+    "automatic_entry": "./lift.sh --auto",
+    "keys": {
+      "N": "Request next side once when idle; press edges only, no queue while moving",
+      "SPACE": "Toggle continuous; pause completes landing and recovery"
+    },
+    "tests": {
+      "total": 229,
+      "passed": 228,
+      "skipped": 1,
+      "failed": 0
+    },
+    "automatic_regression": {
+      "summary": {
+        "engineering_screen_passed": true,
+        "status": "short_alternating_lifts_verified",
+        "confirmed_lifts": {
+          "left": 3,
+          "right": 3
+        },
+        "attempts": [
+          {
+            "env": 0,
+            "side": "left",
+            "start_s": 3.62,
+            "max_clearance_m": 0.017132781445980072,
+            "active_clearance_peak_m": 0.017132781445980072,
+            "post_lift_rebound_peak_m": 1.7136335372924805e-07,
+            "longest_airborne_s": 0.06,
+            "airborne_run_s": 0.0,
+            "support_lost": false,
+            "safety_abort": false,
+            "recovered": true,
+            "aborted": false,
+            "success": true
+          },
+          {
+            "env": 0,
+            "side": "right",
+            "start_s": 6.72,
+            "max_clearance_m": 0.01713518053293228,
+            "active_clearance_peak_m": 0.01713518053293228,
+            "post_lift_rebound_peak_m": 1.564621925354004e-07,
+            "longest_airborne_s": 0.06,
+            "airborne_run_s": 0.0,
+            "support_lost": false,
+            "safety_abort": false,
+            "recovered": true,
+            "aborted": false,
+            "success": true
+          },
+          {
+            "env": 0,
+            "side": "left",
+            "start_s": 9.84,
+            "max_clearance_m": 0.017124876379966736,
+            "active_clearance_peak_m": 0.017124876379966736,
+            "post_lift_rebound_peak_m": 2.086162567138672e-07,
+            "longest_airborne_s": 0.06,
+            "airborne_run_s": 0.0,
+            "support_lost": false,
+            "safety_abort": false,
+            "recovered": true,
+            "aborted": false,
+            "success": true
+          },
+          {
+            "env": 0,
+            "side": "right",
+            "start_s": 12.96,
+            "max_clearance_m": 0.017133384943008423,
+            "active_clearance_peak_m": 0.017133384943008423,
+            "post_lift_rebound_peak_m": 1.6391277313232422e-07,
+            "longest_airborne_s": 0.06,
+            "airborne_run_s": 0.0,
+            "support_lost": false,
+            "safety_abort": false,
+            "recovered": true,
+            "aborted": false,
+            "success": true
+          },
+          {
+            "env": 0,
+            "side": "left",
+            "start_s": 16.080000000000002,
+            "max_clearance_m": 0.017135925590991974,
+            "active_clearance_peak_m": 0.017135925590991974,
+            "post_lift_rebound_peak_m": 1.7136335372924805e-07,
+            "longest_airborne_s": 0.06,
+            "airborne_run_s": 0.0,
+            "support_lost": false,
+            "safety_abort": false,
+            "recovered": true,
+            "aborted": false,
+            "success": true
+          },
+          {
+            "env": 0,
+            "side": "right",
+            "start_s": 19.2,
+            "max_clearance_m": 0.017052635550498962,
+            "active_clearance_peak_m": 0.017052635550498962,
+            "post_lift_rebound_peak_m": 1.862645149230957e-07,
+            "longest_airborne_s": 0.06,
+            "airborne_run_s": 0.0,
+            "support_lost": false,
+            "safety_abort": false,
+            "recovered": true,
+            "aborted": false,
+            "success": true
+          }
+        ],
+        "final_stages": [
+          "done"
+        ],
+        "physical_failure_resets": 0,
+        "peak_xy_displacement_m": 0.024933427572250366,
+        "nonwheel_contact_steps": 0,
+        "final_settled_seconds_per_env": [
+          39.08000000000051
+        ],
+        "required_final_settled_seconds": 2.0,
+        "clearance_threshold_m": 0.003,
+        "required_continuous_airborne_s": 0.04,
+        "position_hold": {
+          "method": "small proportional forward velocity correction through wheel policy",
+          "forward_kp_per_s": 0.8,
+          "velocity_damping": 0.2,
+          "velocity_limit_m_per_s": 0.04,
+          "velocity_filter_time_constant_s": 0.1,
+          "settle_forward_position_tolerance_m": 0.025
+        },
+        "interpretation": "Short in-place lift/recover pulses only; not sustained one-wheel standing or forward walking.",
+        "interactive": false,
+        "continuous_enabled": true,
+        "single_lift_pending": false
+      },
+      "resolved_environment": {
+        "num_envs": 1,
+        "sim_device": "cpu",
+        "headless": true,
+        "seed": 42,
+        "initial_leg_length": 0.1,
+        "leg_control": "hip_pd",
+        "leg_kp": 80.0,
+        "leg_kd": 4.0,
+        "hip_target_scale": 0.2,
+        "terrain": "plane",
+        "observe_terrain": false,
+        "stair_level": 0,
+        "stair_min_level": 0,
+        "stair_max_level": 4,
+        "stair_episode_seconds": 24.0,
+        "stair_curriculum": false,
+        "leg_feedforward_force": 22.4649,
+        "heading_kp": 6.0,
+        "heading_kd": 0.6,
+        "wheel_control": "heading",
+        "wheel_pitch_damping": 0.0,
+        "wheel_balance_scale": 1.0,
+        "physics_solver": "tgs",
+        "wheel_friction": 1.0,
+        "closure_stiffness": 50000.0,
+        "closure_damping": 25.0,
+        "physics_dt": 0.0005,
+        "physics_threads": 0,
+        "command": [
+          0.0,
+          0.0,
+          0.0,
+          0.1
+        ],
+        "random_commands": false,
+        "forward_speed_range": [
+          -2.0,
+          2.0
+        ],
+        "yaw_speed_range": [
+          -6.283185307179586,
+          6.283185307179586
+        ],
+        "leg_length_range": [
+          0.06,
+          0.15
+        ],
+        "tracking_penalties": false,
+        "stability_rewards": false,
+        "support_rewards": false,
+        "observe_leg_lengths": true,
+        "command_resample_seconds": 0.0,
+        "linear_acceleration": 0.8,
+        "yaw_acceleration": 2.0,
+        "zero_command_fraction": 0.2,
+        "allow_approximate_loop": true
+      },
+      "protocol": {
+        "seconds": 60.0,
+        "length": 0.1,
+        "shortening": 0.035,
+        "retract": 0.02,
+        "hold": 0.06,
+        "lower": 0.12,
+        "settle": 3.0,
+        "recovery": 0.8,
+        "cycles": 3,
+        "clearance": 0.003,
+        "lean": 0.012,
+        "airborne_seconds": 0.04
+      },
+      "checkpoint": "logs/standing_support_20261022_093823/input/standing_hold.pt",
+      "checkpoint_sha256": "8ddcbbb3db19b3e4523f63c623381fa46867e75088e3b2e0095cf3e9ab077305",
+      "source_sha256": {
+        "lift.py": "4b8fecaef952b5cb16f086f578713b48887a029eea321f7065d27cd6ec883e71",
+        "lift.sh": "899b1e1c93432fd30085d70ceb5d720d1b01e5b04ab2e1c5818b0412b2516ccd",
+        "wheelleg_gym/wheel_lift.py": "7ef65ad9c6cace1d2028eaafe73eb9fcef29edf3f3d317bce2f76898d5e1cb2d",
+        "wheelleg_gym/leg_control.py": "7a08096f4a76ad910c8e5d7022cd3b5a69babccb8e5dee08d0161cddb37f0965",
+        "wheelleg_gym/env.py": "690d0bf6f311b0105c03d8fcbc444550bb5b4e0d9defd19e556e5bfb576f4a56"
+      },
+      "requested_steps": 3000,
+      "completed_steps": 3000,
+      "finite_outputs": true,
+      "time_limit_resets": 0,
+      "wall_seconds": 45.49632364899662,
+      "pitch_peak_deg": 2.6887122910685703,
+      "roll_peak_deg": 7.100477257829904,
+      "closure_error_peak_m": 0.005783004220575094,
+      "tread_axis_tilt_peak_deg": 7.0999632860948605,
+      "collision_scope_passed": true,
+      "events": [
+        {
+          "event": "weight_transfer_started",
+          "env": 0,
+          "side": 0,
+          "time_s": 3.0
+        },
+        {
+          "event": "lift_started",
+          "env": 0,
+          "side": "left",
+          "time_s": 3.62
+        },
+        {
+          "event": "attempt_finished",
+          "env": 0,
+          "side": "left",
+          "start_s": 3.62,
+          "max_clearance_m": 0.017132781445980072,
+          "active_clearance_peak_m": 0.017132781445980072,
+          "post_lift_rebound_peak_m": 1.7136335372924805e-07,
+          "longest_airborne_s": 0.06,
+          "airborne_run_s": 0.0,
+          "support_lost": false,
+          "safety_abort": false,
+          "recovered": true,
+          "aborted": false,
+          "success": true
+        },
+        {
+          "event": "weight_transfer_started",
+          "env": 0,
+          "side": 1,
+          "time_s": 6.12
+        },
+        {
+          "event": "lift_started",
+          "env": 0,
+          "side": "right",
+          "time_s": 6.72
+        },
+        {
+          "event": "attempt_finished",
+          "env": 0,
+          "side": "right",
+          "start_s": 6.72,
+          "max_clearance_m": 0.01713518053293228,
+          "active_clearance_peak_m": 0.01713518053293228,
+          "post_lift_rebound_peak_m": 1.564621925354004e-07,
+          "longest_airborne_s": 0.06,
+          "airborne_run_s": 0.0,
+          "support_lost": false,
+          "safety_abort": false,
+          "recovered": true,
+          "aborted": false,
+          "success": true
+        },
+        {
+          "event": "weight_transfer_started",
+          "env": 0,
+          "side": 0,
+          "time_s": 9.22
+        },
+        {
+          "event": "lift_started",
+          "env": 0,
+          "side": "left",
+          "time_s": 9.84
+        },
+        {
+          "event": "attempt_finished",
+          "env": 0,
+          "side": "left",
+          "start_s": 9.84,
+          "max_clearance_m": 0.017124876379966736,
+          "active_clearance_peak_m": 0.017124876379966736,
+          "post_lift_rebound_peak_m": 2.086162567138672e-07,
+          "longest_airborne_s": 0.06,
+          "airborne_run_s": 0.0,
+          "support_lost": false,
+          "safety_abort": false,
+          "recovered": true,
+          "aborted": false,
+          "success": true
+        },
+        {
+          "event": "weight_transfer_started",
+          "env": 0,
+          "side": 1,
+          "time_s": 12.34
+        },
+        {
+          "event": "lift_started",
+          "env": 0,
+          "side": "right",
+          "time_s": 12.96
+        },
+        {
+          "event": "attempt_finished",
+          "env": 0,
+          "side": "right",
+          "start_s": 12.96,
+          "max_clearance_m": 0.017133384943008423,
+          "active_clearance_peak_m": 0.017133384943008423,
+          "post_lift_rebound_peak_m": 1.6391277313232422e-07,
+          "longest_airborne_s": 0.06,
+          "airborne_run_s": 0.0,
+          "support_lost": false,
+          "safety_abort": false,
+          "recovered": true,
+          "aborted": false,
+          "success": true
+        },
+        {
+          "event": "weight_transfer_started",
+          "env": 0,
+          "side": 0,
+          "time_s": 15.46
+        },
+        {
+          "event": "lift_started",
+          "env": 0,
+          "side": "left",
+          "time_s": 16.080000000000002
+        },
+        {
+          "event": "attempt_finished",
+          "env": 0,
+          "side": "left",
+          "start_s": 16.080000000000002,
+          "max_clearance_m": 0.017135925590991974,
+          "active_clearance_peak_m": 0.017135925590991974,
+          "post_lift_rebound_peak_m": 1.7136335372924805e-07,
+          "longest_airborne_s": 0.06,
+          "airborne_run_s": 0.0,
+          "support_lost": false,
+          "safety_abort": false,
+          "recovered": true,
+          "aborted": false,
+          "success": true
+        },
+        {
+          "event": "weight_transfer_started",
+          "env": 0,
+          "side": 1,
+          "time_s": 18.580000000000002
+        },
+        {
+          "event": "lift_started",
+          "env": 0,
+          "side": "right",
+          "time_s": 19.2
+        },
+        {
+          "event": "attempt_finished",
+          "env": 0,
+          "side": "right",
+          "start_s": 19.2,
+          "max_clearance_m": 0.017052635550498962,
+          "active_clearance_peak_m": 0.017052635550498962,
+          "post_lift_rebound_peak_m": 1.862645149230957e-07,
+          "longest_airborne_s": 0.06,
+          "airborne_run_s": 0.0,
+          "support_lost": false,
+          "safety_abort": false,
+          "recovered": true,
+          "aborted": false,
+          "success": true
+        }
+      ],
+      "new_training_updates": 0,
+      "keyboard_enabled": false,
+      "wheel_policy_observation_adapter": "sagittal",
+      "wheel_collision": "sphere_tread",
+      "user_velocity_command": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "fixed_base": false,
+      "external_body_support": false,
+      "root_state_writes_outside_resets": false,
+      "contact_metric_semantics": {
+        "swing_force": "maximum contact-force norm across every physics substep of a control interval",
+        "support_force": "mean vertical contact force across every physics substep",
+        "airborne": "clearance >= threshold AND swing max-contact <1N AND support mean-force >5N; only active lift phase counts"
+      }
+    },
+    "viewer_session": {
+      "summary": {
+        "engineering_screen_passed": false,
+        "status": "interactive_session",
+        "confirmed_lifts": {
+          "left": 4,
+          "right": 3
+        },
+        "attempts": [
+          {
+            "env": 0,
+            "side": "left",
+            "start_s": 5.62,
+            "max_clearance_m": 0.017136290669441223,
+            "active_clearance_peak_m": 0.017136290669441223,
+            "post_lift_rebound_peak_m": 1.7136335372924805e-07,
+            "longest_airborne_s": 0.06,
+            "airborne_run_s": 0.0,
+            "support_lost": false,
+            "safety_abort": false,
+            "recovered": true,
+            "aborted": false,
+            "success": true
+          },
+          {
+            "env": 0,
+            "side": "right",
+            "start_s": 11.620000000000001,
+            "max_clearance_m": 0.017153412103652954,
+            "active_clearance_peak_m": 0.017153412103652954,
+            "post_lift_rebound_peak_m": 1.6391277313232422e-07,
+            "longest_airborne_s": 0.06,
+            "airborne_run_s": 0.0,
+            "support_lost": false,
+            "safety_abort": false,
+            "recovered": true,
+            "aborted": false,
+            "success": true
+          },
+          {
+            "env": 0,
+            "side": "left",
+            "start_s": 14.74,
+            "max_clearance_m": 0.01714327186346054,
+            "active_clearance_peak_m": 0.01714327186346054,
+            "post_lift_rebound_peak_m": 1.6391277313232422e-07,
+            "longest_airborne_s": 0.06,
+            "airborne_run_s": 0.0,
+            "support_lost": false,
+            "safety_abort": false,
+            "recovered": true,
+            "aborted": false,
+            "success": true
+          },
+          {
+            "env": 0,
+            "side": "right",
+            "start_s": 17.84,
+            "max_clearance_m": 0.017143063247203827,
+            "active_clearance_peak_m": 0.017143063247203827,
+            "post_lift_rebound_peak_m": 1.7136335372924805e-07,
+            "longest_airborne_s": 0.06,
+            "airborne_run_s": 0.0,
+            "support_lost": false,
+            "safety_abort": false,
+            "recovered": true,
+            "aborted": false,
+            "success": true
+          },
+          {
+            "env": 0,
+            "side": "left",
+            "start_s": 21.18,
+            "max_clearance_m": 0.017146557569503784,
+            "active_clearance_peak_m": 0.017146557569503784,
+            "post_lift_rebound_peak_m": 1.4156103134155273e-07,
+            "longest_airborne_s": 0.06,
+            "airborne_run_s": 0.0,
+            "support_lost": false,
+            "safety_abort": false,
+            "recovered": true,
+            "aborted": false,
+            "success": true
+          },
+          {
+            "env": 0,
+            "side": "right",
+            "start_s": 24.3,
+            "max_clearance_m": 0.017119333148002625,
+            "active_clearance_peak_m": 0.017119333148002625,
+            "post_lift_rebound_peak_m": 1.6391277313232422e-07,
+            "longest_airborne_s": 0.06,
+            "airborne_run_s": 0.0,
+            "support_lost": false,
+            "safety_abort": false,
+            "recovered": true,
+            "aborted": false,
+            "success": true
+          },
+          {
+            "env": 0,
+            "side": "left",
+            "start_s": 27.42,
+            "max_clearance_m": 0.017139233648777008,
+            "active_clearance_peak_m": 0.017139233648777008,
+            "post_lift_rebound_peak_m": 1.7136335372924805e-07,
+            "longest_airborne_s": 0.06,
+            "airborne_run_s": 0.0,
+            "support_lost": false,
+            "safety_abort": false,
+            "recovered": true,
+            "aborted": false,
+            "success": true
+          }
+        ],
+        "final_stages": [
+          "settle"
+        ],
+        "physical_failure_resets": 0,
+        "peak_xy_displacement_m": 0.025120150297880173,
+        "nonwheel_contact_steps": 0,
+        "final_settled_seconds_per_env": [
+          0.5000000000000001
+        ],
+        "required_final_settled_seconds": 2.0,
+        "clearance_threshold_m": 0.003,
+        "required_continuous_airborne_s": 0.04,
+        "position_hold": {
+          "method": "small proportional forward velocity correction through wheel policy",
+          "forward_kp_per_s": 0.8,
+          "velocity_damping": 0.2,
+          "velocity_limit_m_per_s": 0.04,
+          "velocity_filter_time_constant_s": 0.1,
+          "settle_forward_position_tolerance_m": 0.025
+        },
+        "interpretation": "Short in-place lift/recover pulses only; not sustained one-wheel standing or forward walking.",
+        "interactive": true,
+        "continuous_enabled": true,
+        "single_lift_pending": false
+      },
+      "resolved_environment": {
+        "num_envs": 1,
+        "sim_device": "cpu",
+        "headless": false,
+        "seed": 42,
+        "initial_leg_length": 0.1,
+        "leg_control": "hip_pd",
+        "leg_kp": 80.0,
+        "leg_kd": 4.0,
+        "hip_target_scale": 0.2,
+        "terrain": "plane",
+        "observe_terrain": false,
+        "stair_level": 0,
+        "stair_min_level": 0,
+        "stair_max_level": 4,
+        "stair_episode_seconds": 24.0,
+        "stair_curriculum": false,
+        "leg_feedforward_force": 22.4649,
+        "heading_kp": 6.0,
+        "heading_kd": 0.6,
+        "wheel_control": "heading",
+        "wheel_pitch_damping": 0.0,
+        "wheel_balance_scale": 1.0,
+        "physics_solver": "tgs",
+        "wheel_friction": 1.0,
+        "closure_stiffness": 50000.0,
+        "closure_damping": 25.0,
+        "physics_dt": 0.0005,
+        "physics_threads": 0,
+        "command": [
+          0.0,
+          0.0,
+          0.0,
+          0.1
+        ],
+        "random_commands": false,
+        "forward_speed_range": [
+          -2.0,
+          2.0
+        ],
+        "yaw_speed_range": [
+          -6.283185307179586,
+          6.283185307179586
+        ],
+        "leg_length_range": [
+          0.06,
+          0.15
+        ],
+        "tracking_penalties": false,
+        "stability_rewards": false,
+        "support_rewards": false,
+        "observe_leg_lengths": true,
+        "command_resample_seconds": 0.0,
+        "linear_acceleration": 0.8,
+        "yaw_acceleration": 2.0,
+        "zero_command_fraction": 0.2,
+        "allow_approximate_loop": true
+      },
+      "protocol": {
+        "seconds": 30.0,
+        "length": 0.1,
+        "shortening": 0.035,
+        "retract": 0.02,
+        "hold": 0.06,
+        "lower": 0.12,
+        "settle": 3.0,
+        "recovery": 0.8,
+        "cycles": 3,
+        "clearance": 0.003,
+        "lean": 0.012,
+        "airborne_seconds": 0.04
+      },
+      "checkpoint": "logs/standing_support_20261022_093823/input/standing_hold.pt",
+      "checkpoint_sha256": "8ddcbbb3db19b3e4523f63c623381fa46867e75088e3b2e0095cf3e9ab077305",
+      "source_sha256": {
+        "lift.py": "4b8fecaef952b5cb16f086f578713b48887a029eea321f7065d27cd6ec883e71",
+        "lift.sh": "899b1e1c93432fd30085d70ceb5d720d1b01e5b04ab2e1c5818b0412b2516ccd",
+        "wheelleg_gym/wheel_lift.py": "8d9ba0a8dd2eaccaaad5f5ceff5043fce48e95324c83248fa73ee01a915bbe5b",
+        "wheelleg_gym/leg_control.py": "7a08096f4a76ad910c8e5d7022cd3b5a69babccb8e5dee08d0161cddb37f0965",
+        "wheelleg_gym/env.py": "690d0bf6f311b0105c03d8fcbc444550bb5b4e0d9defd19e556e5bfb576f4a56"
+      },
+      "requested_steps": 1500,
+      "completed_steps": 1482,
+      "finite_outputs": true,
+      "time_limit_resets": 0,
+      "wall_seconds": 35.632956022000144,
+      "pitch_peak_deg": 2.6986796715017345,
+      "roll_peak_deg": 7.102374342871875,
+      "closure_error_peak_m": 0.005785996560007334,
+      "tread_axis_tilt_peak_deg": 7.10183561170109,
+      "collision_scope_passed": true,
+      "events": [
+        {
+          "event": "keyboard_next_requested",
+          "time_s": 5.0
+        },
+        {
+          "event": "weight_transfer_started",
+          "env": 0,
+          "side": 0,
+          "time_s": 5.0
+        },
+        {
+          "event": "lift_started",
+          "env": 0,
+          "side": "left",
+          "time_s": 5.62
+        },
+        {
+          "event": "attempt_finished",
+          "env": 0,
+          "side": "left",
+          "start_s": 5.62,
+          "max_clearance_m": 0.017136290669441223,
+          "active_clearance_peak_m": 0.017136290669441223,
+          "post_lift_rebound_peak_m": 1.7136335372924805e-07,
+          "longest_airborne_s": 0.06,
+          "airborne_run_s": 0.0,
+          "support_lost": false,
+          "safety_abort": false,
+          "recovered": true,
+          "aborted": false,
+          "success": true
+        },
+        {
+          "event": "keyboard_next_requested",
+          "time_s": 11.0
+        },
+        {
+          "event": "weight_transfer_started",
+          "env": 0,
+          "side": 1,
+          "time_s": 11.0
+        },
+        {
+          "event": "lift_started",
+          "env": 0,
+          "side": "right",
+          "time_s": 11.620000000000001
+        },
+        {
+          "event": "keyboard_next_ignored",
+          "time_s": 13.22
+        },
+        {
+          "event": "attempt_finished",
+          "env": 0,
+          "side": "right",
+          "start_s": 11.620000000000001,
+          "max_clearance_m": 0.017153412103652954,
+          "active_clearance_peak_m": 0.017153412103652954,
+          "post_lift_rebound_peak_m": 1.6391277313232422e-07,
+          "longest_airborne_s": 0.06,
+          "airborne_run_s": 0.0,
+          "support_lost": false,
+          "safety_abort": false,
+          "recovered": true,
+          "aborted": false,
+          "success": true
+        },
+        {
+          "event": "keyboard_next_requested",
+          "time_s": 14.1
+        },
+        {
+          "event": "weight_transfer_started",
+          "env": 0,
+          "side": 0,
+          "time_s": 14.120000000000001
+        },
+        {
+          "event": "keyboard_next_ignored",
+          "time_s": 14.280000000000001
+        },
+        {
+          "event": "keyboard_next_ignored",
+          "time_s": 14.44
+        },
+        {
+          "event": "lift_started",
+          "env": 0,
+          "side": "left",
+          "time_s": 14.74
+        },
+        {
+          "event": "keyboard_continuous",
+          "running": true,
+          "time_s": 16.0
+        },
+        {
+          "event": "attempt_finished",
+          "env": 0,
+          "side": "left",
+          "start_s": 14.74,
+          "max_clearance_m": 0.01714327186346054,
+          "active_clearance_peak_m": 0.01714327186346054,
+          "post_lift_rebound_peak_m": 1.6391277313232422e-07,
+          "longest_airborne_s": 0.06,
+          "airborne_run_s": 0.0,
+          "support_lost": false,
+          "safety_abort": false,
+          "recovered": true,
+          "aborted": false,
+          "success": true
+        },
+        {
+          "event": "weight_transfer_started",
+          "env": 0,
+          "side": 1,
+          "time_s": 17.240000000000002
+        },
+        {
+          "event": "keyboard_next_ignored",
+          "time_s": 17.400000000000002
+        },
+        {
+          "event": "keyboard_next_ignored",
+          "time_s": 17.54
+        },
+        {
+          "event": "keyboard_next_ignored",
+          "time_s": 17.66
+        },
+        {
+          "event": "keyboard_next_ignored",
+          "time_s": 17.82
+        },
+        {
+          "event": "lift_started",
+          "env": 0,
+          "side": "right",
+          "time_s": 17.84
+        },
+        {
+          "event": "keyboard_next_ignored",
+          "time_s": 18.080000000000002
+        },
+        {
+          "event": "keyboard_next_ignored",
+          "time_s": 18.26
+        },
+        {
+          "event": "keyboard_next_ignored",
+          "time_s": 18.42
+        },
+        {
+          "event": "keyboard_next_ignored",
+          "time_s": 18.6
+        },
+        {
+          "event": "keyboard_next_ignored",
+          "time_s": 18.740000000000002
+        },
+        {
+          "event": "keyboard_next_ignored",
+          "time_s": 18.88
+        },
+        {
+          "event": "keyboard_next_ignored",
+          "time_s": 19.1
+        },
+        {
+          "event": "keyboard_next_ignored",
+          "time_s": 19.26
+        },
+        {
+          "event": "attempt_finished",
+          "env": 0,
+          "side": "right",
+          "start_s": 17.84,
+          "max_clearance_m": 0.017143063247203827,
+          "active_clearance_peak_m": 0.017143063247203827,
+          "post_lift_rebound_peak_m": 1.7136335372924805e-07,
+          "longest_airborne_s": 0.06,
+          "airborne_run_s": 0.0,
+          "support_lost": false,
+          "safety_abort": false,
+          "recovered": true,
+          "aborted": false,
+          "success": true
+        },
+        {
+          "event": "keyboard_continuous",
+          "running": false,
+          "time_s": 20.0
+        },
+        {
+          "event": "keyboard_continuous",
+          "running": true,
+          "time_s": 20.56
+        },
+        {
+          "event": "weight_transfer_started",
+          "env": 0,
+          "side": 0,
+          "time_s": 20.56
+        },
+        {
+          "event": "lift_started",
+          "env": 0,
+          "side": "left",
+          "time_s": 21.18
+        },
+        {
+          "event": "attempt_finished",
+          "env": 0,
+          "side": "left",
+          "start_s": 21.18,
+          "max_clearance_m": 0.017146557569503784,
+          "active_clearance_peak_m": 0.017146557569503784,
+          "post_lift_rebound_peak_m": 1.4156103134155273e-07,
+          "longest_airborne_s": 0.06,
+          "airborne_run_s": 0.0,
+          "support_lost": false,
+          "safety_abort": false,
+          "recovered": true,
+          "aborted": false,
+          "success": true
+        },
+        {
+          "event": "weight_transfer_started",
+          "env": 0,
+          "side": 1,
+          "time_s": 23.68
+        },
+        {
+          "event": "lift_started",
+          "env": 0,
+          "side": "right",
+          "time_s": 24.3
+        },
+        {
+          "event": "attempt_finished",
+          "env": 0,
+          "side": "right",
+          "start_s": 24.3,
+          "max_clearance_m": 0.017119333148002625,
+          "active_clearance_peak_m": 0.017119333148002625,
+          "post_lift_rebound_peak_m": 1.6391277313232422e-07,
+          "longest_airborne_s": 0.06,
+          "airborne_run_s": 0.0,
+          "support_lost": false,
+          "safety_abort": false,
+          "recovered": true,
+          "aborted": false,
+          "success": true
+        },
+        {
+          "event": "weight_transfer_started",
+          "env": 0,
+          "side": 0,
+          "time_s": 26.8
+        },
+        {
+          "event": "lift_started",
+          "env": 0,
+          "side": "left",
+          "time_s": 27.42
+        },
+        {
+          "event": "attempt_finished",
+          "env": 0,
+          "side": "left",
+          "start_s": 27.42,
+          "max_clearance_m": 0.017139233648777008,
+          "active_clearance_peak_m": 0.017139233648777008,
+          "post_lift_rebound_peak_m": 1.7136335372924805e-07,
+          "longest_airborne_s": 0.06,
+          "airborne_run_s": 0.0,
+          "support_lost": false,
+          "safety_abort": false,
+          "recovered": true,
+          "aborted": false,
+          "success": true
+        }
+      ],
+      "new_training_updates": 0,
+      "keyboard_enabled": true,
+      "wheel_policy_observation_adapter": "sagittal",
+      "wheel_collision": "sphere_tread",
+      "user_velocity_command": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "fixed_base": false,
+      "external_body_support": false,
+      "root_state_writes_outside_resets": false,
+      "contact_metric_semantics": {
+        "swing_force": "maximum contact-force norm across every physics substep of a control interval",
+        "support_force": "mean vertical contact force across every physics substep",
+        "airborne": "clearance >= threshold AND swing max-contact <1N AND support mean-force >5N; only active lift phase counts"
+      }
+    },
+    "viewer_test_method": "Native Gym key subscription succeeded. Scheduled ActionEvents and additional live viewer input exercised the same handler. Viewer was closed at 29.64 of 30 requested simulation seconds; this is a functional session, not a completed engineering protocol.",
+    "limits": "Keyboard mode holds at rest until requested, repeats beyond the automatic three-pair limit, and defaults to 300 simulation seconds. No arrow-key driving or leg-length adjustment in lift mode.",
+    "controlled_headless_integration": {
+      "summary": {
+        "engineering_screen_passed": false,
+        "status": "needs_improvement",
+        "confirmed_lifts": {
+          "left": 2,
+          "right": 2
+        },
+        "attempts": [
+          {
+            "env": 0,
+            "side": "left",
+            "start_s": 5.62,
+            "max_clearance_m": 0.017136290669441223,
+            "active_clearance_peak_m": 0.017136290669441223,
+            "post_lift_rebound_peak_m": 1.7136335372924805e-07,
+            "longest_airborne_s": 0.06,
+            "airborne_run_s": 0.0,
+            "support_lost": false,
+            "safety_abort": false,
+            "recovered": true,
+            "aborted": false,
+            "success": true
+          },
+          {
+            "env": 0,
+            "side": "right",
+            "start_s": 11.620000000000001,
+            "max_clearance_m": 0.017153412103652954,
+            "active_clearance_peak_m": 0.017153412103652954,
+            "post_lift_rebound_peak_m": 1.6391277313232422e-07,
+            "longest_airborne_s": 0.06,
+            "airborne_run_s": 0.0,
+            "support_lost": false,
+            "safety_abort": false,
+            "recovered": true,
+            "aborted": false,
+            "success": true
+          },
+          {
+            "env": 0,
+            "side": "left",
+            "start_s": 16.62,
+            "max_clearance_m": 0.01705791801214218,
+            "active_clearance_peak_m": 0.01705791801214218,
+            "post_lift_rebound_peak_m": 1.4156103134155273e-07,
+            "longest_airborne_s": 0.06,
+            "airborne_run_s": 0.0,
+            "support_lost": false,
+            "safety_abort": false,
+            "recovered": true,
+            "aborted": false,
+            "success": true
+          },
+          {
+            "env": 0,
+            "side": "right",
+            "start_s": 19.72,
+            "max_clearance_m": 0.01712346076965332,
+            "active_clearance_peak_m": 0.01712346076965332,
+            "post_lift_rebound_peak_m": 1.7136335372924805e-07,
+            "longest_airborne_s": 0.06,
+            "airborne_run_s": 0.0,
+            "support_lost": false,
+            "safety_abort": false,
+            "recovered": true,
+            "aborted": false,
+            "success": true
+          }
+        ],
+        "final_stages": [
+          "settle"
+        ],
+        "physical_failure_resets": 0,
+        "peak_xy_displacement_m": 0.024870216846466064,
+        "nonwheel_contact_steps": 0,
+        "final_settled_seconds_per_env": [
+          8.559999999999906
+        ],
+        "required_final_settled_seconds": 2.0,
+        "clearance_threshold_m": 0.003,
+        "required_continuous_airborne_s": 0.04,
+        "position_hold": {
+          "method": "small proportional forward velocity correction through wheel policy",
+          "forward_kp_per_s": 0.8,
+          "velocity_damping": 0.2,
+          "velocity_limit_m_per_s": 0.04,
+          "velocity_filter_time_constant_s": 0.1,
+          "settle_forward_position_tolerance_m": 0.025
+        },
+        "interpretation": "Short in-place lift/recover pulses only; not sustained one-wheel standing or forward walking.",
+        "interactive": true,
+        "continuous_enabled": false,
+        "single_lift_pending": false
+      },
+      "events": [
+        {
+          "event": "keyboard_next_requested",
+          "time_s": 5.0
+        },
+        {
+          "event": "weight_transfer_started",
+          "env": 0,
+          "side": 0,
+          "time_s": 5.0
+        },
+        {
+          "event": "lift_started",
+          "env": 0,
+          "side": "left",
+          "time_s": 5.62
+        },
+        {
+          "event": "attempt_finished",
+          "env": 0,
+          "side": "left",
+          "start_s": 5.62,
+          "max_clearance_m": 0.017136290669441223,
+          "active_clearance_peak_m": 0.017136290669441223,
+          "post_lift_rebound_peak_m": 1.7136335372924805e-07,
+          "longest_airborne_s": 0.06,
+          "airborne_run_s": 0.0,
+          "support_lost": false,
+          "safety_abort": false,
+          "recovered": true,
+          "aborted": false,
+          "success": true
+        },
+        {
+          "event": "keyboard_next_requested",
+          "time_s": 11.0
+        },
+        {
+          "event": "weight_transfer_started",
+          "env": 0,
+          "side": 1,
+          "time_s": 11.0
+        },
+        {
+          "event": "lift_started",
+          "env": 0,
+          "side": "right",
+          "time_s": 11.620000000000001
+        },
+        {
+          "event": "attempt_finished",
+          "env": 0,
+          "side": "right",
+          "start_s": 11.620000000000001,
+          "max_clearance_m": 0.017153412103652954,
+          "active_clearance_peak_m": 0.017153412103652954,
+          "post_lift_rebound_peak_m": 1.6391277313232422e-07,
+          "longest_airborne_s": 0.06,
+          "airborne_run_s": 0.0,
+          "support_lost": false,
+          "safety_abort": false,
+          "recovered": true,
+          "aborted": false,
+          "success": true
+        },
+        {
+          "event": "keyboard_continuous",
+          "running": true,
+          "time_s": 16.0
+        },
+        {
+          "event": "weight_transfer_started",
+          "env": 0,
+          "side": 0,
+          "time_s": 16.0
+        },
+        {
+          "event": "lift_started",
+          "env": 0,
+          "side": "left",
+          "time_s": 16.62
+        },
+        {
+          "event": "attempt_finished",
+          "env": 0,
+          "side": "left",
+          "start_s": 16.62,
+          "max_clearance_m": 0.01705791801214218,
+          "active_clearance_peak_m": 0.01705791801214218,
+          "post_lift_rebound_peak_m": 1.4156103134155273e-07,
+          "longest_airborne_s": 0.06,
+          "airborne_run_s": 0.0,
+          "support_lost": false,
+          "safety_abort": false,
+          "recovered": true,
+          "aborted": false,
+          "success": true
+        },
+        {
+          "event": "weight_transfer_started",
+          "env": 0,
+          "side": 1,
+          "time_s": 19.12
+        },
+        {
+          "event": "lift_started",
+          "env": 0,
+          "side": "right",
+          "time_s": 19.72
+        },
+        {
+          "event": "keyboard_continuous",
+          "running": false,
+          "time_s": 20.0
+        },
+        {
+          "event": "attempt_finished",
+          "env": 0,
+          "side": "right",
+          "start_s": 19.72,
+          "max_clearance_m": 0.01712346076965332,
+          "active_clearance_peak_m": 0.01712346076965332,
+          "post_lift_rebound_peak_m": 1.7136335372924805e-07,
+          "longest_airborne_s": 0.06,
+          "airborne_run_s": 0.0,
+          "support_lost": false,
+          "safety_abort": false,
+          "recovered": true,
+          "aborted": false,
+          "success": true
+        }
+      ],
+      "method": "Headless real-physics integration, scheduled ActionEvents delivered through WheelLiftKeyboard; no physical keyboard input or GUI claimed.",
+      "steps": 1500,
+      "seconds": 30,
+      "source_sha256": {
+        "lift.py": "4b8fecaef952b5cb16f086f578713b48887a029eea321f7065d27cd6ec883e71",
+        "lift.sh": "899b1e1c93432fd30085d70ceb5d720d1b01e5b04ab2e1c5818b0412b2516ccd",
+        "wheelleg_gym/wheel_lift.py": "7ef65ad9c6cace1d2028eaafe73eb9fcef29edf3f3d317bce2f76898d5e1cb2d",
+        "wheelleg_gym/leg_control.py": "7a08096f4a76ad910c8e5d7022cd3b5a69babccb8e5dee08d0161cddb37f0965",
+        "wheelleg_gym/env.py": "690d0bf6f311b0105c03d8fcbc444550bb5b4e0d9defd19e556e5bfb576f4a56"
+      }
+    },
+    "final_source_sha256": {
+      "lift.py": "4b8fecaef952b5cb16f086f578713b48887a029eea321f7065d27cd6ec883e71",
+      "lift.sh": "899b1e1c93432fd30085d70ceb5d720d1b01e5b04ab2e1c5818b0412b2516ccd",
+      "wheelleg_gym/wheel_lift.py": "7ef65ad9c6cace1d2028eaafe73eb9fcef29edf3f3d317bce2f76898d5e1cb2d",
+      "wheelleg_gym/leg_control.py": "7a08096f4a76ad910c8e5d7022cd3b5a69babccb8e5dee08d0161cddb37f0965",
+      "wheelleg_gym/env.py": "690d0bf6f311b0105c03d8fcbc444550bb5b4e0d9defd19e556e5bfb576f4a56"
+    },
+    "held_key_filter": "Coalesce release/press pairs in each poll and require two polls without a press before rearming; covered by unit test."
   }
 }
