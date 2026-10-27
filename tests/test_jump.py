@@ -24,10 +24,11 @@ class FakeEnv:
         self.length_l = self.length_r = torch.tensor([0.1])
         self.dof_state = torch.zeros(1, 10, 2)
         self.action_indices = torch.tensor([0, 3, 6, 9, 2, 7])
+        self.normal = torch.full((1, 2), 28.0)
 
     def lift_measurements(self):
         return dict(
-            wheel_normal_force_n=torch.full((1, 2), 28.0),
+            wheel_normal_force_n=self.normal,
             nonwheel_contact=torch.tensor([False]),
         )
 
@@ -207,11 +208,77 @@ class JumpTests(unittest.TestCase):
             self.tick(self.env.info(clearance=(0.02, 0.02), contact=(0, 0)))
         self.tick(self.env.info())
         self.assertEqual(self.controller.states[0]["mode"], "land")
-        for _ in range(61):
+        for _ in range(70):
             self.tick()
         self.assertEqual(len(self.controller.attempts), 1)
         self.assertFalse(self.controller.attempts[0]["success"])
         self.assertTrue(self.controller.attempts[0]["recovered"])
+
+    def test_landing_completes_promptly_without_falsely_certifying_stability(self):
+        self.controller.request_jump()
+        self.controller.states[0]["mode"] = "flight"
+        for _ in range(3):
+            self.tick(self.env.info(clearance=(0.03, 0.03), contact=(0, 0)))
+        self.tick()
+        touchdown = self.controller.time
+        self.env.pitch[0] = 0.15  # Fails the slow recovery check.
+        self.controller.before_step([0, 0, 0, 0.14])
+        self.assertAlmostEqual(float(self.env.commands[0, 3]), 0.14, places=6)
+        torch.testing.assert_close(self.env.lift_lengths, torch.full((1, 2), 0.14))
+        for _ in range(6):
+            self.tick()
+        self.assertEqual(self.controller.states[0]["mode"], "idle")
+        events = [e for e in self.controller.events if e["event"] == "jump_completed"]
+        self.assertEqual(len(events), 1)
+        self.assertLessEqual(events[0]["time_s"] - touchdown, 0.12 + 1e-9)
+        self.assertEqual(self.controller.attempts, [])
+        self.assertIsNotNone(self.controller.states[0]["attempt"])
+        self.assertTrue(self.controller.can_jump)
+
+    def test_airborne_height_selection_is_applied_on_touchdown_not_late_recovery(self):
+        self.controller.request_jump()
+        self.controller.states[0]["mode"] = "flight"
+        self.controller.before_step([0, 0, 0, 0.14])
+        self.assertAlmostEqual(float(self.env.commands[0, 3]), 0.1, places=6)
+        self.controller.after_step(
+            self.env.info(clearance=(0.03, 0.03), contact=(0, 0)), torch.tensor([False])
+        )
+        self.controller.after_step(self.env.info(), torch.tensor([False]))
+        self.controller.before_step()
+        self.assertEqual(self.controller.states[0]["mode"], "land")
+        self.assertAlmostEqual(float(self.env.commands[0, 3]), 0.14, places=6)
+        self.assertGreater(float(self.env.lift_forces.min()), 0.0)
+
+    def test_one_wheel_contact_does_not_complete_landing(self):
+        self.controller.request_jump()
+        self.controller.states[0]["mode"] = "flight"
+        self.tick(self.env.info(clearance=(0.03, 0.03), contact=(0, 0)))
+        self.tick()
+        self.env.normal[0, 1] = 0.0
+        for _ in range(10):
+            self.tick()
+        self.assertEqual(self.controller.states[0]["mode"], "land")
+        self.assertFalse(
+            any(e["event"] == "jump_completed" for e in self.controller.events)
+        )
+        self.env.normal[:] = 28.0
+        for _ in range(6):
+            self.tick()
+        self.assertEqual(self.controller.states[0]["mode"], "idle")
+
+    def test_selected_extended_height_does_not_shrink_when_no_jump_is_requested(self):
+        keyboard = JumpKeyboard(leg_length=0.1, leg_range=(0.08, 0.14))
+        keyboard.process_events([SimpleNamespace(action="leg_extend", value=1)])
+        for _ in range(110):
+            keyboard.advance_leg_length(self.env.dt)
+            self.controller.before_step(keyboard.command())
+        keyboard.process_events([SimpleNamespace(action="leg_extend", value=0)])
+        for _ in range(300):
+            keyboard.advance_leg_length(self.env.dt)
+            self.controller.before_step(keyboard.command())
+            self.assertAlmostEqual(float(self.env.commands[0, 3]), 0.14, places=6)
+            torch.testing.assert_close(self.env.lift_lengths, torch.full((1, 2), 0.14))
+        self.assertEqual(self.controller.events, [])
 
     def test_physical_reset_retains_failure_evidence_and_allows_manual_retry(self):
         self.controller.request_jump()

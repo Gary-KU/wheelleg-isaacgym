@@ -159,8 +159,9 @@ def main():
                         keyboard.pressed.clear()
                         keyboard.jump_requested = False
                         manual_resets += 1
-                    if all(s["mode"] == "idle" for s in controller.states):
-                        keyboard.advance_leg_length(env.dt)
+                    # Keep the selected standing height current even during
+                    # a jump; the controller defers applying it until touchdown.
+                    keyboard.advance_leg_length(env.dt)
                     user = keyboard.command()
                     jump_key = keyboard.consume_jump()
                 obs = controller.before_step(user)
@@ -206,7 +207,8 @@ def main():
                     else:
                         messages = {
                             "jump_started": "预蹲、起跳。",
-                            "touchdown": "已落地，正在恢复站立。",
+                            "touchdown": "已接触地面，腿长与驾驶指令已恢复。",
+                            "jump_completed": "跳跃动作完成。",
                             "jump_ignored": "正在预蹲、蹬伸或腾空；着地后可再次按空格。",
                             "flight_timeout": "未检测到完整落地，正在返回支撑姿态。",
                         }
@@ -215,7 +217,7 @@ def main():
                                 "上次落地恢复已由新起跳中断。"
                                 if event["failure"] == "restarted_before_recovery"
                                 else (
-                                    "跳跃完成。"
+                                    "落地稳定性已验证。"
                                     if event["success"]
                                     else "本次未通过稳定性检查，仍可再次起跳；R 可复位。"
                                 )

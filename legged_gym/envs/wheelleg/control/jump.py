@@ -38,7 +38,10 @@ class JumpKeyboard(KeyboardDrive):
 
 
 class JumpController:
-    """Idle -> crouch -> hold -> push -> flight -> land -> recovered idle.
+    """Idle -> crouch -> hold -> push -> flight -> land -> idle.
+
+    Landing completes the action quickly; recovery is verified in idle without
+    holding driver/height commands or claiming that contact proves stability.
 
     Manual requests do not require readiness. An executing launch cannot
     restart in midair; after touchdown a new press can skip recovery. Both
@@ -56,6 +59,7 @@ class JumpController:
             "crouch_hold_seconds",
             "push_seconds",
             "stable_seconds",
+            "landing_contact_seconds",
         ):
             value = getattr(j, name)
             if (
@@ -109,6 +113,7 @@ class JumpController:
             state.update(
                 mode="crouch",
                 start=self.time,
+                landed_for=0.0,
                 stable=0.0,
                 length=nominal,
                 rolling=bool(self.requested[i, :3].abs().max() > 1e-4),
@@ -140,6 +145,8 @@ class JumpController:
                 airborne_travel_m=0.0,
                 takeoff_velocity_m_s=None,
                 touchdown_velocity_m_s=None,
+                touchdown_s=None,
+                action_complete_s=None,
             )
         self.events.append(dict(event="jump_started", time_s=self.time))
         return True
@@ -148,7 +155,7 @@ class JumpController:
         e = self.env
         desired = self.requested[:, 3:4].clone()
         for i, state in enumerate(self.states):
-            if state["attempt"] is not None:
+            if state["mode"] in ("crouch", "hold", "push", "flight"):
                 desired[i] = state["length"]
         moving = self.requested[:, :3].abs().max(-1).values > 1e-4
         stationary = (
@@ -242,12 +249,18 @@ class JumpController:
             mode = state["mode"]
             if mode == "idle":
                 state["stable"] = state["stable"] + e.dt if bool(stable[i]) else 0.0
+                if state["attempt"] is not None:
+                    if state["stable"] + 1e-9 >= j.stable_seconds:
+                        self._finish(i)
+                    elif self.time - state["start"] > j.recovery_timeout:
+                        self._finish(i, "landing_recovery_timeout")
                 continue
             if mode == "blocked":
                 continue
             age = self.time - state["start"]
             nominal = state["length"]
-            targets[i] = nominal
+            if mode != "land":
+                targets[i] = nominal
             durations = dict(
                 crouch=j.crouch_seconds, hold=j.crouch_hold_seconds, push=j.push_seconds
             )
@@ -277,11 +290,27 @@ class JumpController:
                         dict(event="flight_timeout", env=i, time_s=self.time)
                     )
             elif mode == "land":
-                state["stable"] = state["stable"] + e.dt if bool(stable[i]) else 0.0
-                if state["stable"] + 1e-9 >= j.stable_seconds:
-                    self._finish(i)
+                # Height commands are live from first touchdown. Completing
+                # the action requires sustained two-wheel support, not zero
+                # speed, small pitch or a long stability verification period.
+                supported = bool(
+                    (m["wheel_normal_force_n"][i] > 5.0).all()
+                ) and not bool(m["nonwheel_contact"][i])
+                state["landed_for"] = (
+                    state.get("landed_for", 0.0) + e.dt if supported else 0.0
+                )
+                if (
+                    state["landed_for"] + 1e-9 >= j.landing_contact_seconds
+                    and age + 1e-9 >= j.landing_contact_seconds
+                ):
+                    state["mode"] = "idle"
+                    state["stable"] = 0.0
+                    state["attempt"]["action_complete_s"] = self.time
+                    self.events.append(
+                        dict(event="jump_completed", env=i, time_s=self.time)
+                    )
                 elif age > j.recovery_timeout:
-                    self._finish(i, "landing_recovery_timeout")
+                    self._finish(i, "landing_contact_timeout")
         # Position keeping changes velocity targets, never body states.
         moving = self.requested[:, :3].abs().max(-1).values > 1e-4
         # A released key initiates a real braking interval. Hold the resulting
@@ -292,7 +321,7 @@ class JumpController:
         ) | (self.command_velocity.abs().max(-1).values > 0.03)
         self.braking &= still_moving
         rolling_attempt = torch.tensor(
-            [s.get("rolling", False) and s["attempt"] is not None for s in self.states],
+            [s.get("rolling", False) and s["mode"] == "land" for s in self.states],
             device=e.device,
         )
         follow = moving | self.braking | rolling_attempt
@@ -332,7 +361,7 @@ class JumpController:
         commands = self.requested.clone()
         commands[:, :3] = self.command_velocity
         for i, state in enumerate(self.states):
-            if state["attempt"] is not None:
+            if state["mode"] in ("crouch", "hold", "push", "flight"):
                 commands[i, 3] = state["length"]
         e.lift_lengths, e.lift_forces = targets, forces
         return e.set_commands(commands)
@@ -411,6 +440,7 @@ class JumpController:
                     and attempt["airborne_seen"]
                     and contact
                 ):
+                    attempt["touchdown_s"] = self.time
                     attempt["touchdown_velocity_m_s"] = root[7:10].tolist()
                     state.update(mode="land", start=self.time, stable=0.0)
                     self.events.append(dict(event="touchdown", env=i, time_s=self.time))

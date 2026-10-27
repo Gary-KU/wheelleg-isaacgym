@@ -26,7 +26,8 @@ class WheelLeggedJumpCfg(WheelLeggedStandCfg):
         crouch_hold_seconds = 0.20
         push_seconds = 0.10
         push_force = 65.0
-        stable_seconds = 1.2
+        landing_contact_seconds = 0.10
+        stable_seconds = 1.2  # Report verification only; does not lock controls.
         recovery_timeout = 10.0
         flight_timeout = 0.8
         clearance = 0.003
