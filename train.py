@@ -8,8 +8,8 @@ import json
 import math
 import sys
 
-from wheelleg_gym.cli import common_parser, environment_kwargs, validate_common
-from wheelleg_gym.runtime_config import explicit_argument_destinations, resolve_runtime_args
+from legged_gym.compat.cli import common_parser, environment_kwargs, validate_common
+from legged_gym.compat.runtime_config import explicit_argument_destinations, resolve_runtime_args
 
 
 def main():
@@ -53,8 +53,9 @@ def main():
 
     # Isaac Gym's binary extension must be loaded before importing torch.
     import isaacgym  # noqa: F401
-    from wheelleg_gym.env import WheelLegGymEnv
-    from wheelleg_gym.training import PPORunner, TRAIN_CONFIG
+    from legged_gym.envs.wheelleg.wheelleg_robot import WheelLegRobot
+    from legged_gym.learning.ppo_runner import PPORunner
+    from legged_gym.envs.wheelleg.constants import TRAIN_CONFIG
 
     log_dir = args.log_dir or (
         Path(__file__).resolve().parent / "logs" / "wheelleg"
@@ -63,7 +64,7 @@ def main():
     kwargs = environment_kwargs(args)
     print("Loop closure: compliant external forces; exact rigid-loop equivalence is not assumed.")
     print("Training logs: {}".format(log_dir.resolve()))
-    env = WheelLegGymEnv(**kwargs)
+    env = WheelLegRobot(**kwargs)
     try:
         config = deepcopy(TRAIN_CONFIG)
         if state is not None:

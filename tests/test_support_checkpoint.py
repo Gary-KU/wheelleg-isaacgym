@@ -15,8 +15,8 @@ import torch
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from tools.prepare_support_checkpoint import prepare_support_checkpoint, save_support_checkpoint
-from wheelleg_gym.runtime_config import SUPPORT_ENVIRONMENT
-from wheelleg_gym.training import make_policy
+from legged_gym.compat.runtime_config import SUPPORT_ENVIRONMENT
+from legged_gym.learning.policy import make_policy
 
 
 class SupportCheckpointTests(unittest.TestCase):
@@ -31,7 +31,10 @@ class SupportCheckpointTests(unittest.TestCase):
                            "optimizer_state_dict": {"state": {0: {"step": 10}}},
                            "training_config": self.config,
                            "environment_config": {"physics_dt": 0.0005, "random_commands": True},
-                           "iter": 994, "total_steps": 1000000}
+                           "iter": 994, "total_steps": 1000000,
+                           "legged_gym_env_config": {"control": {"leg_control": "hip_target"}},
+                           "legged_gym_train_config": {"runner": {"experiment_name": "source"}},
+                           "terrain_curriculum_state": {"levels": [3]}}
 
     def prepare(self, **kwargs):
         with contextlib.redirect_stdout(io.StringIO()):
@@ -57,6 +60,9 @@ class SupportCheckpointTests(unittest.TestCase):
                             if key.startswith("critic.")))
         torch.testing.assert_close(prepared["model_state_dict"]["std"], torch.tensor([3.0]*4+[0.1]*2))
         self.assertNotIn("optimizer_state_dict", prepared)
+        for key in ("legged_gym_env_config", "legged_gym_train_config", "terrain_curriculum_state"):
+            self.assertNotIn(key, prepared)
+            self.assertIn(key, self.checkpoint)
         self.assertEqual((prepared["iter"], prepared["total_steps"]), (0, 0))
         config = prepared["training_config"]
         self.assertEqual(config["algorithm"]["learning_rate"], 0.0003)

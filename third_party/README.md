@@ -1,22 +1,40 @@
-# Vendored RSL-RL components
+# Vendored components and sources
 
-The `rsl_rl` directory contains the feed-forward `ActorCritic`, PPO, rollout
-storage and supporting utilities from the local Wheel-Legged-Gym distribution,
-which identifies this fork as version 2.0.1. Upstream authors are ETH Zurich,
-Nikita Rudin, and NVIDIA; BSD-3-Clause notices and the license are retained.
+The `rsl_rl` directory retains the feed-forward `ActorCritic`, PPO and rollout
+storage used by this project from the local Wheel-Legged-Gym distribution,
+which identifies its fork as version 2.0.1. Upstream authors are ETH Zurich,
+Nikita Rudin and NVIDIA. Copyright headers and the
+[BSD-3-Clause license](rsl_rl/LICENSE) are retained.
 
-Local adaptations: imports use the standalone `rsl_rl` package name; only the
-feed-forward policy is exported; the optional GitPython import is deferred until
-repository snapshots are requested. The migration's small runner lives outside
-this vendor directory in `wheelleg_gym/training.py`.
+The task/config/runner conventions were adapted from
+[Wheel-Legged-Gym commit c354431](https://github.com/clearlab-sustech/Wheel-Legged-Gym/tree/c354431e5633eb98d9663fa3fbe444201d2de383).
+The corresponding license copy is [LEGGED_GYM_LICENSE](LEGGED_GYM_LICENSE).
+This project implements the subset used by its five-bar wheelleg tasks.
 
-Additional local changes support scalar or six-motor exploration noise in
-`modules/actor_critic.py`, cloned rollout observations, and a configurable
-adaptive learning-rate ceiling in `algorithms/ppo.py`. Network/PPO defaults
-are collected in `wheelleg_gym/config.py`; the runner still re-exports
-`TRAIN_CONFIG` for existing imports.
+The project-owned [OnPolicyRunner](../legged_gym/learning/on_policy_runner.py) is a thin local
+adapter: it translates nested task configuration and the six-value task API to
+the shared [PPORunner](../legged_gym/learning/ppo_runner.py). That engine owns rollout
+collection, updates, checkpoint loading and saving for both entry styles.
+Robot diagnostics and curriculum state enter through optional collector hooks
+provided by the environment. The engine records legacy metadata, and the
+adapter adds nested task metadata.
 
-The vendored files avoid coupling this port to the neighbouring checkout or to
-Isaac Lab's newer RSL-RL/Python dependency versions.
+Local algorithm changes preserve scalar or six-motor exploration noise, cloned
+rollout observations, terminal-observation timeout bootstrapping and the
+configurable adaptive learning-rate ceiling. The supported policy is the
+checkpoint-compatible feed-forward `ActorCritic/PPO`, with observations already
+stacked by the environment. Simulation and PPO must use the same device.
 
-The legged_gym migration adds `runners/OnPolicyRunner` and `env/VecEnv` from Wheel-Legged-Gym commit `c354431e5633eb98d9663fa3fbe444201d2de383`. The runner imports this same vendored package, supports the existing feed-forward policy, consumes the six-value task API, retains the timeout-bootstrap fix in PPO, and fixes completed-iteration/save counters on resume. It records both nested and legacy config metadata and restores curriculum/optimizer state. The legacy small runner remains available for old scripts. Upstream recurrent/sequence classes and unrelated tasks/assets were not copied.
+Normal robot/task defaults live in
+[wheelleg_config.py](../legged_gym/envs/wheelleg/wheelleg_config.py).
+[constants.py](../legged_gym/envs/wheelleg/constants.py) retains robot units,
+shared constants and legacy training defaults.
+[learning/policy.py](../legged_gym/learning/policy.py) constructs policies from
+caller-owned configuration. Project-owned environment, training and
+compatibility code lives under `legged_gym`; root command-line entrypoints
+remain available.
+
+These local components avoid a runtime dependency on a neighbouring checkout or
+on Isaac Lab's newer RSL-RL/Python versions. Robot assets are maintained once in
+[assets/wheelleg](../assets/wheelleg/). Further source and asset notices are in
+[NOTICE.md](../NOTICE.md).

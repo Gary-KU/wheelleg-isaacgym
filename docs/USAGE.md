@@ -176,7 +176,7 @@ PYTHON_BIN=/home/gary/miniconda3/envs/isaacgym/bin/python ./run.sh play.py --hel
 
 ## 训练参数
 
-默认值集中在 [config.py](../wheelleg_gym/config.py)，命令行参数由 `cli.py` 和 `train.py` 定义。
+默认值集中在 [config.py](../legged_gym/envs/wheelleg/constants.py)，命令行参数由 `cli.py` 和 `train.py` 定义。
 命令行会覆盖配置默认值。参数中的连字符和部分旧下划线别名均可使用，文档统一采用连字符。
 
 | 参数 | 含义 |
@@ -236,7 +236,7 @@ PYTHON_BIN=/home/gary/miniconda3/envs/isaacgym/bin/python ./run.sh play.py --hel
 如果要把旧策略作为新观测训练的起点，先运行 [权重升级工具](../tools/README.md#观测升级)，
 再对转换后的新文件使用 `--profile stability` 或对应显式设置。保留源权重，给新实验单独指定 `--log-dir`。
 新的 `tools/optimize_training.py` 已串起升级、有限训练和同条件前后复测，见 [训练优化](TRAINING_OPTIMIZATION.md)。
-不要使用历史 `tools/train_and_evaluate.py` 自动续接新增观测与稳定性配置。
+不要使用历史 `tools/archive/train_and_evaluate_186d.py` 自动续接新增观测与稳定性配置。
 
 续训会恢复已训练的探索噪声和优化器，因此不能同时指定 `--init-noise-std` 或 `--learning-rate`。
 网络结构与其他训练超参数以检查点保存的训练配置为准，不能只改 `config.py` 就期待续训全部更新。
@@ -311,8 +311,8 @@ cd /home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym
 训练入口更新并保存权重；播放入口加载权重供观察与键盘操作；评估入口运行指定工况并写出数值报告。
 
 建议先学本页的环境、键盘和参数，再读 [中文代码导读](CODE_GUIDE.md)，最后看 [训练优化](TRAINING_OPTIMIZATION.md)。
-命令行参数的代码定义在 [cli.py](../wheelleg_gym/cli.py) 和各入口的 `parser.add_argument(...)`；
-预设与检查点恢复规则在 [runtime_config.py](../wheelleg_gym/runtime_config.py)，基础默认值在 [config.py](../wheelleg_gym/config.py)。
+命令行参数的代码定义在 [cli.py](../legged_gym/compat/cli.py) 和各入口的 `parser.add_argument(...)`；
+预设与检查点恢复规则在 [runtime_config.py](../legged_gym/compat/runtime_config.py)，基础默认值在 [config.py](../legged_gym/envs/wheelleg/constants.py)。
 
 ## 策略评估
 

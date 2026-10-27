@@ -10,10 +10,10 @@ import time
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from wheelleg_gym.cli import common_parser, environment_kwargs, validate_common
-from wheelleg_gym.config import DEFAULT_CONTROL_DT
-from wheelleg_gym.runtime_config import explicit_argument_destinations, resolve_runtime_args
-from wheelleg_gym.support_metrics import duration_steps
+from legged_gym.compat.cli import common_parser, environment_kwargs, validate_common
+from legged_gym.envs.wheelleg.constants import DEFAULT_CONTROL_DT
+from legged_gym.compat.runtime_config import explicit_argument_destinations, resolve_runtime_args
+from legged_gym.envs.wheelleg.diagnostics.support_metrics import duration_steps
 
 
 def summarize_stairs(samples, num_envs):
@@ -124,9 +124,10 @@ def main():
 
     import isaacgym  # noqa: F401; binary extension must precede Torch.
     import torch
-    from wheelleg_gym.constraints import quat_rotate_inverse
-    from wheelleg_gym.env import WheelLegGymEnv
-    from wheelleg_gym.training import make_policy
+    from legged_gym.envs.wheelleg.model.constraints import quat_rotate_inverse
+    from legged_gym.envs.wheelleg.wheelleg_robot import WheelLegRobot
+    from legged_gym.envs.wheelleg.constants import TRAIN_CONFIG
+    from legged_gym.learning.policy import make_policy
 
     checkpoint = torch.load(str(args.checkpoint), map_location="cpu")
     explicit = explicit_argument_destinations(parser, argv)
@@ -144,13 +145,13 @@ def main():
     if not args.observe_terrain or not args.observe_leg_lengths:
         parser.error("Stair evaluation requires a terrain-aware 252-D checkpoint")
     kwargs = environment_kwargs(args)
-    env = WheelLegGymEnv(**kwargs)
+    env = WheelLegRobot(**kwargs)
     started = time.perf_counter()
     try:
         # Preserve the configured training time limit; distinguish resets from
         # actual failures and successful course endings in all statistics.
         policy = make_policy(env.num_obs, env.num_actions, env.device,
-                             checkpoint.get("training_config", {}).get("policy"))
+                             checkpoint.get("training_config", {}).get("policy", TRAIN_CONFIG["policy"]))
         policy.load_state_dict(checkpoint["model_state_dict"], strict=True)
         policy.eval()
         env.reset()

@@ -6,7 +6,7 @@ import xml.etree.ElementTree as ET
 
 import numpy as np
 
-from .config import MAX_LEG_LENGTH
+from legged_gym.envs.wheelleg.constants import MAX_LEG_LENGTH
 
 
 def symmetric_joint_positions(length):

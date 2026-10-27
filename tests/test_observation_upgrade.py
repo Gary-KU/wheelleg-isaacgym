@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT/"third_party"))
 from rsl_rl.modules import ActorCritic
-from wheelleg_gym.observation_upgrade import (
+from legged_gym.envs.wheelleg.observation_upgrade import (
     expand_input_columns, save_upgraded_checkpoint, upgrade_checkpoint_observations,
 )
 
@@ -50,6 +50,13 @@ class ObservationUpgradeTests(unittest.TestCase):
             "iter": 794, "total_steps": 6406400,
             "training_config": {"policy": {"actor_hidden_dims": [16, 8], "critic_hidden_dims": [16, 8]}},
             "environment_config": {"command": [0, 0, 0, 0.08]},
+            "legged_gym_env_config": {
+                "env": {"num_observations": 186, "num_actions": 6},
+                "observations": {"observe_leg_lengths": False, "observe_terrain": False},
+                "rewards": {"only_positive_rewards": True, "support_rewards": False,
+                            "scales": {"upright": 8.5, "termination": -99.0}},
+            },
+            "legged_gym_train_config": {"runner": {"experiment_name": "source_186d"}},
         }
 
     def test_nonzero_new_features_preserve_actor_and_critic_predictions(self):
@@ -98,12 +105,32 @@ class ObservationUpgradeTests(unittest.TestCase):
         self.assertEqual(upgraded["iter"], 794)
         self.assertEqual(upgraded["total_steps"], 6406400)
         self.assertTrue(upgraded["environment_config"]["observe_leg_lengths"])
+        expected_environment = deepcopy(snapshot["legged_gym_env_config"])
+        expected_environment["env"]["num_observations"] = 198
+        expected_environment["observations"]["observe_leg_lengths"] = True
+        self.assertEqual(upgraded["legged_gym_env_config"], expected_environment)
+        self.assertEqual(upgraded["legged_gym_train_config"], snapshot["legged_gym_train_config"])
+        for key in ("legged_gym_env_config", "legged_gym_train_config"):
+            self.assertEqual(self.checkpoint[key], snapshot[key])
+            self.assertIsNot(upgraded[key], self.checkpoint[key])
+        self.assertIsNot(upgraded["legged_gym_env_config"]["rewards"]["scales"],
+                         self.checkpoint["legged_gym_env_config"]["rewards"]["scales"])
         self.assertNotIn("observe_leg_lengths", self.checkpoint["environment_config"])
         for name, value in snapshot["model_state_dict"].items():
             torch.testing.assert_close(self.checkpoint["model_state_dict"][name], value, rtol=0, atol=0)
             if name not in ("actor.0.weight", "critic.0.weight"):
                 torch.testing.assert_close(upgraded["model_state_dict"][name], value, rtol=0, atol=0)
         self.assertEqual(upgraded["observation_upgrade"]["source_checkpoint"], str(Path("legacy.pt").resolve()))
+
+    def test_legacy_checkpoint_does_not_gain_nested_task_snapshots(self):
+        legacy = deepcopy(self.checkpoint)
+        legacy.pop("legged_gym_env_config")
+        legacy.pop("legged_gym_train_config")
+        upgraded = upgrade_checkpoint_observations(legacy)
+        self.assertTrue(upgraded["environment_config"]["observe_leg_lengths"])
+        self.assertNotIn("legged_gym_env_config", upgraded)
+        self.assertNotIn("legged_gym_train_config", upgraded)
+        self.assertNotIn("observe_leg_lengths", legacy["environment_config"])
 
     def test_reupgrade_wrong_shapes_or_ambiguous_optimizer_layout_are_rejected(self):
         upgraded = upgrade_checkpoint_observations(self.checkpoint)

@@ -9,7 +9,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from wheelleg_gym.observation_upgrade import save_upgraded_checkpoint
+from legged_gym.envs.wheelleg.observation_upgrade import save_upgraded_checkpoint
 
 
 def main():

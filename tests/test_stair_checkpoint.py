@@ -17,8 +17,8 @@ sys.path.insert(0, str(ROOT))
 from tools.prepare_stair_checkpoint import (
     expand_stair_input_columns, prepare_stair_checkpoint, save_stair_checkpoint,
 )
-from wheelleg_gym.runtime_config import STAIRS_ENVIRONMENT
-from wheelleg_gym.training import make_policy
+from legged_gym.compat.runtime_config import STAIRS_ENVIRONMENT
+from legged_gym.learning.policy import make_policy
 
 
 class StairCheckpointTests(unittest.TestCase):
@@ -37,8 +37,13 @@ class StairCheckpointTests(unittest.TestCase):
             "model_state_dict": self.source_policy.state_dict(),
             "optimizer_state_dict": {"state": {0: {"step": 10}}},
             "training_config": self.config,
-            "environment_config": {"physics_dt": .0005, "leg_control": "hip_pd", "heading_kp": 2., "heading_kd": .1},
+            "environment_config": {"physics_dt": .0005, "leg_control": "hip_pd", "heading_kp": 2., "heading_kd": .1,
+                                   "wheel_control": "heading", "wheel_pitch_damping": 0.8,
+                                   "wheel_balance_scale": 1.25},
             "iter": 0, "total_steps": 0,
+            "legged_gym_env_config": {"terrain": {"terrain": "plane"}},
+            "legged_gym_train_config": {"runner": {"experiment_name": "standing_source"}},
+            "terrain_curriculum_state": {"levels": [3]},
         }
 
     def prepare(self, **kwargs):
@@ -75,6 +80,9 @@ class StairCheckpointTests(unittest.TestCase):
         self.assertFalse(torch.equal(model["critic.0.bias"], self.checkpoint["model_state_dict"]["critic.0.bias"]))
         torch.testing.assert_close(model["std"], torch.tensor([.1]*4+[.02]*2), rtol=0, atol=0)
         self.assertNotIn("optimizer_state_dict", prepared)
+        for key in ("legged_gym_env_config", "legged_gym_train_config", "terrain_curriculum_state"):
+            self.assertNotIn(key, prepared)
+            self.assertIn(key, self.checkpoint)
         self.assertEqual((prepared["iter"], prepared["total_steps"]), (0, 0))
         config = prepared["training_config"]
         self.assertEqual((config["algorithm"]["learning_rate"], config["algorithm"]["max_learning_rate"]), (.0003, .0003))
@@ -84,6 +92,8 @@ class StairCheckpointTests(unittest.TestCase):
         env = prepared["environment_config"]
         self.assertEqual((env["terrain"], env["observe_terrain"], env["leg_control"]), ("stairs", True, "hip_target"))
         self.assertEqual(env["hip_target_scale"], .2)
+        self.assertEqual(env["wheel_control"], "policy")
+        self.assertEqual((env["wheel_pitch_damping"], env["wheel_balance_scale"]), (0.0, 1.0))
         self.assertEqual(env["command"], [.25, 0., 0., .14])
         self.assertEqual((env["stair_level"], env["stair_max_level"], env["stair_curriculum"]), (0, 4, True))
         self.assertEqual(env["physics_dt"], .0005)

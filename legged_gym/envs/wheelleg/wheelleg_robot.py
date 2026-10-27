@@ -15,10 +15,10 @@ from isaacgym import gymapi, gymtorch
 import numpy as np
 import torch
 
-from wheelleg_gym.constraints import ClosureForces, quat_rotate_inverse
-from wheelleg_gym.kinematics import fivebar, inverse_symmetric
-from wheelleg_gym.commands import sample_command_targets, slew_commands, validate_command_limits
-from wheelleg_gym.config import (
+from legged_gym.envs.wheelleg.model.constraints import ClosureForces, quat_rotate_inverse
+from legged_gym.envs.wheelleg.model.kinematics import fivebar, inverse_symmetric
+from legged_gym.envs.wheelleg.commands import sample_command_targets, slew_commands, validate_command_limits
+from legged_gym.envs.wheelleg.constants import (
     ACTION_JOINTS, ACTION_SCALES, CLOSURE_MAX_FORCE, DEFAULT_CLOSURE_DAMPING,
     DEFAULT_CLOSURE_STIFFNESS, DEFAULT_COMMAND, DEFAULT_CONTROL_DT,
     DEFAULT_EPISODE_SECONDS, DEFAULT_FORWARD_SPEED_RANGE, DEFAULT_LEG_LENGTH_RANGE,
@@ -27,17 +27,19 @@ from wheelleg_gym.config import (
     OBSERVATION_LEG_LENGTH_SIZE, TERMINATION_LOOP_ERROR, TERMINATION_TILT, TORQUE_LIMIT,
     OBSERVATION_TERRAIN_SIZE,
 )
-from wheelleg_gym.rewards import stability_penalty, tracking_error_penalty, support_reward_terms
-from wheelleg_gym.leg_control import hip_targets, hip_pd_torques, hip_support_torques
+from legged_gym.envs.wheelleg.rewards import weighted_flat_reward_terms
+from legged_gym.envs.wheelleg.stair_rewards import stair_task_reward_terms
+from legged_gym.envs.wheelleg.control.leg_control import hip_targets, hip_pd_torques, hip_support_torques
 
 
 ASSET_ROOT = Path(__file__).resolve().parents[3] / "assets" / "wheelleg"
 
 
-class LeggedRobot:
+class WheelLegRobot:
     """轮腿环境：负责物理步进、观测、奖励、终止和局部重置。
 
-    几何在 kinematics.py，闭环外力在 constraints.py，默认参数在 config.py。
+    几何在 model/kinematics.py，闭环外力在 model/constraints.py。
+    机器人任务配置在 wheelleg_config.py，物理常量在 constants.py。
     step() 执行一个控制周期；内部再按 physics_dt 推进多个物理步。
     """
 
@@ -157,7 +159,7 @@ class LeggedRobot:
         self.terrain_model = None
         self.terrain_levels = torch.full((self.num_envs,), int(stair_level), dtype=torch.long, device=self.device)
         if terrain == "stairs":
-            from wheelleg_gym.terrain import StairTerrain
+            from legged_gym.envs.wheelleg.terrain import StairTerrain
             self.terrain_model = StairTerrain(self.num_envs, seed=seed)
             self.terrain_origins = torch.tensor(self.terrain_model.origins, dtype=torch.float32, device=self.device)
         self.observation_frame_size = (OBSERVATION_BASE_FRAME_SIZE
@@ -271,7 +273,7 @@ class LeggedRobot:
         root_pose = self.metadata.get("default_root_pose", {})
         initial_pose = None
         if self.initial_leg_length is not None:
-            from wheelleg_gym.initial_pose import make_initial_pose
+            from legged_gym.envs.wheelleg.model.initial_pose import make_initial_pose
             initial_pose = make_initial_pose(
                 ASSET_ROOT/self.metadata["urdf"], self.metadata, self.initial_leg_length)
             root_pose = {"pos": initial_pose["root_position"],
@@ -503,56 +505,15 @@ class LeggedRobot:
         return self.obs_buf
 
     def _rewards(self, terminated):
-        """保留源任务基础奖励，并按开关加入跟踪/稳定项。"""
-        if self.terrain_model is not None:
-            from wheelleg_gym.stair_rewards import stair_reward_terms
-            self.reward_terms = stair_reward_terms(
-                self.stair_delta_x, self.stair_transport_velocity, self.commands, self.projected_gravity,
-                self.ang_vel, self.torques[:, self.action_indices], self.last_applied_torques,
-                self.passive_limit_margin, self.stair_base_contact,
-                self.stair_stall_steps > 100, self.stair_success, terminated, dt=self.dt)
-            self.reward_terms["heading"] = -4.0*(self.total_yaw-self.target_yaw).square()
-            return sum(self.reward_terms.values())
-        o, c, a = self.slice_obs, self.commands, self.actions
-        r = -100.0 * terminated.float()
-        r += 3.0 * torch.exp(-((c[:, :2]-self.lin_vel[:, :2])**2).sum(-1)/0.005)
-        if not self.support_rewards:
-            r += 2*(torch.sign(c[:, 0]) == torch.sign(self.lin_vel[:, 0])).float()-1
-        r += 2.0 * torch.exp(-(c[:, 2]-self.ang_vel[:, 2])**2/0.001)
-        r -= 0.2 * o[:, 2]**2
-        effort = self.torques[:, self.action_indices] if self.support_rewards else a
-        r -= 0.0001 * effort.square().sum(-1)
-        if not self.stability_rewards:
-            r -= 0.003 * ((a-self.last_actions)**2).sum(-1)
-        self.reward_terms = {}
-        if self.support_rewards:
-            self.reward_terms = support_reward_terms(
-                self.length_l, self.length_r, c[:, 3],
-                self.dof_state[:, self.passive_indices, 0],
-                self.passive_lower, self.passive_upper)
-            for term in self.reward_terms.values():
-                r += term
-        else:
-            r += 2.0 * torch.exp(-((c[:, 3]-self.length_r)**2+(c[:, 3]-self.length_l)**2)/0.003)
-        r -= 0.1 * o[:, 13:17].abs().sum(-1)
-        r += 6.0 * torch.exp(-(1+o[:, 8])**2/0.02)
-        r -= 0.02 * (o[:, 3:5]**2).sum(-1)
-        symmetry = (math.pi-self.phi_l4-self.phi_r1)+(math.pi-self.phi_r4-self.phi_l1)
-        r += 0.7 * torch.exp(-symmetry**2/0.01)
-        r += 0.5 * torch.exp(-(self.theta_l.abs()+self.theta_r.abs())**2/0.1)
-        r -= (self.total_yaw-self.target_yaw).abs()
-        if self.tracking_penalties:
-            if self.support_rewards:
-                # The support terms above already cover both leg errors.
-                r -= 4.0*(self.lin_vel[:, :2]-c[:, :2]).square().sum(-1)
-            else:
-                r += tracking_error_penalty(self.lin_vel, self.commands, self.length_l, self.length_r)
-        if self.stability_rewards:
-            previous_torques = self.last_applied_torques
-            r += stability_penalty(self.projected_gravity, self.ang_vel,
-                                   self.torques[:, self.action_indices], previous_torques)
-            r -= 0.5*(self.ang_vel[:, 2]-c[:, 2]).square()
-        return r
+        """Legacy reward adapter; equations are shared with the registered task."""
+        self.reward_terms = (stair_task_reward_terms(self, terminated)
+                             if self.terrain_model is not None
+                             else weighted_flat_reward_terms(self, terminated))
+        # In-place accumulation preserves the legacy float32 reward convention.
+        reward = torch.zeros(self.num_envs, device=self.device)
+        for value in self.reward_terms.values():
+            reward += value
+        return reward
 
     def _stair_diagnostics(self, before_wheel_xy):
         """Terminal-safe axle transport, lane containment and real contacts.
@@ -625,7 +586,7 @@ class LeggedRobot:
         if self.leg_control == "hip_target":
             effort[:, :4] = 0.0
         if self.wheel_control == "heading":
-            from wheelleg_gym.wheel_control import balance_heading_torques
+            from legged_gym.envs.wheelleg.control.wheel_control import balance_heading_torques
             effort[:, 4:] = balance_heading_torques(
                 self.wheel_balance_scale*effort[:, 4:], self.total_yaw-self.target_yaw,
                 self.ang_vel[:, 2]-self.commands[:, 2], self.ang_vel[:, 1],
@@ -685,7 +646,7 @@ class LeggedRobot:
         self.total_yaw += torch.atan2(torch.sin(yaw_delta), torch.cos(yaw_delta))
         self.last_yaw.copy_(self.yaw)
         if self.wheel_control == "heading":
-            from wheelleg_gym.wheel_control import bounded_heading_target
+            from legged_gym.envs.wheelleg.control.wheel_control import bounded_heading_target
             self.target_yaw.copy_(bounded_heading_target(
                 self.total_yaw, self.target_yaw, self.commands[:, 2], self.dt))
         else:
@@ -884,6 +845,12 @@ class LeggedRobot:
 
     def get_privileged_observations(self):
         return None
+
+    def create_training_metrics(self):
+        """Keep robot diagnostics and curriculum state outside the PPO engine."""
+        from legged_gym.envs.wheelleg.diagnostics.training_metrics import WheelLegTrainingMetrics
+
+        return WheelLegTrainingMetrics(self)
 
     def close(self):
         if self.closed:

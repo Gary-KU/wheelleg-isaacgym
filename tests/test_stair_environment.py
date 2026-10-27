@@ -10,16 +10,16 @@ from isaacgym import gymtorch
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-import wheelleg_gym.env as environment_module
-from wheelleg_gym.env import WheelLegGymEnv
-from wheelleg_gym.leg_control import hip_targets, hip_support_torques
+import legged_gym.envs.wheelleg.wheelleg_robot as environment_module
+from legged_gym.envs.wheelleg.wheelleg_robot import WheelLegRobot
+from legged_gym.envs.wheelleg.control.leg_control import hip_targets, hip_support_torques
 
 
 class StairEnvironmentTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         torch.set_num_threads(1)
-        cls.env = WheelLegGymEnv(
+        cls.env = WheelLegRobot(
             num_envs=2, sim_device="cpu", headless=True, physics_threads=0,
             terrain="stairs", observe_terrain=True, observe_leg_lengths=True,
             leg_control="hip_target", hip_target_scale=.2,

@@ -6,8 +6,8 @@ import unittest
 import isaacgym  # noqa: F401
 import torch
 
-from wheelleg_gym.leg_control import hip_targets, hip_pd_torques, hip_support_torques
-from wheelleg_gym.kinematics import fivebar
+from legged_gym.envs.wheelleg.control.leg_control import hip_targets, hip_pd_torques, hip_support_torques
+from legged_gym.envs.wheelleg.model.kinematics import fivebar
 
 
 class LegControlTests(unittest.TestCase):

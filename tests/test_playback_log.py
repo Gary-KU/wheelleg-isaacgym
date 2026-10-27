@@ -9,7 +9,7 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from wheelleg_gym.playback_log import PlaybackEventLog, reset_diagnostics
+from legged_gym.envs.wheelleg.diagnostics.playback_log import PlaybackEventLog, reset_diagnostics
 
 
 class PlaybackLogTests(unittest.TestCase):

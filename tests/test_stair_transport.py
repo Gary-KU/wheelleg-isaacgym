@@ -9,14 +9,14 @@ import isaacgym  # noqa: F401; load the SDK before Torch.
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from wheelleg_gym.env import WheelLegGymEnv
+from legged_gym.envs.wheelleg.wheelleg_robot import WheelLegRobot
 
 
 class StairTransportTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         torch.set_num_threads(1)
-        cls.env = WheelLegGymEnv(
+        cls.env = WheelLegRobot(
             num_envs=2, sim_device="cpu", headless=True, physics_threads=0,
             terrain="stairs", stair_level=1, observe_terrain=True,
             observe_leg_lengths=True, leg_control="hip_target", hip_target_scale=.2,

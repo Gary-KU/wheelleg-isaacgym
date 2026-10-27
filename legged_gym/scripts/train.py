@@ -6,7 +6,8 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 import isaacgym  # must precede torch
 import torch
-import legged_gym.envs  # registers tasks
+from legged_gym.envs import register_tasks
+register_tasks()
 from legged_gym.utils import get_args, task_registry
 
 

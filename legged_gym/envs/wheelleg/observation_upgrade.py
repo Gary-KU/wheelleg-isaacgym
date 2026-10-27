@@ -100,6 +100,12 @@ def upgrade_checkpoint_observations(checkpoint, source_path=None):
             raise ValueError("optimizer_state_dict must be a mapping")
         mapping = _optimizer_parameter_mapping(optimizer, model)
     upgraded = deepcopy(checkpoint)
+    # Preserve the source task and training settings, including custom rewards.
+    # Only its observation layout changes when restoring the nested snapshot.
+    nested_environment = upgraded.get("legged_gym_env_config")
+    if nested_environment is not None:
+        nested_environment.setdefault("env", {})["num_observations"] = NEW_OBSERVATIONS
+        nested_environment.setdefault("observations", {})["observe_leg_lengths"] = True
     for name in INPUT_WEIGHTS:
         upgraded["model_state_dict"][name] = expand_input_columns(model[name])
         if mapping is not None:

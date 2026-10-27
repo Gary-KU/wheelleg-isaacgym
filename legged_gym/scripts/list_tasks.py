@@ -4,7 +4,8 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 import isaacgym
-import legged_gym.envs
+from legged_gym.envs import register_tasks
+register_tasks()
 from legged_gym.utils import task_registry
 
 for name in task_registry.task_classes:

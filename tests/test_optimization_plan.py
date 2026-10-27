@@ -6,7 +6,7 @@ import sys
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from wheelleg_gym.optimization_plan import compare_reports, evaluation_cases, summarize_report
+from legged_gym.envs.wheelleg.diagnostics.optimization_plan import compare_reports, evaluation_cases, summarize_report
 
 
 def report():

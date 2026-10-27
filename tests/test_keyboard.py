@@ -6,7 +6,7 @@ import sys
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from wheelleg_gym.keyboard import KeyboardDrive
+from legged_gym.envs.wheelleg.keyboard import KeyboardDrive
 
 
 def event(action, value=1.0):

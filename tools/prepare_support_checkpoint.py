@@ -21,9 +21,9 @@ def _runtime():
         sys.path.insert(0, str(root))
     import isaacgym  # noqa: F401; binary extension must precede Torch.
     import torch
-    from wheelleg_gym.config import TRAIN_CONFIG
-    from wheelleg_gym.runtime_config import SUPPORT_ENVIRONMENT
-    from wheelleg_gym.training import make_policy
+    from legged_gym.envs.wheelleg.constants import TRAIN_CONFIG
+    from legged_gym.compat.runtime_config import SUPPORT_ENVIRONMENT
+    from legged_gym.learning.policy import make_policy
     return torch, TRAIN_CONFIG, SUPPORT_ENVIRONMENT, make_policy
 
 
@@ -49,6 +49,9 @@ def prepare_support_checkpoint(checkpoint, source_path=None, seed=42, hip_std=3.
             raise ValueError("Support preparation requires a 198-D actor and critic")
 
     result = deepcopy(checkpoint)
+    # Restore from the updated flat metadata, not the source task's snapshots.
+    for key in ("legged_gym_env_config", "legged_gym_train_config", "terrain_curriculum_state"):
+        result.pop(key, None)
     config = deepcopy(checkpoint.get("training_config", defaults))
     policy_config = config.setdefault("policy", deepcopy(defaults["policy"]))
     policy_config["init_noise_std"] = [float(hip_std)]*4+[0.1, 0.1]

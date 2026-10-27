@@ -49,9 +49,9 @@ def main():
     import numpy as np
     import torch
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-    from wheelleg_gym.env import WheelLegGymEnv
+    from legged_gym.envs.wheelleg.wheelleg_robot import WheelLegRobot
 
-    class DiagnosticEnv(WheelLegGymEnv):
+    class DiagnosticEnv(WheelLegRobot):
         def _load_robot(self, stiffness, damping):
             self.metadata = deepcopy(self.metadata)
             self.metadata["default_root_pose"]["pos"][2] = 1.0

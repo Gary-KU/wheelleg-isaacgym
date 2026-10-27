@@ -2,7 +2,7 @@
 
 import math
 
-from .config import MIN_LEG_LENGTH, MAX_LEG_LENGTH
+from legged_gym.envs.wheelleg.constants import MIN_LEG_LENGTH, MAX_LEG_LENGTH
 
 
 class KeyboardDrive:

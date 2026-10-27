@@ -30,9 +30,9 @@ def _runtime():
         sys.path.insert(0, str(root))
     import isaacgym  # noqa: F401; binary extension must precede Torch.
     import torch
-    from wheelleg_gym.config import TRAIN_CONFIG
-    from wheelleg_gym.runtime_config import STAIRS_ENVIRONMENT
-    from wheelleg_gym.training import make_policy
+    from legged_gym.envs.wheelleg.constants import TRAIN_CONFIG
+    from legged_gym.compat.runtime_config import STAIRS_ENVIRONMENT
+    from legged_gym.learning.policy import make_policy
     return torch, TRAIN_CONFIG, STAIRS_ENVIRONMENT, make_policy
 
 
@@ -93,6 +93,9 @@ def prepare_stair_checkpoint(checkpoint, source_path=None, seed=42):
         raise ValueError("Source actor contains non-finite parameters")
 
     result = deepcopy(checkpoint)
+    # Restore from the updated flat metadata, not the source task's snapshots.
+    for key in ("legged_gym_env_config", "legged_gym_train_config", "terrain_curriculum_state"):
+        result.pop(key, None)
     result["model_state_dict"] = deepcopy(model.state_dict())
     result.pop("optimizer_state_dict", None)
     result.pop("support_bootstrap", None)

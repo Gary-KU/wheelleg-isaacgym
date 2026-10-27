@@ -7,7 +7,7 @@
 from copy import deepcopy
 import sys
 
-from .config import (
+from legged_gym.envs.wheelleg.constants import (
     DEFAULT_CONTROL_DT, OBSERVATION_BASE_FRAME_SIZE,
     OBSERVATION_HISTORY_FRAMES, OBSERVATION_LEG_LENGTH_SIZE,
     OBSERVATION_TERRAIN_SIZE,
@@ -69,6 +69,8 @@ STAIRS_ENVIRONMENT = dict(HYBRID_ENVIRONMENT, **{
     "stair_level": 0, "stair_min_level": 0, "stair_max_level": 4, "stair_curriculum": True,
     "stair_episode_seconds": 24.,
     "leg_control": "hip_target", "hip_target_scale": .2,
+    "wheel_control": "policy",
+    "wheel_pitch_damping": 0.0, "wheel_balance_scale": 1.0,
     "leg_feedforward_force": 22.4649, "heading_kp": 6., "heading_kd": .3,
     "initial_leg_length": .14, "command": [.25, 0., 0., .14],
     "forward_speed_range": [.25, .25], "yaw_speed_range": [0., 0.],

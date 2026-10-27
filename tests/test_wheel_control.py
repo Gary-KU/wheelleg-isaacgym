@@ -8,17 +8,17 @@ import isaacgym  # noqa: F401; the extension must load before Torch.
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from wheelleg_gym.cli import common_parser, environment_kwargs
-from wheelleg_gym.env import WheelLegGymEnv
-from wheelleg_gym.runtime_config import explicit_argument_destinations, resolve_runtime_args
-from wheelleg_gym.wheel_control import bounded_heading_target
+from legged_gym.compat.cli import common_parser, environment_kwargs
+from legged_gym.envs.wheelleg.wheelleg_robot import WheelLegRobot
+from legged_gym.compat.runtime_config import explicit_argument_destinations, resolve_runtime_args
+from legged_gym.envs.wheelleg.control.wheel_control import bounded_heading_target
 
 
 class WheelControlTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # Construct without either new option to also exercise legacy defaults.
-        cls.env = WheelLegGymEnv(
+        cls.env = WheelLegRobot(
             num_envs=4, sim_device="cpu", headless=True, seed=19,
             allow_approximate_loop=True, initial_leg_length=.08,
             leg_control="hip_pd", leg_feedforward_force=22.465,

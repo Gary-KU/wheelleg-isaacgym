@@ -10,8 +10,8 @@ import isaacgym  # noqa: F401; extension must precede PyTorch in combined tests.
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from wheelleg_gym.rewards import tracking_error_penalty
-from wheelleg_gym.env import WheelLegGymEnv, validated_range
+from legged_gym.envs.wheelleg.rewards import tracking_error_penalty
+from legged_gym.envs.wheelleg.wheelleg_robot import WheelLegRobot, validated_range
 
 
 class TrackingPenaltyTests(unittest.TestCase):
@@ -67,7 +67,7 @@ class CommandRangeTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # Only CPU PhysX is used here; the main training process owns the GPU.
-        cls.env = WheelLegGymEnv(
+        cls.env = WheelLegRobot(
             num_envs=8, sim_device="cpu", headless=True, seed=31,
             random_commands=True, forward_speed_range=(-0.3, 0.3),
             yaw_speed_range=(0.0, 0.0), leg_length_range=(0.08, 0.08),
@@ -114,7 +114,7 @@ class CommandRangeTests(unittest.TestCase):
         env = self.env
         terminated = torch.zeros(8, dtype=torch.bool)
         extra = torch.full((8,), -2.5)
-        with patch("wheelleg_gym.env.tracking_error_penalty", return_value=extra) as helper:
+        with patch("legged_gym.envs.wheelleg.rewards.tracking_error_penalty", return_value=extra) as helper:
             baseline = env._rewards(terminated)
             helper.assert_not_called()
             env.tracking_penalties = True

@@ -7,7 +7,7 @@ import sys
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from wheelleg_gym.support_metrics import (
+from legged_gym.envs.wheelleg.diagnostics.support_metrics import (
     assess_support, duration_steps, summarize_support, velocity_kick_schedule,
 )
 

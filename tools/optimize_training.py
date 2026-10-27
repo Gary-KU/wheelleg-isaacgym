@@ -18,7 +18,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from wheelleg_gym.optimization_plan import compare_reports, evaluation_cases
+from legged_gym.envs.wheelleg.diagnostics.optimization_plan import compare_reports, evaluation_cases
 
 
 def atomic_json(path, value):
@@ -163,7 +163,7 @@ def main():
         if observations == 186:
             phase = "observation_upgrade"
             status("running")
-            from wheelleg_gym.observation_upgrade import save_upgraded_checkpoint
+            from legged_gym.envs.wheelleg.observation_upgrade import save_upgraded_checkpoint
             save_upgraded_checkpoint(source, upgraded)
         phase = "training"
         run(train_command, train_dir/"console.log", args.train_timeout)

@@ -8,7 +8,7 @@ import isaacgym  # noqa: F401; extension must precede torch in combined discover
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from wheelleg_gym.rewards import support_reward_terms
+from legged_gym.envs.wheelleg.rewards import support_reward_terms
 
 
 class SupportRewardTests(unittest.TestCase):

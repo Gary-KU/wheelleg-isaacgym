@@ -4,7 +4,7 @@ import math
 
 import torch
 
-from .kinematics import inverse_symmetric
+from legged_gym.envs.wheelleg.model.kinematics import inverse_symmetric
 
 
 def hip_targets(leg_lengths):

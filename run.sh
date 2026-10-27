@@ -2,7 +2,9 @@
 set -euo pipefail
 
 if [ "$#" -eq 0 ]; then
-    printf '%s\n' 'Usage: ./run.sh train.py|play.py|evaluate.py|smoke_test.py [arguments]'
+    printf '%s\n' 'Usage: ./run.sh <script.py> [arguments]' \
+        'Example: ./run.sh legged_gym/scripts/train.py --task wheelleg_flat --headless' \
+        'Examples: docs/LEGGED_GYM.md; legacy commands: docs/USAGE.md'
     exit 2
 fi
 

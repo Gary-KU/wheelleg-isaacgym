@@ -8,7 +8,7 @@ import isaacgym  # noqa: F401; must precede torch when combined with environment
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from wheelleg_gym.rewards import stability_penalty
+from legged_gym.envs.wheelleg.rewards import stability_penalty
 
 
 class StabilityPenaltyTests(unittest.TestCase):

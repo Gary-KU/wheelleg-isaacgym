@@ -105,14 +105,14 @@ cd /home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym
 | 想理解什么 | 文件与入口 |
 | --- | --- |
 | 日常播放、训练默认参数 | [stairs.sh](../stairs.sh)、[train_stairs.sh](../train_stairs.sh) |
-| 五档阶梯网格、采样点、精确高度查询 | [terrain.py](../wheelleg_gym/terrain.py) 的 `StairTerrain` |
-| 地形创建、42 维单帧观测、髋角动作与重置 | [env.py](../wheelleg_gym/env.py) 的 `__init__()`、`_observations()`、`step()` |
-| 支撑 PD 与前馈换算 | [leg_control.py](../wheelleg_gym/leg_control.py)、`env.py::step()` |
+| 五档阶梯网格、采样点、精确高度查询 | [terrain.py](../legged_gym/envs/wheelleg/terrain.py) 的 `StairTerrain` |
+| 地形创建、42 维单帧观测、髋角动作与重置 | [env.py](../legged_gym/envs/wheelleg/wheelleg_robot.py) 的 `__init__()`、`_observations()`、`step()` |
+| 支撑 PD 与前馈换算 | [leg_control.py](../legged_gym/envs/wheelleg/control/leg_control.py)、`env.py::step()` |
 | 双轮中心进度/速度、轮下地面扫描参考 | `env.py::_kinematics()`、`_stair_diagnostics()`、`_observations()` |
-| 进度、姿态、力矩、失败与通过奖励 | [stair_rewards.py](../wheelleg_gym/stair_rewards.py)、`env.py::_rewards()` |
+| 进度、姿态、力矩、失败与通过奖励 | [stair_rewards.py](../legged_gym/envs/wheelleg/stair_rewards.py)、`env.py::_rewards()` |
 | 真实通过、失败判据、课程升降 | `env.py::_stair_diagnostics()` 与 `step()` 的重置部分 |
-| 预设与检查点恢复优先级 | [runtime_config.py](../wheelleg_gym/runtime_config.py) 的 `STAIRS_ENVIRONMENT`、[cli.py](../wheelleg_gym/cli.py) |
-| PPO、课程状态保存、训练指标 | [training.py](../wheelleg_gym/training.py) 的 `PPORunner` |
+| 预设与检查点恢复优先级 | [runtime_config.py](../legged_gym/compat/runtime_config.py) 的 `STAIRS_ENVIRONMENT`、[cli.py](../legged_gym/compat/cli.py) |
+| PPO、课程状态保存、训练指标 | [training.py](../legged_gym/learning/ppo_runner.py) 的 `PPORunner` |
 | 198→252 维起点转换 | [prepare_stair_checkpoint.py](../tools/prepare_stair_checkpoint.py) |
 | 终止前诊断、独立通过检查与报告 | [evaluate_stairs.py](../tools/evaluate_stairs.py) |
 

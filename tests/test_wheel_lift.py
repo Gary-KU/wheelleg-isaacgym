@@ -10,16 +10,16 @@ from types import SimpleNamespace
 import isaacgym  # extension before torch
 import torch
 
-from wheelleg_gym.leg_control import hip_targets, hip_support_torques
-from wheelleg_gym.kinematics import fivebar
-from wheelleg_gym.wheel_lift import (
+from legged_gym.envs.wheelleg.control.leg_control import hip_targets, hip_support_torques
+from legged_gym.envs.wheelleg.model.kinematics import fivebar
+from legged_gym.envs.wheelleg.control.wheel_lift import (
     AlternatingWheelLift,
     WheelLiftEnv,
     validate_spherical_tread,
     sagittal_wheel_observations,
     WheelLiftKeyboard,
 )
-from wheelleg_gym.env import ASSET_ROOT
+from legged_gym.envs.wheelleg.wheelleg_robot import ASSET_ROOT
 
 
 class IndependentLegTests(unittest.TestCase):

@@ -10,8 +10,8 @@ import isaacgym  # noqa: F401; extension must load before Torch.
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from wheelleg_gym.env import ASSET_ROOT, WheelLegGymEnv
-from wheelleg_gym.initial_pose import make_initial_pose, symmetric_joint_positions
+from legged_gym.envs.wheelleg.wheelleg_robot import ASSET_ROOT, WheelLegRobot
+from legged_gym.envs.wheelleg.model.initial_pose import make_initial_pose, symmetric_joint_positions
 
 
 class InitialPoseGeometryTests(unittest.TestCase):
@@ -38,7 +38,7 @@ class InitialPosePhysicsTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         torch.set_num_threads(1)
-        cls.env = WheelLegGymEnv(num_envs=2, sim_device="cpu", headless=True,
+        cls.env = WheelLegRobot(num_envs=2, sim_device="cpu", headless=True,
                                  initial_leg_length=0.08, allow_approximate_loop=True)
 
     @classmethod
@@ -82,7 +82,7 @@ class InitialPosePhysicsTests(unittest.TestCase):
 
 class LegacyInitialPoseTests(unittest.TestCase):
     def test_none_preserves_old_initial_joints_and_root_height(self):
-        env = WheelLegGymEnv(num_envs=1, sim_device="cpu", headless=True,
+        env = WheelLegRobot(num_envs=1, sim_device="cpu", headless=True,
                              initial_leg_length=None, allow_approximate_loop=True)
         try:
             self.assertEqual(float(env.dof_state[:, :, 0].abs().max()), 0)
@@ -97,7 +97,7 @@ class LegacyInitialPoseTests(unittest.TestCase):
                      "Set WHEELLEG_TEST_DEVICE=cuda:0 for the finite GPU initialization check")
 class InitialPoseGpuTests(unittest.TestCase):
     def test_gpu_fk_translation_reset_and_real_gravity(self):
-        env = WheelLegGymEnv(num_envs=8, sim_device=os.environ["WHEELLEG_TEST_DEVICE"], headless=True,
+        env = WheelLegRobot(num_envs=8, sim_device=os.environ["WHEELLEG_TEST_DEVICE"], headless=True,
                              initial_leg_length=0.08, allow_approximate_loop=True)
         try:
             self.assertLess(float(env.closure.errors(env.rb_states).max()), 0.0001)

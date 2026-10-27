@@ -14,13 +14,14 @@ from isaacgym import gymapi, gymtorch
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from wheelleg_gym.env import ACTION_JOINTS, WheelLegGymEnv
+from legged_gym.envs.wheelleg.wheelleg_robot import ACTION_JOINTS, WheelLegRobot
+from legged_gym.envs.wheelleg.constants import FLAT_REWARD_SCALES
 
 
 class EnvironmentTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.env = WheelLegGymEnv(
+        cls.env = WheelLegRobot(
             num_envs=2, sim_device=os.environ.get("WHEELLEG_TEST_DEVICE", "cpu"),
             headless=True, seed=17, allow_approximate_loop=True,
         )
@@ -148,12 +149,17 @@ class EnvironmentTests(unittest.TestCase):
             _, _, rewards, dones, info = env.step(self.zero_actions)
             self.assertFalse(dones.any().item())
             self.assertTrue(torch.isfinite(rewards).all().item())
-            self.assertEqual(set(info["reward_terms"]), {
-                "leg_tracking", "leg_error", "leg_asymmetry", "passive_limit"})
+            terms = info["reward_terms"]
+            self.assertTrue({"leg_tracking", "leg_error", "leg_asymmetry",
+                             "passive_limit"}.issubset(terms))
+            self.assertEqual(set(terms), set(FLAT_REWARD_SCALES))
+            torch.testing.assert_close(
+                sum(terms.values(), torch.zeros_like(rewards)), rewards,
+                rtol=0, atol=0)
             passive = info["pre_reset_dof_positions"][:, env.passive_indices]
             expected = torch.minimum(passive-env.passive_lower, env.passive_upper-passive)
             torch.testing.assert_close(info["pre_reset_passive_limit_margin"], expected)
-            for term in info["reward_terms"].values():
+            for term in terms.values():
                 self.assertEqual(term.shape, (2,))
         finally:
             env.support_rewards = previous
@@ -161,7 +167,7 @@ class EnvironmentTests(unittest.TestCase):
 
 class ContactSettingsTests(unittest.TestCase):
     def test_optional_contact_settings_select_real_solver_and_only_tire_materials(self):
-        candidate = WheelLegGymEnv(
+        candidate = WheelLegRobot(
             num_envs=1, sim_device="cpu", headless=True, allow_approximate_loop=True,
             physics_threads=0, physics_solver="pgs", wheel_friction=2.)
         try:

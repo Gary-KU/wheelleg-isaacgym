@@ -9,7 +9,7 @@ import isaacgym  # noqa: F401; combined tests may import the binary extension.
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from wheelleg_gym.stair_rewards import stair_reward_terms
+from legged_gym.envs.wheelleg.stair_rewards import stair_reward_terms
 
 
 def inputs(size=1):

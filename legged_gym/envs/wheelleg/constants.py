@@ -67,3 +67,28 @@ TRAIN_CONFIG = {
     "num_steps_per_env": 25,
     "save_interval": 100,
 }
+
+# Shared per-control-step flat reward scales. The task config can override each
+# value; the legacy environment uses this same mapping without a second formula.
+FLAT_REWARD_SCALES = {
+    "termination": -100.0,
+    "tracking_lin_vel": 3.0,
+    "direction": 1.0,
+    "tracking_ang_vel": 2.0,
+    "lin_vel_z": -0.2,
+    "effort": -0.0001,
+    "action_rate": -0.003,
+    "leg_tracking": 2.0,
+    "leg_error": -0.25,
+    "leg_asymmetry": -0.5,
+    "passive_limit": -4.0,
+    "hip_pose": -0.1,
+    "upright": 6.0,
+    "angular_motion": -0.02,
+    "hip_symmetry": 0.7,
+    "leg_angle": 0.5,
+    "heading": -1.0,
+    "tracking_error": 1.0,
+    "stability": 1.0,
+    "yaw_error": -0.5,
+}

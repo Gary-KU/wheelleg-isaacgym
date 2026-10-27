@@ -9,8 +9,8 @@ import sys
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from wheelleg_gym.cli import common_parser, environment_kwargs, validate_common
-from wheelleg_gym.runtime_config import explicit_argument_destinations, resolve_runtime_args
+from legged_gym.compat.cli import common_parser, environment_kwargs, validate_common
+from legged_gym.compat.runtime_config import explicit_argument_destinations, resolve_runtime_args
 
 
 class Weight:

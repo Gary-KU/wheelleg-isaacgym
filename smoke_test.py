@@ -5,7 +5,7 @@ import json
 import time
 from pathlib import Path
 
-from wheelleg_gym.cli import common_parser, environment_kwargs, validate_common
+from legged_gym.compat.cli import common_parser, environment_kwargs, validate_common
 
 
 def main():
@@ -21,11 +21,11 @@ def main():
         parser.error("Require positive steps and nonnegative action amplitude")
     import isaacgym  # noqa: F401
     import torch
-    from wheelleg_gym.env import WheelLegGymEnv
+    from legged_gym.envs.wheelleg.wheelleg_robot import WheelLegRobot
 
     kwargs = environment_kwargs(args)
     kwargs.update(fix_base=args.fix_base, physics_dt=args.physics_dt)
-    env = WheelLegGymEnv(**kwargs)
+    env = WheelLegRobot(**kwargs)
     try:
         initial_error = float(env.closure.errors(env.rb_states).max())
         initial_axis_error = float(env.closure.axis_errors(env.rb_states).max())

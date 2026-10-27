@@ -8,9 +8,10 @@ import time
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 import isaacgym
 import torch
-import legged_gym.envs
+from legged_gym.envs import register_tasks
+register_tasks()
 from legged_gym.utils import get_args, task_registry
-from wheelleg_gym.keyboard import KeyboardDrive
+from legged_gym.envs.wheelleg.keyboard import KeyboardDrive
 
 
 def main():

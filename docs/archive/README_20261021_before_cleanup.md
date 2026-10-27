@@ -3,8 +3,8 @@
 # WheelLeg Isaac Gym 迁移版
 
 本机 RTX 4060 Laptop 已通过 37 项命令采样、键盘、CPU/CUDA 数值与 GPU 环境测试、64 环境两轮
-PPO 更新及 100 步权重播放。详细结果见 [验证记录](validation/summary.json) 和
-[周期动作测试](validation/free_base.json)。短训练只验证流程，不代表已学会平衡。
+PPO 更新及 100 步权重播放。详细结果见 [验证记录](../../validation/summary.json) 和
+[周期动作测试](../../validation/free_base.json)。短训练只验证流程，不代表已学会平衡。
 
 这里把本仓库的五连杆轮腿模型、6 维力矩动作、186 维历史观测和 PPO
 训练入口迁移到 **Isaac Gym Preview 4**。运行这份代码不需要 Isaac Sim 或

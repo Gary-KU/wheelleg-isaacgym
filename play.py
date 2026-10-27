@@ -6,9 +6,9 @@ import math
 import sys
 import time
 
-from wheelleg_gym.cli import common_parser, environment_kwargs, validate_common
-from wheelleg_gym.runtime_config import explicit_argument_destinations, resolve_runtime_args
-from wheelleg_gym.config import MIN_LEG_LENGTH, MAX_LEG_LENGTH
+from legged_gym.compat.cli import common_parser, environment_kwargs, validate_common
+from legged_gym.compat.runtime_config import explicit_argument_destinations, resolve_runtime_args
+from legged_gym.envs.wheelleg.constants import MIN_LEG_LENGTH, MAX_LEG_LENGTH
 
 
 def main():
@@ -66,11 +66,12 @@ def main():
 
     import isaacgym  # noqa: F401; must precede torch
     import torch
-    from wheelleg_gym.env import WheelLegGymEnv
-    from wheelleg_gym.training import make_policy, scalar, viewer_is_closed
-    from wheelleg_gym.keyboard import KeyboardDrive
-    from wheelleg_gym.commands import CommandGovernor
-    from wheelleg_gym.playback_log import PlaybackEventLog, reset_diagnostics
+    from legged_gym.envs.wheelleg.wheelleg_robot import WheelLegRobot
+    from legged_gym.envs.wheelleg.constants import TRAIN_CONFIG
+    from legged_gym.learning.policy import make_policy, scalar, viewer_is_closed
+    from legged_gym.envs.wheelleg.keyboard import KeyboardDrive
+    from legged_gym.envs.wheelleg.commands import CommandGovernor
+    from legged_gym.envs.wheelleg.diagnostics.playback_log import PlaybackEventLog, reset_diagnostics
     from isaacgym import gymapi
 
     kwargs = environment_kwargs(args)
@@ -80,7 +81,7 @@ def main():
     if args.keyboard:
         kwargs["command"] = (0.0, 0.0, 0.0, args.command[3])
     print("Loop closure: compliant external forces; monitor anchor errors in millimetres.")
-    env = WheelLegGymEnv(**kwargs)
+    env = WheelLegRobot(**kwargs)
     event_log = None
     try:
         event_log = PlaybackEventLog(args.event_log)
@@ -89,7 +90,7 @@ def main():
             env.max_episode_length = args.num_steps + 1
         controller = None
         if args.checkpoint:
-            config = state.get("training_config", {}).get("policy")
+            config = state.get("training_config", {}).get("policy", TRAIN_CONFIG["policy"])
             controller = make_policy(env.num_obs, env.num_actions, env.device, config)
             controller.load_state_dict(state["model_state_dict"], strict=True)
             controller.eval()

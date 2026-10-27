@@ -11,9 +11,9 @@ from isaacgym import gymapi
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from wheelleg_gym.cli import common_parser, environment_kwargs, validate_common
-from wheelleg_gym.commands import CommandGovernor, sample_command_targets, slew_commands
-from wheelleg_gym.env import WheelLegGymEnv
+from legged_gym.compat.cli import common_parser, environment_kwargs, validate_common
+from legged_gym.envs.wheelleg.commands import CommandGovernor, sample_command_targets, slew_commands
+from legged_gym.envs.wheelleg.wheelleg_robot import WheelLegRobot
 
 
 class CommandGovernorTests(unittest.TestCase):
@@ -106,7 +106,7 @@ class CommandGovernorTests(unittest.TestCase):
 class TimedCommandEnvironmentTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.env = WheelLegGymEnv(num_envs=2, sim_device="cpu", headless=True,
+        cls.env = WheelLegRobot(num_envs=2, sim_device="cpu", headless=True,
             random_commands=True, forward_speed_range=(.3, .3), yaw_speed_range=(.8, .8),
             leg_length_range=(.08, .08), command_resample_seconds=.04,
             linear_acceleration=.8, yaw_acceleration=2., zero_command_fraction=0.,

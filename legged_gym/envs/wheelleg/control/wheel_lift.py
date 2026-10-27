@@ -12,9 +12,9 @@ import xml.etree.ElementTree as ET
 import isaacgym  # binary extension before torch
 import torch
 
-from .constraints import quat_rotate_inverse
-from .env import ASSET_ROOT, WheelLegGymEnv
-from .leg_control import hip_targets, hip_support_torques
+from legged_gym.envs.wheelleg.model.constraints import quat_rotate_inverse
+from legged_gym.envs.wheelleg.wheelleg_robot import ASSET_ROOT, WheelLegRobot
+from legged_gym.envs.wheelleg.control.leg_control import hip_targets, hip_support_torques
 
 
 def validate_spherical_tread(path):
@@ -35,7 +35,7 @@ def validate_spherical_tread(path):
         raise ValueError("Source tire no longer matches the spherical tread proxy")
 
 
-class WheelLiftEnv(WheelLegGymEnv):
+class WheelLiftEnv(WheelLegRobot):
     def __init__(self, wheel_collision="mesh", **kwargs):
         if wheel_collision not in ("mesh", "sphere_tread"):
             raise ValueError("wheel_collision must be mesh or sphere_tread")

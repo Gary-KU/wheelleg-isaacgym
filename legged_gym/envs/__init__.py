@@ -1,22 +1,9 @@
-"""One registration per robot task, following the legged_gym convention."""
+"""Task registration is explicit; importing helpers never loads a robot or Gym."""
 
-from legged_gym.utils.task_registry import task_registry
-from .wheelleg.wheelleg import WheelLegged
-from .wheelleg.wheelleg_config import (
-    WheelLeggedCfg,
-    WheelLeggedCfgPPO,
-    WheelLeggedStandCfg,
-    WheelLeggedStandCfgPPO,
-    WheelLeggedStairsCfg,
-    WheelLeggedStairsCfgPPO,
-)
 
-task_registry.register(
-    "wheelleg_flat", WheelLegged, WheelLeggedCfg(), WheelLeggedCfgPPO()
-)
-task_registry.register(
-    "wheelleg_stand", WheelLegged, WheelLeggedStandCfg(), WheelLeggedStandCfgPPO()
-)
-task_registry.register(
-    "wheelleg_stairs", WheelLegged, WheelLeggedStairsCfg(), WheelLeggedStairsCfgPPO()
-)
+def register_tasks(registry=None):
+    """Register built-in tasks. Add another robot's register() call here."""
+    from legged_gym.utils.task_registry import task_registry
+    from .wheelleg.register import register
+
+    register(registry if registry is not None else task_registry)

@@ -4,11 +4,11 @@ import math
 from pathlib import Path
 
 from legged_gym import LEGGED_GYM_ROOT_DIR
-from legged_gym.envs.base.legged_robot import ASSET_ROOT, LeggedRobot
+from legged_gym.envs.wheelleg.wheelleg_robot import ASSET_ROOT, WheelLegRobot
 from legged_gym.utils.helpers import class_to_dict
 import torch
-from wheelleg_gym.rewards import stability_penalty, tracking_error_penalty
-from wheelleg_gym.stair_rewards import stair_reward_terms
+from legged_gym.envs.wheelleg.rewards import flat_reward_terms
+from legged_gym.envs.wheelleg.stair_rewards import stair_task_reward_terms
 
 
 # Every saved legacy constructor setting has one readable nested config home.
@@ -90,8 +90,31 @@ def restore_environment_config(cfg, values):
             raise ValueError("Unsupported checkpoint environment field: " + name)
 
 
-class WheelLegged(LeggedRobot):
+class WheelLegged(WheelLegRobot):
     """Task owns config/reward registration; base owns real physics and resets."""
+
+    restore_legacy_environment = staticmethod(restore_environment_config)
+
+    @staticmethod
+    def configure_execution(cfg, args, checkpoint_state):
+        """Wheelleg-only playback/CLI rules stay outside the generic registry."""
+        if args.command is not None:
+            cfg.commands.command = args.command
+        if args.mode == "play":
+            cfg.commands.random_commands = False
+            cfg.commands.command_resample_seconds = 0.0
+            cfg.terrain.stair_curriculum = False
+            if (
+                checkpoint_state is not None
+                and "legged_gym_env_config" not in checkpoint_state
+                and cfg.terrain.terrain != "stairs"
+            ):
+                cfg.control.wheel_control = "heading"
+                cfg.control.heading_kp, cfg.control.heading_kd = 6.0, 0.6
+        if args.stair_level is not None:
+            if cfg.terrain.terrain != "stairs":
+                raise ValueError("--stair_level requires a stair task")
+            cfg.terrain.stair_level = args.stair_level
 
     def __init__(
         self, cfg, sim_params=None, physics_engine=None, sim_device="cpu", headless=True
@@ -150,27 +173,11 @@ class WheelLegged(LeggedRobot):
                 self.reward_functions.append((name, function))
 
     def _rewards(self, terminated):
-        self._terminated = terminated
-        self._stair_terms = None
-        if self.terrain_model is not None:
-            self._stair_terms = stair_reward_terms(
-                self.stair_delta_x,
-                self.stair_transport_velocity,
-                self.commands,
-                self.projected_gravity,
-                self.ang_vel,
-                self.torques[:, self.action_indices],
-                self.last_applied_torques,
-                self.passive_limit_margin,
-                self.stair_base_contact,
-                self.stair_stall_steps > 100,
-                self.stair_success,
-                terminated,
-                dt=self.dt,
-            )
-            self._stair_terms["heading"] = (
-                -4.0 * (self.total_yaw - self.target_yaw).square()
-            )
+        self._task_reward_terms = (
+            stair_task_reward_terms(self, terminated)
+            if self.terrain_model is not None
+            else flat_reward_terms(self, terminated)
+        )
         self.reward_terms = {
             name: self.reward_scales[name] * function()
             for name, function in self.reward_functions
@@ -194,155 +201,95 @@ class WheelLegged(LeggedRobot):
         self._kinematics()
         self._observations(advance_history=False)
 
+    # Explicit methods keep reward registration searchable in editors. All
+    # equations are evaluated once in rewards.py / stair_rewards.py above.
+
     def _reward_termination(self):
-        return self._terminated.float()
+        return self._task_reward_terms["termination"]
 
     def _reward_tracking_lin_vel(self):
-        return torch.exp(
-            -(self.commands[:, :2] - self.lin_vel[:, :2]).square().sum(-1) / 0.005
-        )
+        return self._task_reward_terms["tracking_lin_vel"]
 
     def _reward_direction(self):
-        if self.support_rewards:
-            return torch.zeros(self.num_envs, device=self.device)
-        return (
-            2
-            * (
-                torch.sign(self.commands[:, 0]) == torch.sign(self.lin_vel[:, 0])
-            ).float()
-            - 1
-        )
+        return self._task_reward_terms["direction"]
 
     def _reward_tracking_ang_vel(self):
-        return torch.exp(-(self.commands[:, 2] - self.ang_vel[:, 2]).square() / 0.001)
+        return self._task_reward_terms["tracking_ang_vel"]
 
     def _reward_lin_vel_z(self):
-        return self.slice_obs[:, 2].square()
+        return self._task_reward_terms["lin_vel_z"]
 
     def _reward_effort(self):
-        if self._stair_terms is not None:
-            return self._stair_terms["effort"]
-        values = (
-            self.torques[:, self.action_indices]
-            if self.support_rewards
-            else self.actions
-        )
-        return values.square().sum(-1)
+        return self._task_reward_terms["effort"]
 
     def _reward_action_rate(self):
-        if self.stability_rewards:
-            return torch.zeros(self.num_envs, device=self.device)
-        return (self.actions - self.last_actions).square().sum(-1)
-
-    def _leg_errors(self):
-        return (
-            torch.stack((self.length_l, self.length_r), -1) - self.commands[:, 3:4]
-        ) / 0.01
+        return self._task_reward_terms["action_rate"]
 
     def _reward_leg_tracking(self):
-        if self.support_rewards:
-            return torch.exp(-0.5 * self._leg_errors().square().sum(-1))
-        return torch.exp(
-            -(
-                (self.commands[:, 3] - self.length_r).square()
-                + (self.commands[:, 3] - self.length_l).square()
-            )
-            / 0.003
-        )
+        return self._task_reward_terms["leg_tracking"]
 
     def _reward_leg_error(self):
-        return (
-            self._leg_errors().square().clamp(max=9).sum(-1)
-            if self.support_rewards
-            else torch.zeros(self.num_envs, device=self.device)
-        )
+        return self._task_reward_terms["leg_error"]
 
     def _reward_leg_asymmetry(self):
-        return (
-            ((self.length_l - self.length_r) / 0.01).square().clamp(max=9)
-            if self.support_rewards
-            else torch.zeros(self.num_envs, device=self.device)
-        )
+        return self._task_reward_terms["leg_asymmetry"]
 
     def _reward_passive_limit(self):
-        if self._stair_terms is not None:
-            return self._stair_terms["passive_limit"]
-        return (
-            (1 - self.passive_limit_margin / 0.1).clamp(0, 1).square().mean(-1)
-            if self.support_rewards
-            else torch.zeros(self.num_envs, device=self.device)
-        )
+        return self._task_reward_terms["passive_limit"]
 
     def _reward_hip_pose(self):
-        return self.slice_obs[:, 13:17].abs().sum(-1)
+        return self._task_reward_terms["hip_pose"]
 
     def _reward_upright(self):
-        return torch.exp(-(1 + self.slice_obs[:, 8]).square() / 0.02)
+        return self._task_reward_terms["upright"]
 
     def _reward_angular_motion(self):
-        return self.slice_obs[:, 3:5].square().sum(-1)
+        return self._task_reward_terms["angular_motion"]
 
     def _reward_hip_symmetry(self):
-        value = (math.pi - self.phi_l4 - self.phi_r1) + (
-            math.pi - self.phi_r4 - self.phi_l1
-        )
-        return torch.exp(-value.square() / 0.01)
+        return self._task_reward_terms["hip_symmetry"]
 
     def _reward_leg_angle(self):
-        return torch.exp(-(self.theta_l.abs() + self.theta_r.abs()).square() / 0.1)
+        return self._task_reward_terms["leg_angle"]
 
     def _reward_heading(self):
-        if self._stair_terms is not None:
-            return self._stair_terms["heading"]
-        return (self.total_yaw - self.target_yaw).abs()
+        return self._task_reward_terms["heading"]
 
     def _reward_tracking_error(self):
-        if not self.tracking_penalties:
-            return torch.zeros(self.num_envs, device=self.device)
-        if self.support_rewards:
-            return -4 * (self.lin_vel[:, :2] - self.commands[:, :2]).square().sum(-1)
-        return tracking_error_penalty(
-            self.lin_vel, self.commands, self.length_l, self.length_r
-        )
+        return self._task_reward_terms["tracking_error"]
 
     def _reward_stability(self):
-        if not self.stability_rewards:
-            return torch.zeros(self.num_envs, device=self.device)
-        return stability_penalty(
-            self.projected_gravity,
-            self.ang_vel,
-            self.torques[:, self.action_indices],
-            self.last_applied_torques,
-        )
+        return self._task_reward_terms["stability"]
 
     def _reward_yaw_error(self):
-        return (
-            (self.ang_vel[:, 2] - self.commands[:, 2]).square()
-            if self.stability_rewards
-            else torch.zeros(self.num_envs, device=self.device)
-        )
+        return self._task_reward_terms["yaw_error"]
 
+    def _reward_progress(self):
+        return self._task_reward_terms["progress"]
 
-# Stair helper already defines named, weighted terms. Expose each as a regular
-# _reward_<name> method so zeroing a cfg scale removes it from the task.
-def _stair_reward(name):
-    def reward(self):
-        return self._stair_terms[name]
+    def _reward_velocity(self):
+        return self._task_reward_terms["velocity"]
 
-    reward.__name__ = "_reward_" + name
-    return reward
+    def _reward_yaw(self):
+        return self._task_reward_terms["yaw"]
 
+    def _reward_posture(self):
+        return self._task_reward_terms["posture"]
 
-for _name in (
-    "progress",
-    "velocity",
-    "yaw",
-    "posture",
-    "angular_damping",
-    "stall",
-    "base_contact",
-    "torque_smoothness",
-    "failure",
-    "success",
-):
-    setattr(WheelLegged, "_reward_" + _name, _stair_reward(_name))
+    def _reward_angular_damping(self):
+        return self._task_reward_terms["angular_damping"]
+
+    def _reward_stall(self):
+        return self._task_reward_terms["stall"]
+
+    def _reward_base_contact(self):
+        return self._task_reward_terms["base_contact"]
+
+    def _reward_torque_smoothness(self):
+        return self._task_reward_terms["torque_smoothness"]
+
+    def _reward_failure(self):
+        return self._task_reward_terms["failure"]
+
+    def _reward_success(self):
+        return self._task_reward_terms["success"]

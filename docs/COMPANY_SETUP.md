@@ -37,11 +37,11 @@ git push
 | 阅读顺序 | 文件 | 关注点 |
 | --- | --- | --- |
 | 1 | `stand.sh`、`stairs.sh`、`train_stairs.sh` | 常用命令如何组合参数 |
-| 2 | `wheelleg_gym/config.py`、`cli.py`、`runtime_config.py` | 默认配置、命令行参数与权重配置的覆盖关系 |
+| 2 | `legged_gym/envs/wheelleg/constants.py`、`cli.py`、`runtime_config.py` | 默认配置、命令行参数与权重配置的覆盖关系 |
 | 3 | `play.py`、`keyboard.py` | 按键怎样变成速度和腿长目标 |
-| 4 | `wheelleg_gym/env.py` | 创建仿真、步进、观测、奖励、终止和复位 |
+| 4 | `legged_gym/envs/wheelleg/wheelleg_robot.py` | 创建仿真、步进、观测、奖励、终止和复位 |
 | 5 | `constraints.py`、`leg_control.py`、`wheel_control.py` | 近似闭环外力、支撑前馈、PD、轮子平衡与航向反馈 |
-| 6 | `train.py`、`wheelleg_gym/training.py`、`third_party/rsl_rl/` | PPO 采样和更新 |
+| 6 | `train.py`、`legged_gym/learning/ppo_runner.py`、`third_party/rsl_rl/` | PPO 采样和更新 |
 
 更详细的调用流程见[代码导读](CODE_GUIDE.md)。`./run.sh play.py --help` 等帮助命令也需要先安装仿真环境，因为入口会导入 Isaac Gym。
 

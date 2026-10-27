@@ -10,10 +10,10 @@ import time
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from wheelleg_gym.cli import common_parser, environment_kwargs, validate_common
-from wheelleg_gym.config import DEFAULT_CONTROL_DT
-from wheelleg_gym.runtime_config import explicit_argument_destinations, resolve_runtime_args
-from wheelleg_gym.support_metrics import duration_steps
+from legged_gym.compat.cli import common_parser, environment_kwargs, validate_common
+from legged_gym.envs.wheelleg.constants import DEFAULT_CONTROL_DT
+from legged_gym.compat.runtime_config import explicit_argument_destinations, resolve_runtime_args
+from legged_gym.envs.wheelleg.diagnostics.support_metrics import duration_steps
 
 
 def make_drive_sequence(speed=.6, turn_speed=2., dt=DEFAULT_CONTROL_DT):
@@ -117,10 +117,11 @@ def main():
 
     import isaacgym  # noqa: F401; SDK binary extension must precede Torch.
     import torch
-    from wheelleg_gym.commands import CommandGovernor
-    from wheelleg_gym.constraints import quat_rotate_inverse
-    from wheelleg_gym.env import WheelLegGymEnv
-    from wheelleg_gym.training import make_policy
+    from legged_gym.envs.wheelleg.commands import CommandGovernor
+    from legged_gym.envs.wheelleg.model.constraints import quat_rotate_inverse
+    from legged_gym.envs.wheelleg.wheelleg_robot import WheelLegRobot
+    from legged_gym.envs.wheelleg.constants import TRAIN_CONFIG
+    from legged_gym.learning.policy import make_policy
 
     torch.set_num_threads(1)
     checkpoint = torch.load(str(args.checkpoint), map_location="cpu")
@@ -139,14 +140,14 @@ def main():
         parser.error("Use a stationary initial --command 0 0 0 LENGTH; the fixed sequence supplies motion")
     kwargs = environment_kwargs(args)
     kwargs.update(headless=True, terrain="plane", stair_curriculum=False)
-    env = WheelLegGymEnv(**kwargs)
+    env = WheelLegRobot(**kwargs)
     total_steps = sequence[-1]["end_step_exclusive"]
     try:
         # Keyboard play also removes periodic timeouts, retaining all physical
         # failure checks and automatic physical resets.
         env.max_episode_length = total_steps+1
         policy = make_policy(env.num_obs, env.num_actions, env.device,
-                             checkpoint.get("training_config", {}).get("policy"))
+                             checkpoint.get("training_config", {}).get("policy", TRAIN_CONFIG["policy"]))
         policy.load_state_dict(checkpoint["model_state_dict"], strict=True)
         policy.eval()
         env.reset()

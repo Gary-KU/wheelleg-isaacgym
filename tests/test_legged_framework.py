@@ -7,13 +7,16 @@ import unittest
 
 import isaacgym
 import torch
-import legged_gym.envs
-from legged_gym.envs.base.legged_robot import LeggedRobot
+from legged_gym.envs import register_tasks
+
+register_tasks()
+from legged_gym.envs.wheelleg.wheelleg_robot import WheelLegRobot
 from legged_gym.envs.wheelleg.wheelleg import WheelLegged, environment_kwargs
 from legged_gym.envs.wheelleg.wheelleg_config import WheelLeggedCfg
 from legged_gym.utils import task_registry, class_to_dict, get_args
 from legged_gym.utils.helpers import get_load_path
-from rsl_rl.runners import OnPolicyRunner
+from legged_gym.learning.on_policy_runner import OnPolicyRunner
+from tools.prepare_support_checkpoint import prepare_support_checkpoint
 
 
 class FrameworkConfigTests(unittest.TestCase):
@@ -86,6 +89,70 @@ class FrameworkConfigTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "observation layout"):
             task_registry.prepare_cfgs(args.task, args)
 
+    def test_earlier_nested_checkpoint_accepts_removed_cli_placeholders(self):
+        env_cfg, train_cfg = task_registry.get_cfgs("wheelleg_stand")
+        env_cfg.control.leg_kp = 75.0
+        snapshot = class_to_dict(train_cfg)
+        snapshot["runner"].update(resume=True, load_run="old", checkpoint=-1)
+        snapshot["initialization_provenance"] = {"source_iteration": 42}
+        state = {
+            "model_state_dict": {"actor.0.weight": torch.zeros(1, 198)},
+            "legged_gym_env_config": class_to_dict(env_cfg),
+            "legged_gym_train_config": snapshot,
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "old_framework.pt"
+            torch.save(state, str(path))
+            args = get_args(
+                "train",
+                [
+                    "--task",
+                    "wheelleg_stand",
+                    "--resume",
+                    "--checkpoint",
+                    str(path),
+                    "--headless",
+                ],
+            )
+            restored_env, restored_train = task_registry.prepare_cfgs(args.task, args)
+        self.assertEqual(restored_env.control.leg_kp, 75.0)
+        self.assertEqual(
+            restored_train.initialization_provenance, {"source_iteration": 42}
+        )
+        self.assertNotIn("resume", class_to_dict(restored_train.runner))
+
+    def test_converted_checkpoint_restores_new_objective_and_provenance(self):
+        # A registered-task source carries nested snapshots. Conversion must
+        # restore the new support objective rather than the source control mode.
+        source = torch.load(
+            "logs/standing_support_20261022_093823/input/standing_hold.pt",
+            map_location="cpu",
+        )
+        env_cfg, train_cfg = task_registry.get_cfgs("wheelleg_stand")
+        env_cfg.control.leg_control = "hip_target"
+        source["legged_gym_env_config"] = class_to_dict(env_cfg)
+        source["legged_gym_train_config"] = class_to_dict(train_cfg)
+        converted = prepare_support_checkpoint(source, source_path="source.pt")
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "support.pt"
+            torch.save(converted, str(path))
+            args = get_args(
+                "train",
+                [
+                    "--task",
+                    "wheelleg_stand",
+                    "--resume",
+                    "--checkpoint",
+                    str(path),
+                    "--headless",
+                ],
+            )
+            restored_env, restored_train = task_registry.prepare_cfgs(args.task, args)
+        self.assertEqual(restored_env.control.leg_control, "torque")
+        self.assertEqual(
+            restored_train.initialization_provenance, converted["support_bootstrap"]
+        )
+
 
 class FrameworkPhysicsTests(unittest.TestCase):
     @classmethod
@@ -111,7 +178,7 @@ class FrameworkPhysicsTests(unittest.TestCase):
             self.assertIs(result[0], result[5])
             self.assertIs(e.get_observations()[0], e.obs_buf)
             actual = e._rewards(torch.zeros(8, dtype=torch.bool)).clone()
-            expected = LeggedRobot._rewards(e, torch.zeros(8, dtype=torch.bool))
+            expected = WheelLegRobot._rewards(e, torch.zeros(8, dtype=torch.bool))
             torch.testing.assert_close(actual, expected, rtol=1e-6, atol=2e-6)
         self.assertEqual(
             e.environment_config,

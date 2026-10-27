@@ -9,13 +9,13 @@ from pathlib import Path
 import sys
 import time
 
-from wheelleg_gym.cli import common_parser, environment_kwargs, validate_common
-from wheelleg_gym.runtime_config import (
+from legged_gym.compat.cli import common_parser, environment_kwargs, validate_common
+from legged_gym.compat.runtime_config import (
     explicit_argument_destinations,
     resolve_runtime_args,
     checkpoint_observation_size,
 )
-from wheelleg_gym.support_metrics import duration_steps
+from legged_gym.envs.wheelleg.diagnostics.support_metrics import duration_steps
 
 
 def main():
@@ -69,13 +69,14 @@ def main():
         parser.error("This task accepts zero velocity commands only")
     import isaacgym  # binary extension before torch
     import torch
-    from wheelleg_gym.wheel_lift import (
+    from legged_gym.envs.wheelleg.control.wheel_lift import (
         AlternatingWheelLift,
         WheelLiftEnv,
         sagittal_wheel_observations,
         WheelLiftKeyboard,
     )
-    from wheelleg_gym.training import make_policy, viewer_is_closed
+    from legged_gym.envs.wheelleg.constants import TRAIN_CONFIG
+    from legged_gym.learning.policy import make_policy, viewer_is_closed
 
     torch.set_num_threads(1)
     checkpoint = torch.load(str(args.checkpoint), map_location="cpu")
@@ -115,9 +116,9 @@ def main():
         for name in (
             "lift.py",
             "lift.sh",
-            "wheelleg_gym/wheel_lift.py",
-            "wheelleg_gym/leg_control.py",
-            "wheelleg_gym/env.py",
+            "legged_gym/envs/wheelleg/control/wheel_lift.py",
+            "legged_gym/envs/wheelleg/control/leg_control.py",
+            "legged_gym/envs/wheelleg/wheelleg_robot.py",
         )
     }
     checkpoint_sha256 = hashlib.sha256(args.checkpoint.read_bytes()).hexdigest()
@@ -154,7 +155,7 @@ def main():
             env.num_obs,
             env.num_actions,
             env.device,
-            checkpoint.get("training_config", {}).get("policy"),
+            checkpoint.get("training_config", {}).get("policy", TRAIN_CONFIG["policy"]),
         )
         policy.load_state_dict(checkpoint["model_state_dict"], strict=True)
         policy.eval()

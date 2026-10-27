@@ -8,7 +8,7 @@ import numpy as np
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from wheelleg_gym.terrain import StairTerrain
+from legged_gym.envs.wheelleg.terrain import StairTerrain
 
 
 class StairTerrainTests(unittest.TestCase):

@@ -10,7 +10,7 @@ from isaacgym import gymapi  # noqa: F401
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from wheelleg_gym.constraints import ClosureForces, quat_rotate, quat_rotate_inverse
+from legged_gym.envs.wheelleg.model.constraints import ClosureForces, quat_rotate, quat_rotate_inverse
 
 
 def metadata(anchor0=(1.0, 0.0, 0.0)):
