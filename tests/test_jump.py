@@ -330,10 +330,18 @@ class JumpTests(unittest.TestCase):
         self.controller.before_step()
         torch.testing.assert_close(self.controller.anchor_xy, anchor, rtol=0, atol=0)
 
+    def test_twenty_cm_standing_target_reaches_controller_and_excess_is_rejected(self):
+        self.controller.before_step([0, 0, 0, 0.20])
+        torch.testing.assert_close(self.env.lift_lengths, torch.full((1, 2), 0.20))
+        self.assertAlmostEqual(float(self.env.commands[0, 3]), 0.20, places=6)
+        for length in (0.201, 0.079, float("nan")):
+            with self.assertRaises(ValueError):
+                self.controller.before_step([0, 0, 0, length])
+
     def test_jump_targets_follow_requested_height_without_exceeding_joint_workspace(
         self,
     ):
-        for nominal in (0.08, 0.10, 0.14):
+        for nominal in (0.08, 0.10, 0.14, 0.18, 0.20):
             with self.subTest(length=nominal):
                 self.setUp()
                 self.env.commands[:, 3] = nominal
@@ -344,7 +352,7 @@ class JumpTests(unittest.TestCase):
                 state = self.controller.states[0]
                 self.assertGreaterEqual(state["crouch_length"], 0.06)
                 self.assertLess(state["crouch_length"], nominal)
-                self.assertGreater(state["extension_length"], nominal)
+                self.assertGreaterEqual(state["extension_length"] + 1e-8, nominal)
                 self.assertLessEqual(state["extension_length"], 0.20)
 
 

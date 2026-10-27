@@ -12,6 +12,8 @@ import time
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
+from legged_gym.envs.wheelleg.constants import MAX_LEG_LENGTH
+
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -27,7 +29,12 @@ def main():
     parser.add_argument("--num-envs", type=int, default=1)
     parser.add_argument("--sim-device", default="cpu")
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--length", type=float, default=0.10)
+    parser.add_argument(
+        "--length",
+        type=float,
+        default=0.10,
+        help="Initial effective leg length in metres (0.08..0.20)",
+    )
     parser.add_argument("--physics-solver", choices=("pgs", "tgs"))
     parser.add_argument("--wheel-friction", type=float)
     parser.add_argument(
@@ -61,8 +68,8 @@ def main():
         parser.error("Keyboard demonstration requires one robot")
     if not args.checkpoint.is_file():
         parser.error("Checkpoint does not exist")
-    if not 0.08 <= args.length <= 0.14:
-        parser.error("Standing leg length must be within 8..14 cm")
+    if not 0.08 <= args.length <= MAX_LEG_LENGTH:
+        parser.error("Standing leg length must be within 8..20 cm")
     if args.wheel_friction is not None and (
         not math.isfinite(args.wheel_friction) or args.wheel_friction < 0
     ):
@@ -116,11 +123,11 @@ def main():
                 speed=0.6,
                 turn_speed=2.0,
                 leg_length=args.length,
-                leg_range=(0.08, 0.14),
+                leg_range=(0.08, MAX_LEG_LENGTH),
             )
             keyboard.bind(env.gym, env.viewer, isaacgym.gymapi)
             print(
-                "点击仿真窗口：空格=起跳，无需等稳；方向键=驾驶；X=停；Q/E=调腿长；R=重置。",
+                "点击仿真窗口：空格=起跳，无需等稳；方向键=驾驶；X=停；Q/E=调腿长（8–20 cm）；R=重置。",
                 flush=True,
             )
             print(
@@ -135,6 +142,7 @@ def main():
         started = time.perf_counter()
         last_finished = -100.0
         last_driving = -100.0
+        displayed_height_cm = round(args.length * 100)
         with torch.inference_mode():
             for step in range(steps):
                 if viewer_is_closed(env):
@@ -162,6 +170,17 @@ def main():
                     # Keep the selected standing height current even during
                     # a jump; the controller defers applying it until touchdown.
                     keyboard.advance_leg_length(env.dt)
+                    height_cm = round(keyboard.leg_length * 100)
+                    if height_cm != displayed_height_cm:
+                        print(
+                            "站立腿长目标：{:.1f} cm；实际左/右：{:.1f}/{:.1f} cm".format(
+                                keyboard.leg_length * 100,
+                                float(env.length_l[0]) * 100,
+                                float(env.length_r[0]) * 100,
+                            ),
+                            flush=True,
+                        )
+                        displayed_height_cm = height_cm
                     user = keyboard.command()
                     jump_key = keyboard.consume_jump()
                 obs = controller.before_step(user)
@@ -231,6 +250,7 @@ def main():
                 if any(abs(v) > 1e-4 for v in user[:3]):
                     last_driving = controller.time
                 row = dict(
+                    measured_leg_length=info["pre_reset_leg_length"].cpu().tolist(),
                     requested_commands=list(user),
                     applied_commands=env.commands.cpu().tolist(),
                     time_s=controller.time,
@@ -322,6 +342,10 @@ def main():
             final_modes=[s["mode"] for s in controller.states],
             final_stable=final_stable,
             final_offset_xy_m=final_offset.cpu().tolist(),
+            final_requested_leg_length_m=controller.requested[:, 3].cpu().tolist(),
+            final_measured_leg_length_m=torch.stack((env.length_l, env.length_r), -1)
+            .cpu()
+            .tolist(),
             standing_metrics=metrics,
             collision_model=args.wheel_collision,
             fixed_base=False,

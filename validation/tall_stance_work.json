@@ -1,0 +1,336 @@
+{
+  "date": "2026-10-27",
+  "problem": "E could extend the legs, but stand.sh and JumpController separately capped the standing target at 14 cm while the shared model software maximum was 20 cm.",
+  "change": {
+    "manual_range_m": [
+      0.08,
+      0.2
+    ],
+    "default_initial_length_m": 0.1,
+    "constant_source": "legged_gym/envs/wheelleg/constants.py:MAX_LEG_LENGTH",
+    "keyboard_leg_speed_m_s": 0.02,
+    "viewer_feedback": "When the selected target changes by approximately 1 cm, print target and measured left/right leg lengths.",
+    "cli": "./stand.sh --length 0.18",
+    "report_fields": [
+      "final_requested_leg_length_m",
+      "final_measured_leg_length_m",
+      "trace[].measured_leg_length"
+    ],
+    "unchanged": "URDF geometry, actual joint limits, +/-9 Nm effort cap, PD/feedforward, standing wheel policy and jump admission behavior."
+  },
+  "standing_protocols": [
+    {
+      "protocol": "initial_16cm",
+      "command": "./stand.sh --headless --length 0.16 --seconds 30",
+      "target_m": 0.16,
+      "status": "passed",
+      "physical_resets": 0,
+      "nonwheel_steps": 0,
+      "final_stable": true,
+      "final_root_z_m": 0.22246460616588593,
+      "joint_torque_peak_nm": 3.030785083770752,
+      "closure_peak_m": 0.0010302284499630332,
+      "standing_metrics": {
+        "samples": 1401,
+        "seconds": 28.02,
+        "wheel_rms_rad_s": 0.01250867173075676,
+        "wheel_peak_rad_s": 0.11301673203706741,
+        "pitch_rms_rad": 0.001495366683229804,
+        "roll_rms_rad": 6.0318475334497634e-06,
+        "xy_span_m": [
+          [
+            0.0009067901410162449,
+            1.7637128166825278e-06
+          ]
+        ]
+      }
+    },
+    {
+      "protocol": "initial_18cm",
+      "command": "./stand.sh --headless --length 0.18 --seconds 30",
+      "target_m": 0.18,
+      "status": "passed",
+      "physical_resets": 0,
+      "nonwheel_steps": 0,
+      "final_stable": true,
+      "final_root_z_m": 0.24248360097408295,
+      "joint_torque_peak_nm": 2.8440537452697754,
+      "closure_peak_m": 0.0009781720582395792,
+      "standing_metrics": {
+        "samples": 1401,
+        "seconds": 28.02,
+        "wheel_rms_rad_s": 0.01656200736761093,
+        "wheel_peak_rad_s": 0.15501956641674042,
+        "pitch_rms_rad": 0.0013115090550854802,
+        "roll_rms_rad": 9.854657946561929e-06,
+        "xy_span_m": [
+          [
+            0.0010682102292776108,
+            1.8662915408640401e-06
+          ]
+        ]
+      }
+    },
+    {
+      "protocol": "initial_20cm",
+      "command": "./stand.sh --headless --length 0.2 --seconds 30",
+      "target_m": 0.2,
+      "status": "passed",
+      "physical_resets": 0,
+      "nonwheel_steps": 0,
+      "final_stable": true,
+      "final_root_z_m": 0.26247963309288025,
+      "joint_torque_peak_nm": 2.6497530937194824,
+      "closure_peak_m": 0.0009691653540357947,
+      "standing_metrics": {
+        "samples": 1401,
+        "seconds": 28.02,
+        "wheel_rms_rad_s": 0.02341122180223465,
+        "wheel_peak_rad_s": 0.21766456961631775,
+        "pitch_rms_rad": 0.0012406159657984972,
+        "roll_rms_rad": 6.80447556078434e-06,
+        "xy_span_m": [
+          [
+            0.001294507528655231,
+            3.781644863920519e-06
+          ]
+        ]
+      }
+    },
+    {
+      "protocol": "drive20cm",
+      "command": "./stand.sh --headless --length .20 --seconds 30 --jump-speed .6",
+      "status": "passed",
+      "physical_resets": 0,
+      "nonwheel_steps": 0,
+      "final_stable": true,
+      "final_measured_leg_length_m": [
+        [
+          0.20018303394317627,
+          0.20018287003040314
+        ]
+      ],
+      "joint_torque_peak_nm": 2.6497530937194824,
+      "closure_peak_m": 0.0009691653540357947,
+      "note": "Standing sample statistics span separate pre-drive and post-drive locations and braking transients; do not interpret their XY span as stationary drift."
+    }
+  ],
+  "keyboard_protocol": {
+    "case": "no_jump",
+    "baseline": false,
+    "inputs": [
+      {
+        "t": 2.0,
+        "events": [
+          [
+            "leg_extend",
+            1
+          ]
+        ]
+      },
+      {
+        "t": 7.1000000000000005,
+        "events": [
+          [
+            "leg_extend",
+            0
+          ]
+        ]
+      }
+    ],
+    "attempts": [],
+    "events": [],
+    "physical_resets": 0,
+    "nonwheel_steps": 0,
+    "closure_peak_m": 0.001231485279276967,
+    "torque_peak_nm": 3.063033103942871,
+    "final_mode": "idle",
+    "last_3s_measured_length_range_m": [
+      0.20018137991428375,
+      0.2001822292804718
+    ],
+    "last_3s_target_range_m": [
+      0.2,
+      0.2
+    ],
+    "final_wheel_rms": 0.0004752565983920829
+  },
+  "high_stance_jump_protocols": [
+    {
+      "protocol": "jump_18cm",
+      "command": "./stand.sh --headless --length 0.18 --seconds 28 --auto-jumps 2",
+      "status": "incomplete_or_needs_improvement",
+      "physical_resets": 0,
+      "final_stable": true,
+      "final_measured_leg_length_m": [
+        [
+          0.18022792041301727,
+          0.18022727966308594
+        ]
+      ],
+      "attempts": [
+        {
+          "env": 0,
+          "start_s": 2.12,
+          "standing_z": 0.2424846887588501,
+          "peak_z": 0.24677813053131104,
+          "peak_clearance_m": 0.00274108350276947,
+          "airborne_run_s": 0.0,
+          "longest_airborne_s": 0.0,
+          "airborne_seen": false,
+          "peak_pitch_rad": 0.05659881979227066,
+          "peak_roll_rad": 4.294951577321626e-05,
+          "nonwheel_contact": false,
+          "peak_xy_displacement_m": 0.038522668182849884,
+          "peak_lateral_displacement_m": 2.5129023924819194e-05,
+          "requested_velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rolling": false,
+          "max_upward_velocity": 0.5207369327545166,
+          "airborne_travel_m": 0.0,
+          "takeoff_velocity_m_s": null,
+          "touchdown_velocity_m_s": null,
+          "touchdown_s": null,
+          "action_complete_s": 3.72,
+          "finish_s": 7.2,
+          "body_rise_m": 0.0042934417724609375,
+          "recovered": true,
+          "failure": null,
+          "success": false
+        },
+        {
+          "env": 0,
+          "start_s": 9.22,
+          "standing_z": 0.24248257279396057,
+          "peak_z": 0.2467748373746872,
+          "peak_clearance_m": 0.002742372453212738,
+          "airborne_run_s": 0.0,
+          "longest_airborne_s": 0.0,
+          "airborne_seen": false,
+          "peak_pitch_rad": 0.05848133936524391,
+          "peak_roll_rad": 4.210059341858141e-05,
+          "nonwheel_contact": false,
+          "peak_xy_displacement_m": 0.04017621651291847,
+          "peak_lateral_displacement_m": 2.922068233601749e-05,
+          "requested_velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rolling": false,
+          "max_upward_velocity": 0.5206934809684753,
+          "airborne_travel_m": 0.0,
+          "takeoff_velocity_m_s": null,
+          "touchdown_velocity_m_s": null,
+          "touchdown_s": null,
+          "action_complete_s": 10.82,
+          "finish_s": 14.32,
+          "body_rise_m": 0.0042922645807266235,
+          "recovered": true,
+          "failure": null,
+          "success": false
+        }
+      ]
+    },
+    {
+      "protocol": "jump_20cm",
+      "command": "./stand.sh --headless --length 0.2 --seconds 28 --auto-jumps 2",
+      "status": "incomplete_or_needs_improvement",
+      "physical_resets": 0,
+      "final_stable": true,
+      "final_measured_leg_length_m": [
+        [
+          0.20018179714679718,
+          0.20018188655376434
+        ]
+      ],
+      "attempts": [
+        {
+          "env": 0,
+          "start_s": 2.16,
+          "standing_z": 0.26248154044151306,
+          "peak_z": 0.2624870240688324,
+          "peak_clearance_m": 8.195638656616211e-08,
+          "airborne_run_s": 0.0,
+          "longest_airborne_s": 0.0,
+          "airborne_seen": false,
+          "peak_pitch_rad": 0.02140321396291256,
+          "peak_roll_rad": 1.616407826077193e-05,
+          "nonwheel_contact": false,
+          "peak_xy_displacement_m": 0.016267605125904083,
+          "peak_lateral_displacement_m": 6.661532097496092e-06,
+          "requested_velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rolling": false,
+          "max_upward_velocity": 0.3339229226112366,
+          "airborne_travel_m": 0.0,
+          "takeoff_velocity_m_s": null,
+          "touchdown_velocity_m_s": null,
+          "touchdown_s": null,
+          "action_complete_s": 3.7600000000000002,
+          "finish_s": 6.6000000000000005,
+          "body_rise_m": 5.4836273193359375e-06,
+          "recovered": true,
+          "failure": null,
+          "success": false
+        },
+        {
+          "env": 0,
+          "start_s": 8.620000000000001,
+          "standing_z": 0.2624801993370056,
+          "peak_z": 0.26248741149902344,
+          "peak_clearance_m": 6.705522537231445e-08,
+          "airborne_run_s": 0.0,
+          "longest_airborne_s": 0.0,
+          "airborne_seen": false,
+          "peak_pitch_rad": 0.023329684510827065,
+          "peak_roll_rad": 2.5044098947546445e-05,
+          "nonwheel_contact": false,
+          "peak_xy_displacement_m": 0.01779755763709545,
+          "peak_lateral_displacement_m": 4.557637112156954e-06,
+          "requested_velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rolling": false,
+          "max_upward_velocity": 0.33391398191452026,
+          "airborne_travel_m": 0.0,
+          "takeoff_velocity_m_s": null,
+          "touchdown_velocity_m_s": null,
+          "touchdown_s": null,
+          "action_complete_s": 10.22,
+          "finish_s": 13.1,
+          "body_rise_m": 7.212162017822266e-06,
+          "recovered": true,
+          "failure": null,
+          "success": false
+        }
+      ]
+    }
+  ],
+  "automated_tests": {
+    "command": "./run.sh -m unittest discover -s tests",
+    "discovered": 275,
+    "passed": 274,
+    "skipped": 1,
+    "clean_staged_export": true
+  },
+  "source_sha256": {
+    "legged_gym/scripts/stand.py": "64e4c874031badc56f53b32fec48ef568b225b0e92d40fe5303bb1fe5b148965",
+    "legged_gym/envs/wheelleg/control/jump.py": "c1a3c3097c00e1d31b33b19fde56ed81ac460941b3897b22f00302cb10ca3ffa",
+    "tests/test_jump.py": "f05f5b4ce94bc6c9a8eb5a4b9bac39ab177a3f0bcbedde47490c31ae54c485d6"
+  },
+  "limitations": [
+    "16/18/20 cm standing and 20 cm straight driving were tested on flat ground for finite durations only.",
+    "18/20 cm jump attempts failed the existing airborne/body-rise quality thresholds; no stability or jump success claims are made for those attempts. They returned to the selected standing height without falling.",
+    "Default remains 10 cm to preserve the previously verified jump behavior at 10..14 cm; taller standing is selected using E or --length.",
+    "Effective fivebar leg length is distinct from base height above the ground."
+  ]
+}

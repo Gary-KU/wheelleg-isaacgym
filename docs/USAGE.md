@@ -18,13 +18,13 @@ cd /home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym
 | X | 清除驾驶按键，减速停车 |
 | ↑ / ↓ | 前进 / 后退，目标 ±0.6 m/s |
 | ← / → | 转向，目标 ±2 rad/s |
-| Q / E | 缩腿 / 伸腿，目标范围 8–14 cm |
+| Q / E | 缩腿 / 伸腿，目标范围 8–20 cm |
 | R | 重置机器人 |
 
 松开方向键后先刹车，再保持停车位置。预蹲和腾空保持起跳时已下发的平滑速度目标，着地后响应最新驾驶/停车指令；Q/E 始终记录腿长选择，着地后立即应用；双轮持续接地约 0.10 秒即可提示动作完成，稳定性验收单独进行。详细控制方法、测量和代码位置见 [站立与跳跃](JUMP.md)。
 
 ```bash
-./stand.sh --length 0.12 --seconds 600
+./stand.sh --length 0.18 --seconds 600  # 直接启动为18 cm较高站姿
 ./stand.sh --headless --seconds 60 --report validation/my_stand.json
 ./stand.sh --headless --auto-jumps 3 --seconds 30 --report validation/my_jump.json
 ./stand.sh --help

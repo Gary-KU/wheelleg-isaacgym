@@ -9,7 +9,7 @@ import math
 import torch
 
 from ..keyboard import KeyboardDrive
-from ..constants import ACTION_SCALES
+from ..constants import ACTION_SCALES, MAX_LEG_LENGTH
 
 
 class JumpKeyboard(KeyboardDrive):
@@ -237,8 +237,8 @@ class JumpController:
                 torch.isfinite(value).all()
             ):
                 raise ValueError("Expected finite [N,4] or [4] user commands")
-            if bool(((value[:, 3] < 0.08) | (value[:, 3] > 0.14)).any()):
-                raise ValueError("Jump demo standing targets must be within 8..14 cm")
+            if bool(((value[:, 3] < 0.08) | (value[:, 3] > MAX_LEG_LENGTH)).any()):
+                raise ValueError("Jump demo standing targets must be within 8..20 cm")
             self.requested.copy_(value)
         m = e.lift_measurements()
         lengths = torch.stack((e.length_l, e.length_r), -1)
