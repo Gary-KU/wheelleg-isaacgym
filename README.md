@@ -17,6 +17,7 @@ conda activate isaacgym
 | 入口 | 用途 |
 | --- | --- |
 | `./stand.sh` | 从 5 cm 低蹲撑到 8 cm，再用键盘驾驶与调腿长 |
+| `./jump.sh` | 安静站立与小跳；空格单跳，X 停止，方向键驾驶，见[跳跃说明](docs/JUMP.md) |
 | `./stairs.sh` | 已复测的 1 cm 四上四下阶梯演示 |
 | `./lift.sh` | 原地交替抬轮；N 请求下一侧，空格切换连续动作；`--auto` 自动演示 |
 | `./train_stairs.sh` | 从精选的 2 cm 课程起点继续 GPU 训练，写入新实验目录 |

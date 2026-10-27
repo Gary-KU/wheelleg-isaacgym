@@ -48,6 +48,7 @@ core.*
 !/validation/wheel_lift_work.json
 !/validation/legged_framework_work.json
 !/validation/readability_cleanup_work.json
+!/validation/jump_work.json
 *.egg-info/
 build/
 dist/

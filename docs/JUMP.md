@@ -1,0 +1,60 @@
+# 空格小跳与安静站立
+
+在 Isaac Gym 的 Python 3.8 环境中运行：
+
+```bash
+conda activate isaacgym
+./jump.sh
+```
+
+点击仿真窗口，等终端提示“已站稳，可以按空格跳跃”。
+
+| 按键 | 动作 |
+| --- | --- |
+| 空格 | 双轮接地、零速并站稳后，跳一次 |
+| ↑ / ↓ | 前进 / 后退，目标速度 ±0.6 m/s，有加减速过程 |
+| ← / → | 转向，目标角速度 ±2 rad/s |
+| X | 清除驾驶按键，减速停车 |
+| Q / E | 缩腿 / 伸腿，站立目标范围 8–14 cm |
+| R | 重置机器人，重新等待站稳 |
+
+空格采用按下沿触发，长按不连跳；动作中按空格会被忽略，落稳后需要重新按。默认先预蹲，再蹬伸、腾空和落地恢复。跳跃期间暂停驾驶和腿长调整；恢复站立后继续响应。原 `stand.sh` 的空格停止、`lift.sh` 的空格连续抬轮保留原义。
+
+默认是小跳，已测轮胎离地约 2.2 cm、连续腾空约 0.12 s，机体最高点比跳前高约 3 cm。落地有短暂俯仰和轮子调整，通常几秒内恢复；并不表示跳跃全程轮子不动。
+
+## 控制方式与代码
+
+| 文件 | 职责 |
+| --- | --- |
+| [jump_config.py](../legged_gym/envs/wheelleg/jump_config.py) | 腿长轨迹、蹬伸力、接触预设、静止位置反馈参数 |
+| [control/jump.py](../legged_gym/envs/wheelleg/control/jump.py) | 空格触发、动作状态机、停车位置保持与腾空轮子反作用力矩 |
+| [scripts/jump.py](../legged_gym/scripts/jump.py) | 加载旧权重、键盘事件、运行与测量报告 |
+| [control/wheel_lift.py](../legged_gym/envs/wheelleg/control/wheel_lift.py) | 复用接触测量、独立左右腿目标和胎面代理环境 |
+
+使用既有 `standing_hold.pt` 的轮子策略；腿部采用显式轨迹、PD 和径向支撑/蹬伸力矩。这次没有训练新 RL 跳跃策略。所有主动关节仍受 ±9 Nm 限制，没有固定机身、额外向上托举或运行中写根状态。原五连杆弹簧阻尼闭合近似保留。
+
+最终单跳复测的主动关节峰值为 9 Nm，闭合点误差峰值约 3.8 mm；跳跃阶段会触及现有力矩上限，也保留有限的闭环变形。
+
+此入口使用 PGS 接触求解、轮子摩擦系数 2，以及原生球形胎面代理。代理匹配原轮胎中央球面带在小横滚角时的滚动表面，保留原视觉网格、质量、质心、惯量和关节；完整侧壁碰撞并不完全相同。它与停车位置反馈共同减少静止找平衡，原资产文件不变。停车反馈输出小幅速度目标，既不锁轮也不锁机体；起步稳定过程仍有约 1 cm 位置偏置。
+
+## 复测与报告
+
+```bash
+# 连续三跳，最后检查是否恢复安静站立
+./jump.sh --headless --auto-jumps 3 --seconds 30 \
+  --report validation/my_jump.json
+
+# 零速站立 60 秒
+./jump.sh --headless --seconds 60 --report validation/my_quiet_stand.json
+
+# 同腿长/权重的旧接触设置参考：网格、TGS、摩擦1、无停车反馈
+./jump.sh --headless --seconds 60 --wheel-collision mesh \
+  --physics-solver tgs --wheel-friction 1 --no-parking \
+  --report validation/my_mesh_reference.json
+```
+
+默认报告为 `validation/jump_latest.json`，加 `--record-trace` 保存逐步轨迹。`--length 0.12` 设置初始站立腿长，跳跃目标会随之调整，并限制在现有软件工作范围内。
+
+报告同时检查双轮离地和失去接触、机体上升、落地恢复、姿态与位移、失败重置。`status=passed` 才表示该次指定协议通过；程序正常退出或仅出现轮胎离地间隙不能单独证明跳跃成功。`standing_metrics` 使用零用户指令、idle 状态、启动和每次完成跳跃两秒后的样本，不按轮速好坏剔除样本。
+
+已完成单机器人连续 10 跳、4 台各 3 跳、8/14 cm 站姿各两跳，以及前进/停车/跳跃/后退/转向的脚本按键序列；详细参数与结果在[验收记录](../validation/jump_work.json)。这些是平地有限复测。其他地形、长期侧漂和实机部署需要各自验证。
