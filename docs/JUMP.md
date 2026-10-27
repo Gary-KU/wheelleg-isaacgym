@@ -4,7 +4,7 @@
 
 ```bash
 conda activate isaacgym
-./jump.sh
+./stand.sh
 ```
 
 点击仿真窗口，等终端提示“已站稳，可以按空格跳跃”。
@@ -18,7 +18,7 @@ conda activate isaacgym
 | Q / E | 缩腿 / 伸腿，站立目标范围 8–14 cm |
 | R | 重置机器人，重新等待站稳 |
 
-空格采用按下沿触发，长按不连跳；动作中按空格会被忽略，落稳后需要重新按。默认先预蹲，再蹬伸、腾空和落地恢复。跳跃期间暂停驾驶和腿长调整；恢复站立后继续响应。原 `stand.sh` 的空格停止、`lift.sh` 的空格连续抬轮保留原义。
+空格采用按下沿触发，长按不连跳；动作中按空格会被忽略，落稳后需要重新按。默认先预蹲，再蹬伸、腾空和落地恢复。跳跃期间暂停驾驶和腿长调整；恢复站立后继续响应。`stand.sh` 统一使用空格跳跃、X 停止；通用 `play.py` 的空格停止和 `lift.sh` 的空格连续抬轮保留各自含义。
 
 默认是小跳，已测轮胎离地约 2.2 cm、连续腾空约 0.12 s，机体最高点比跳前高约 3 cm。落地有短暂俯仰和轮子调整，通常几秒内恢复；并不表示跳跃全程轮子不动。
 
@@ -28,7 +28,7 @@ conda activate isaacgym
 | --- | --- |
 | [jump_config.py](../legged_gym/envs/wheelleg/jump_config.py) | 腿长轨迹、蹬伸力、接触预设、静止位置反馈参数 |
 | [control/jump.py](../legged_gym/envs/wheelleg/control/jump.py) | 空格触发、动作状态机、停车位置保持与腾空轮子反作用力矩 |
-| [scripts/jump.py](../legged_gym/scripts/jump.py) | 加载旧权重、键盘事件、运行与测量报告 |
+| [scripts/stand.py](../legged_gym/scripts/stand.py) | 加载旧权重、键盘事件、运行与测量报告 |
 | [control/wheel_lift.py](../legged_gym/envs/wheelleg/control/wheel_lift.py) | 复用接触测量、独立左右腿目标和胎面代理环境 |
 
 使用既有 `standing_hold.pt` 的轮子策略；腿部采用显式轨迹、PD 和径向支撑/蹬伸力矩。这次没有训练新 RL 跳跃策略。所有主动关节仍受 ±9 Nm 限制，没有固定机身、额外向上托举或运行中写根状态。原五连杆弹簧阻尼闭合近似保留。
@@ -41,19 +41,19 @@ conda activate isaacgym
 
 ```bash
 # 连续三跳，最后检查是否恢复安静站立
-./jump.sh --headless --auto-jumps 3 --seconds 30 \
+./stand.sh --headless --auto-jumps 3 --seconds 30 \
   --report validation/my_jump.json
 
 # 零速站立 60 秒
-./jump.sh --headless --seconds 60 --report validation/my_quiet_stand.json
+./stand.sh --headless --seconds 60 --report validation/my_quiet_stand.json
 
 # 同腿长/权重的旧接触设置参考：网格、TGS、摩擦1、无停车反馈
-./jump.sh --headless --seconds 60 --wheel-collision mesh \
+./stand.sh --headless --seconds 60 --wheel-collision mesh \
   --physics-solver tgs --wheel-friction 1 --no-parking \
   --report validation/my_mesh_reference.json
 ```
 
-默认报告为 `validation/jump_latest.json`，加 `--record-trace` 保存逐步轨迹。`--length 0.12` 设置初始站立腿长，跳跃目标会随之调整，并限制在现有软件工作范围内。
+默认报告为 `validation/stand_latest.json`，加 `--record-trace` 保存逐步轨迹。`--length 0.12` 设置初始站立腿长，跳跃目标会随之调整，并限制在现有软件工作范围内。
 
 报告同时检查双轮离地和失去接触、机体上升、落地恢复、姿态与位移、失败重置。`status=passed` 才表示该次指定协议通过；程序正常退出或仅出现轮胎离地间隙不能单独证明跳跃成功。`standing_metrics` 使用零用户指令、idle 状态、启动和每次完成跳跃两秒后的样本，不按轮速好坏剔除样本。
 

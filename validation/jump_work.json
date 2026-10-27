@@ -1,7 +1,7 @@
 {
   "date": "2026-10-27",
   "task": "Space-triggered small physical jump and quieter idle standing",
-  "entry": "./jump.sh",
+  "entry": "./stand.sh",
   "method": {
     "wheel_policy": "Existing 198-input standing_hold.pt; no model weights changed.",
     "legs": "Symmetric crouch/extension trajectory, hip PD and radial joint-torque feedforward.",
@@ -1462,6 +1462,79 @@
       "checkpoint": "/tmp/wheelleg-jump-staged-_jsibula/logs/standing_support_20261022_093823/input/standing_hold.pt",
       "checkpoint_sha256": "8ddcbbb3db19b3e4523f63c623381fa46867e75088e3b2e0095cf3e9ab077305",
       "keyboard_enabled": false
+    },
+    "unified_stand_entry": {
+      "status": "passed",
+      "scope": "Small flat-ground jumps with existing RL wheels and explicit leg control; no new RL training.",
+      "completed_steps": 500,
+      "environment_seconds": 10.0,
+      "wall_seconds": 7.309011303999796,
+      "num_envs": 1,
+      "finite_outputs": true,
+      "physical_failure_resets": 0,
+      "time_limit_resets": 0,
+      "closure_error_peak_m": 0.0037856961134821177,
+      "active_joint_torque_peak_nm": 9.0,
+      "nonwheel_contact_steps": 0,
+      "manual_resets": 0,
+      "automatic_jumps_per_env": 1,
+      "successful_jumps": 1,
+      "attempts": [
+        {
+          "env": 0,
+          "start_s": 1.68,
+          "standing_z": 0.16218894720077515,
+          "peak_z": 0.19275853037834167,
+          "peak_clearance_m": 0.022241175174713135,
+          "airborne_run_s": 0.0,
+          "longest_airborne_s": 0.12000000000000001,
+          "airborne_seen": true,
+          "peak_pitch_rad": 0.12481024116277695,
+          "peak_roll_rad": 0.00021817606466356665,
+          "nonwheel_contact": false,
+          "peak_xy_displacement_m": 0.04380929470062256,
+          "max_upward_velocity": 0.9039963483810425,
+          "finish_s": 5.88,
+          "body_rise_m": 0.03056958317756653,
+          "recovered": true,
+          "failure": null,
+          "success": true
+        }
+      ],
+      "unfinished_attempts": 0,
+      "final_modes": [
+        "idle"
+      ],
+      "final_stable": true,
+      "final_offset_xy_m": [
+        [
+          0.010159065015614033,
+          -5.9938247432000935e-05
+        ]
+      ],
+      "standing_metrics": {
+        "samples": 106,
+        "seconds": 2.12,
+        "wheel_rms_rad_s": 0.001963838469237089,
+        "wheel_peak_rad_s": 0.004889918956905603,
+        "pitch_rms_rad": 0.0029558490496128798,
+        "roll_rms_rad": 1.3846232832293026e-05,
+        "xy_span_m": [
+          [
+            8.498318493366241e-05,
+            8.742463251110166e-07
+          ]
+        ]
+      },
+      "collision_model": "sphere_tread",
+      "fixed_base": false,
+      "external_body_support": false,
+      "root_state_writes_outside_resets": false,
+      "joint_torque_limit_nm": 9.0,
+      "closure_model": "external_force_compliant_approximation",
+      "checkpoint": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/logs/standing_support_20261022_093823/input/standing_hold.pt",
+      "checkpoint_sha256": "8ddcbbb3db19b3e4523f63c623381fa46867e75088e3b2e0095cf3e9ab077305",
+      "keyboard_enabled": false
     }
   },
   "standing_comparison": {
@@ -1515,11 +1588,11 @@
     "preexisting_local_keyboard_edits_not_used_by_jump_controller": true
   },
   "source_sha256": {
-    "jump.sh": "0f1cca2b8f8a483b409aa3ea8dfc3f3b7640d6f69e7c86a68cf603483986a3cd",
-    "legged_gym/scripts/jump.py": "8f28a941dc668a5bf0323d828e139e86f1994fb3f03cdd47e0d0a826fa88b41c",
     "legged_gym/envs/wheelleg/jump_config.py": "d26eb1b73b4e3c2090b1c1a71dbf8379428b0ad1388e491e2e74c3f431e16b7b",
     "legged_gym/envs/wheelleg/control/jump.py": "a4c5c9a55b6dfa37296b5b9ed133ca690059e3ea2e5c34fac8b9b9ffdbec5b4b",
-    "tests/test_jump.py": "b0e49cb8af79645e9347f7b53fca72a058ac83a5caf747e5312dea8555a7f996"
+    "tests/test_jump.py": "b0e49cb8af79645e9347f7b53fca72a058ac83a5caf747e5312dea8555a7f996",
+    "stand.sh": "ffe602b8e00533c13cf7947fa013f84d1167aec7020a408b78753e78ee89f327",
+    "legged_gym/scripts/stand.py": "2441d50a0efc2748e26944249fa81220dde12b035b6c712ed21fd300cbdc0e6b"
   },
   "limits": [
     "Ideal flat-ground finite simulations, without sensor noise, random pushes or initial-pose perturbations.",
@@ -1533,5 +1606,20 @@
     "shell_syntax": true,
     "git_diff_check": true,
     "new_documentation_links": true
+  },
+  "entry_merge": {
+    "parent_commit": "6fd4d34e880d82c9518c7d6bf3ae9897cc3d4cdc",
+    "single_launch_script": "stand.sh",
+    "standalone_jump_launcher_removed": true,
+    "internal_cli": "legged_gym/scripts/stand.py",
+    "controller_and_physics_unchanged": true,
+    "cli_ast_matches_pre_merge_after_default_report_filename_change": true,
+    "controls": "Space single jump, X stop, arrows drive/steer, Q/E height, R reset",
+    "tests": {
+      "total": 265,
+      "passed": 264,
+      "skipped": 1,
+      "failed": 0
+    }
   }
 }

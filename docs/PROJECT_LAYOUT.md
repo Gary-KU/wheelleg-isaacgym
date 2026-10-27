@@ -6,7 +6,7 @@ Python 源码统一位于 `legged_gym/`。机器人代码按任务集中，共�
 
 ```text
 legged_gym/
-  scripts/                       注册任务 train.py / play.py / list_tasks.py
+  scripts/                       注册任务 train.py / play.py / list_tasks.py；统一演示 stand.py
   envs/
     __init__.py                  显式 register_tasks()，调用各机器人 register()
     base/base_config.py          嵌套配置实例化

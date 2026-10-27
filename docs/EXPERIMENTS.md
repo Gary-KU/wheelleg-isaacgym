@@ -15,7 +15,7 @@
 证据索引见 [stairs_work.json](../validation/stairs_work.json)。
 
 下文保留原平地纯RL实验记录。当前平地站立演示为 `./stand.sh` 的混合控制，
-其结果见 [standing_work.json](../validation/standing_work.json)。
+当前站立/跳跃结果见 [jump_work.json](../validation/jump_work.json)，较早支撑结果见 [standing_work.json](../validation/standing_work.json)。
 
 新增优化实验：`logs/stability_optimization_20261021_215150/`，已从 794 轮起点增加 200 次更新至 994，
 并完成同条件前后复测。前后俯仰与常规跟踪改善，横滚增大、快速切换和低蹲仍未解决；整体质量为 `needs_improvement`。

@@ -310,7 +310,7 @@ def main():
         )
         if args.record_trace:
             report["trace"] = trace
-        target = args.report or ROOT / "validation/jump_latest.json"
+        target = args.report or ROOT / "validation/stand_latest.json"
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n")
         print(

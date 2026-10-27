@@ -12,7 +12,7 @@ cd /home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym
 ./run.sh legged_gym/scripts/play.py --task wheelleg_stand
 ```
 
-播放默认加载仓库精选站立权重，使用 CPU、单机器人，点击仿真窗口后用方向键前后/转向、Q/E 调腿长、空格停下、R 重置。这是普通站立和行驶播放；原地抬轮仍用独立的 `./lift.sh`（N/空格），两套按键不同。
+播放默认加载仓库精选站立权重，使用 CPU、单机器人，点击仿真窗口后用方向键前后/转向、Q/E 调腿长、空格停下、R 重置。这是通用播放入口；统一的安静站立、驾驶与空格跳跃使用 `./stand.sh`（X 停止），详见 [站立与跳跃](JUMP.md)。原地抬轮仍用独立的 `./lift.sh`（N/空格），两套按键不同。
 
 | 阅读顺序 | 文件 | 修改什么 |
 | --- | --- | --- |

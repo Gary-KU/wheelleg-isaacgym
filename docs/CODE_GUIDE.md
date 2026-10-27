@@ -2,6 +2,8 @@
 
 日常从注册任务的训练、播放入口开始。机器人默认值在 [wheelleg_config.py](../legged_gym/envs/wheelleg/wheelleg_config.py)，共用单位和旧入口默认值在 [constants.py](../legged_gym/envs/wheelleg/constants.py)。加载权重时还会恢复它保存的配置，因此复现运行需要同时核对任务、检查点和显式参数。
 
+日常手动演示统一运行 `./stand.sh`：入口为 [scripts/stand.py](../legged_gym/scripts/stand.py)，参数为 [jump_config.py](../legged_gym/envs/wheelleg/jump_config.py)，站立/停车/跳跃状态在 [control/jump.py](../legged_gym/envs/wheelleg/control/jump.py)。空格跳跃，X 停止；详细操作见 [站立与跳跃](JUMP.md)。
+
 ## 阅读路线
 
 | 顺序 | 文件 | 关注什么 |
