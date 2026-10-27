@@ -380,6 +380,9 @@ class OnPolicyRunner:
                         self.env.stair_min_level, self.env.stair_max_level
                     )
                 )
+                # Actors and cached observations were created at the initial
+                # levels. Relocate them before learn() collects its first step.
+                self.env.reset()
         return loaded_dict.get("infos")
 
     def get_inference_policy(self, device=None):

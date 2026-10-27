@@ -31,8 +31,8 @@
   },
   "tests": {
     "working_tree": {
-      "total": 237,
-      "passed": 236,
+      "total": 238,
+      "passed": 237,
       "skipped": 1,
       "failed": 0
     },
@@ -47,11 +47,18 @@
       "existing geometry, constraints, control, PPO and terrain regressions"
     ],
     "staged_snapshot_without_preexisting_edits": {
-      "total": 237,
-      "passed": 236,
+      "total": 238,
+      "passed": 237,
       "skipped": 1,
       "failed": 0,
       "method": "Exported the staged Git tree to a clean temporary directory and ran the complete test suite against only files included in this commit."
+    },
+    "curriculum_resume_regression": {
+      "scenario": "Restore levels [1,2] into two actors initially at level0; check root XY equals restored lane origins, refreshed observations finite, and next physics step has no lane failure or level demotion.",
+      "failed_before_fix": true,
+      "passed_after_fix": true,
+      "maximum_pre_fix_lane_mismatch_m": 3.6,
+      "fix": "Reset actor states/observations after restoring curriculum levels, before collecting rollout."
     }
   },
   "old_policy_validation": {
@@ -328,10 +335,10 @@
     "legged_gym/utils/helpers.py": "765c62f08680d6f9e14f1316f5a74fdcc8266b58f68abdf0c76325eec0d72312",
     "legged_gym/utils/task_registry.py": "9d76a091d7beaab21cd6163058ecb10045e56c8f8d89853b6dbcbde6e732d226",
     "third_party/rsl_rl/runners/__init__.py": "ad0670196b0f6299bceddd5f78d2fa6c10b5e37a35d6ebf099f623b35e42af4b",
-    "third_party/rsl_rl/runners/on_policy_runner.py": "0e0df049217ed1e584094ce91b8f1acd126cd53986b2b1d3ff5fcd62352bc320",
+    "third_party/rsl_rl/runners/on_policy_runner.py": "a7697add18a61e2cd79e65b03cc475c46b57cf58c505aa5b3071c4f0d1bd74aa",
     "third_party/rsl_rl/env/__init__.py": "8434e0a09de407154c6e8ba37518b306ff0c56708238bc1640cc8bff48203c5d",
     "third_party/rsl_rl/env/vec_env.py": "1fd86b7b4fbd4d5262c8bb431a94a3efe339f93ca578c4bca134682123d9e087",
-    "tests/test_legged_framework.py": "c6fcd8b6872c9a23bd1b4e27b1554e137bac95ffc88e6d7c38f925f537058b0b",
+    "tests/test_legged_framework.py": "06dc8ef27b93151ed3b5bb23a8dc985e6e1675211b3714e05a997a96eb2bd2f4",
     "setup.py": "eb5ac889775d863663571006a9c1b2add63b5938ab115e7d1b2b0a27b30a451f"
   },
   "limitations": [

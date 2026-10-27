@@ -157,5 +157,35 @@ class FrameworkPhysicsTests(unittest.TestCase):
             e.max_episode_length = old_limit
 
 
+class CurriculumResumeTests(unittest.TestCase):
+    def test_loaded_levels_relocate_actors_and_observations_before_next_step(self):
+        cfg, train = task_registry.get_cfgs("wheelleg_stairs")
+        cfg.env.num_envs = 2
+        train.policy.actor_hidden_dims = [16, 8]
+        train.policy.critic_hidden_dims = [16, 8]
+        env = WheelLegged(cfg, sim_device="cpu", headless=True)
+        try:
+            runner = OnPolicyRunner(env, class_to_dict(train), None, device="cpu")
+            with tempfile.TemporaryDirectory() as tmp:
+                path = Path(tmp) / "model_0.pt"
+                runner.save(path)
+                state = torch.load(str(path), map_location="cpu")
+                state["terrain_curriculum_state"]["levels"] = [1, 2]
+                torch.save(state, str(path))
+                runner.load(path, load_optimizer=False)
+            torch.testing.assert_close(env.terrain_levels, torch.tensor([1, 2]))
+            expected_xy = env.terrain_origins[
+                env.environment_indices, env.terrain_levels, :2
+            ]
+            torch.testing.assert_close(env.root_states[:, :2], expected_xy)
+            obs, _ = env.get_observations()
+            self.assertTrue(torch.isfinite(obs).all())
+            _, _, _, _, info, _ = env.step(torch.zeros(2, 6))
+            self.assertFalse(info["physical_failures"].any())
+            torch.testing.assert_close(env.terrain_levels, torch.tensor([1, 2]))
+        finally:
+            env.close()
+
+
 if __name__ == "__main__":
     unittest.main()
