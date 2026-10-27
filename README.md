@@ -16,7 +16,7 @@ conda activate isaacgym
 
 | 入口 | 用途 |
 | --- | --- |
-| `./stand.sh` | 安静站立、键盘驾驶与小跳；空格单跳，X 停止，见[站立与跳跃](docs/JUMP.md) |
+| `./stand.sh` | 安静站立、键盘驾驶与行驶跳跃；空格单跳，X 停止，见[站立与跳跃](docs/JUMP.md) |
 | `./stairs.sh` | 已复测的 1 cm 四上四下阶梯演示 |
 | `./lift.sh` | 原地交替抬轮；N 请求下一侧，空格切换连续动作；`--auto` 自动演示 |
 | `./train_stairs.sh` | 从精选的 2 cm 课程起点继续 GPU 训练，写入新实验目录 |
@@ -42,7 +42,7 @@ Python 源码统一放在 `legged_gym/`：`envs/wheelleg/` 负责当前机器人
 
 ## 已验证范围
 
-- `stand.sh` 统一安静站立、驾驶与小跳；有限平地复测已降低静止轮速，长期慢漂仍需验证，见[运行与复测](docs/USAGE.md)。
+- `stand.sh` 统一安静站立、驾驶与行驶跳跃；有限平地复测已降低静止轮速，长期慢漂仍需验证，见[运行与复测](docs/USAGE.md)。
 - 精选阶梯策略通过了 1 cm 课程的有限复测；2 cm 及更高阶梯尚未通过验收，见[阶梯训练与报告](docs/STAIRS.md)。
 - 抬轮采用现有轮子策略与显式腿部控制，依赖专用胎面代理和输入适配，尚未向前迈步，见[抬轮说明](docs/WHEEL_LIFT.md)。
 - 五连杆采用弹簧阻尼外力近似闭合，具有有限刚度与闭合误差，见[资产说明](assets/wheelleg/README.md)和[SCUT 闭链核对](docs/SCUT_CLOSED_CHAIN.md)。

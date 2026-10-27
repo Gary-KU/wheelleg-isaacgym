@@ -52,3 +52,5 @@ core.*
 *.egg-info/
 build/
 dist/
+
+!/validation/moving_jump_work.json

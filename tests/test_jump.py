@@ -19,8 +19,8 @@ class FakeEnv:
         self.commands = torch.tensor([[0.0, 0.0, 0.0, 0.1]])
         self.root_states = torch.zeros(1, 13)
         self.root_states[:, 2] = 0.162
-        self.pitch = self.roll = self.yaw = torch.zeros(1)
-        self.ang_vel = self.lin_vel = torch.zeros(1, 3)
+        self.pitch, self.roll, self.yaw = [torch.zeros(1) for _ in range(3)]
+        self.ang_vel, self.lin_vel = [torch.zeros(1, 3) for _ in range(2)]
         self.length_l = self.length_r = torch.tensor([0.1])
         self.dof_state = torch.zeros(1, 10, 2)
         self.action_indices = torch.tensor([0, 3, 6, 9, 2, 7])
@@ -71,15 +71,75 @@ class JumpTests(unittest.TestCase):
         self.assertEqual(JumpKeyboard.KEYS["drive_stop"], "KEY_X")
         self.assertEqual(KeyboardDrive.KEYS["drive_stop"], "KEY_SPACE")
 
-    def test_jump_requires_stable_contact_and_stationary_user_commands(self):
+    def test_jump_requires_stable_contact_and_rejects_acceleration(self):
         self.assertFalse(self.controller.request_jump())
         self.ready()
         self.controller.before_step([0.2, 0, 0, 0.1])
         self.assertFalse(self.controller.request_jump())
         self.controller.before_step([0, 0, 0, 0.1])
+        self.ready()
         self.assertTrue(self.controller.request_jump())
         self.assertFalse(self.controller.request_jump())
         self.assertEqual(self.controller.states[0]["mode"], "crouch")
+
+    def test_steady_forward_and_backward_roll_can_jump_without_braking(self):
+        for speed in (-0.6, 0.6):
+            with self.subTest(speed=speed):
+                self.setUp()
+                self.env.lin_vel[0, 0] = speed
+                self.env.root_states[0, 7] = speed
+                self.env.dof_state[0, self.env.action_indices[4:], 1] = (
+                    torch.tensor([-speed, speed]) / 0.0625
+                )
+                self.controller.before_step([speed, 0, 0, 0.1])
+                for _ in range(110):
+                    self.tick()
+                self.assertTrue(self.controller.request_jump())
+                for mode in ("crouch", "push", "flight", "land"):
+                    self.controller.states[0]["mode"] = mode
+                    self.controller.before_step()
+                    self.assertAlmostEqual(
+                        float(self.env.commands[0, 0]), speed, places=6
+                    )
+                self.env.root_states[0, 0] += speed * 2
+                self.controller.after_step(self.env.info(), torch.tensor([False]))
+                attempt = self.controller.states[0]["attempt"]
+                self.assertGreater(attempt["peak_xy_displacement_m"], 1.0)
+                self.assertAlmostEqual(attempt["peak_lateral_displacement_m"], 0.0)
+                # Intended travel is not stationary drift; acceptance still
+                # requires real body rise, flight and landing recovery.
+                attempt.update(
+                    peak_z=0.22, longest_airborne_s=0.16, max_upward_velocity=1.0
+                )
+                self.controller._finish(0)
+                self.assertTrue(self.controller.attempts[0]["success"])
+
+    def test_airborne_key_release_is_applied_at_touchdown_without_teleporting(self):
+        speed = 0.6
+        self.env.lin_vel[0, 0] = speed
+        self.env.root_states[0, 7] = speed
+        self.controller.before_step([speed, 0, 0, 0.1])
+        for _ in range(110):
+            self.tick()
+        self.assertTrue(self.controller.request_jump())
+        self.controller.states[0]["mode"] = "flight"
+        root = self.env.root_states.clone()
+        self.controller.before_step([0, 0, 0, 0.1])
+        self.assertAlmostEqual(float(self.env.commands[0, 0]), speed, places=6)
+        torch.testing.assert_close(self.env.root_states, root, rtol=0, atol=0)
+        self.controller.states[0]["mode"] = "land"
+        self.controller.before_step()
+        self.assertLess(float(self.env.commands[0, 0]), speed)
+        self.assertGreater(float(self.env.commands[0, 0]), 0.0)
+
+    def test_turns_and_lateral_slip_do_not_arm_jump(self):
+        self.ready()
+        self.controller.before_step([0, 0, 2.0, 0.1])
+        self.assertFalse(self.controller.request_jump())
+        self.env.lin_vel[0] = torch.tensor([0.6, 0.1, 0.0])
+        self.controller.before_step([0.6, 0, 0, 0.1])
+        self.ready()
+        self.assertFalse(self.controller.request_jump())
 
     def test_push_duration_then_flight_has_no_support_force(self):
         self.ready()
@@ -90,7 +150,10 @@ class JumpTests(unittest.TestCase):
             forces.append(float(self.env.lift_forces[0, 0]))
             if self.controller.states[0]["mode"] == "flight":
                 break
-        self.assertEqual(forces.count(45.0), 5)
+        self.assertEqual(
+            forces.count(self.controller.jump.push_force),
+            round(self.controller.jump.push_seconds / self.env.dt),
+        )
         self.assertEqual(forces[-1], 0.0)
         self.assertGreaterEqual(float(self.env.lift_lengths.min()), 0.06)
         self.assertLessEqual(float(self.env.lift_lengths.max()), 0.20)
@@ -139,7 +202,10 @@ class JumpTests(unittest.TestCase):
         policy = SimpleNamespace(act_inference=lambda obs: torch.full((1, 6), 100.0))
         actions = self.controller.policy_actions(policy, torch.zeros(1, 198))
         torch.testing.assert_close(actions[:, :4], torch.zeros(1, 4))
-        self.assertLessEqual(float(actions[:, 4:].abs().max()) * 10, 0.250001)
+        self.assertLessEqual(
+            float(actions[:, 4:].abs().max()) * 10,
+            self.controller.jump.air_wheel_torque_limit + 1e-6,
+        )
 
     def test_parking_is_bounded_velocity_feedback_without_root_state_writes(self):
         self.env.root_states[0, 0] = 1.0

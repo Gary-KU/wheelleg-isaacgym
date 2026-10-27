@@ -1,4 +1,4 @@
-"""Contact-gated small jumps; all motion comes from capped joint torques.
+"""Contact-gated standing and rolling jumps; all motion comes from capped joint torques.
 
 The wheel actor is an existing standing policy. Jumping is a leg trajectory,
 not a newly trained jumping policy. No root states are changed by this module.
@@ -40,7 +40,7 @@ class JumpKeyboard(KeyboardDrive):
 class JumpController:
     """Idle -> crouch -> hold -> push -> flight -> land -> recovered idle.
 
-    Repeated presses are ignored while moving, airborne or recovering. Both
+    Repeated presses are ignored while airborne or recovering. Both
     clearance and contact loss are required to count a real airborne interval.
     """
 
@@ -87,12 +87,12 @@ class JumpController:
         if any(
             s["mode"] != "idle" or s["stable"] + 1e-9 < self.jump.stable_seconds
             for s in self.states
-        ) or bool((self.requested[:, :3].abs() > 1e-4).any()):
+        ):
             self.events.append(
                 dict(
                     event="jump_ignored",
                     time_s=self.time,
-                    reason="Stand still and wait for stable contact; requests are not queued.",
+                    reason="Wait for stable contact and steady straight driving; requests are not queued.",
                 )
             )
             return False
@@ -104,6 +104,10 @@ class JumpController:
                 start=self.time,
                 stable=0.0,
                 length=nominal,
+                rolling=bool(self.requested[i, :3].abs().max() > 1e-4),
+                origin_xy=self.env.root_states[i, :2].clone(),
+                origin_yaw=float(self.env.yaw[i]),
+                launch_command=self.requested[i, :3].clone(),
                 crouch_length=max(0.06, self.jump.crouch_length + offset),
                 extension_length=min(0.20, self.jump.extension_length + offset),
             )
@@ -120,7 +124,13 @@ class JumpController:
                 peak_roll_rad=0.0,
                 nonwheel_contact=False,
                 peak_xy_displacement_m=0.0,
+                peak_lateral_displacement_m=0.0,
+                requested_velocity=self.requested[i, :3].tolist(),
+                rolling=state["rolling"],
                 max_upward_velocity=0.0,
+                airborne_travel_m=0.0,
+                takeoff_velocity_m_s=None,
+                touchdown_velocity_m_s=None,
             )
         self.events.append(dict(event="jump_started", time_s=self.time))
         return True
@@ -131,21 +141,38 @@ class JumpController:
         for i, state in enumerate(self.states):
             if state["attempt"] is not None:
                 desired[i] = state["length"]
-        return (
-            (e.pitch.abs() < 0.03)
-            & (e.roll.abs() < 0.025)
-            & (e.ang_vel[:, :2].abs().max(-1).values < 0.20)
-            & (e.ang_vel[:, 2].abs() < 0.10)
-            & (torch.linalg.vector_norm(e.root_states[:, 7:9], dim=-1) < 0.025)
+        moving = self.requested[:, :3].abs().max(-1).values > 1e-4
+        stationary = (
+            (torch.linalg.vector_norm(e.root_states[:, 7:9], dim=-1) < 0.025)
             & (e.lin_vel[:, 1].abs() < 0.002)
             & (
                 torch.linalg.vector_norm(e.root_states[:, :2] - self.anchor_xy, dim=-1)
                 < 0.03
             )
+            & (e.dof_state[:, e.action_indices[4:], 1].abs().max(-1).values < 0.35)
+        )
+        # Ground-trained balance can support a steady roll. Do not launch
+        # during acceleration, sharp turns or appreciable lateral slip.
+        rolling = (
+            ((e.lin_vel[:, 0] - self.requested[:, 0]).abs() < 0.08)
+            & (e.lin_vel[:, 1].abs() < 0.025)
+            & (self.requested[:, 0].abs() <= 0.60001)
+            & (self.requested[:, 1].abs() < 1e-4)
+            & (self.requested[:, 2].abs() < 1e-4)
+            & (
+                (self.command_velocity - self.requested[:, :3]).abs().max(-1).values
+                < 0.03
+            )
+        )
+        return (
+            (e.pitch.abs() < torch.where(moving, 0.06, 0.03))
+            & (e.roll.abs() < 0.025)
+            & (e.ang_vel[:, :2].abs().max(-1).values < 0.20)
+            & (e.ang_vel[:, 2].abs() < 0.10)
+            & torch.where(moving, rolling, stationary)
             & ((lengths - desired).abs().max(-1).values < 0.005)
             & (normal > 5.0).all(-1)
             & ~nonwheel
-            & (e.dof_state[:, e.action_indices[4:], 1].abs().max(-1).values < 0.35)
         )
 
     def _finish(self, i, failure=None):
@@ -166,7 +193,12 @@ class JumpController:
                 >= self.jump.minimum_airborne_seconds
                 and attempt["body_rise_m"] >= self.jump.minimum_body_rise
                 and attempt["max_upward_velocity"] > 0.15
-                and attempt["peak_xy_displacement_m"] <= 0.06
+                and (
+                    attempt["peak_lateral_displacement_m"]
+                    if attempt["rolling"]
+                    else attempt["peak_xy_displacement_m"]
+                )
+                <= 0.06
                 and attempt["peak_pitch_rad"] < 0.20
                 and attempt["peak_roll_rad"] < 0.10
             )
@@ -197,13 +229,11 @@ class JumpController:
         stable = self._stable(lengths, m["wheel_normal_force_n"], m["nonwheel_contact"])
         targets = self.requested[:, 3:4].expand(-1, 2).clone()
         forces = torch.full_like(targets, e.leg_feedforward_force)
-        active = torch.zeros(e.num_envs, dtype=torch.bool, device=e.device)
         for i, state in enumerate(self.states):
             mode = state["mode"]
             if mode == "idle":
                 state["stable"] = state["stable"] + e.dt if bool(stable[i]) else 0.0
                 continue
-            active[i] = True
             if mode == "blocked":
                 continue
             age = self.time - state["start"]
@@ -249,15 +279,19 @@ class JumpController:
                 elif age > j.recovery_timeout:
                     self._finish(i, "landing_recovery_timeout")
         # Position keeping changes velocity targets, never body states.
-        moving = (self.requested[:, :3].abs().max(-1).values > 1e-4) & ~active
+        moving = self.requested[:, :3].abs().max(-1).values > 1e-4
         # A released key initiates a real braking interval. Hold the resulting
         # stopping position rather than pulling back to the key-release point.
         self.braking |= self.was_driving & ~moving
         still_moving = (
             torch.linalg.vector_norm(e.root_states[:, 7:9], dim=-1) > 0.03
         ) | (self.command_velocity.abs().max(-1).values > 0.03)
-        self.braking &= still_moving & ~active
-        follow = moving | self.braking
+        self.braking &= still_moving
+        rolling_attempt = torch.tensor(
+            [s.get("rolling", False) and s["attempt"] is not None for s in self.states],
+            device=e.device,
+        )
+        follow = moving | self.braking | rolling_attempt
         self.anchor_xy[follow] = e.root_states[follow, :2]
         self.was_driving.copy_(moving)
         delta = e.root_states[:, :2] - self.anchor_xy
@@ -272,6 +306,16 @@ class JumpController:
         goal = self.requested[:, :3].clone()
         goal[~moving] = 0.0
         goal[~moving, 0] = self.parking_velocity[~moving]
+        # The launch lasts less than a second. Keep its velocity target
+        # continuous if a key changes mid-crouch or in flight; apply the newest
+        # driving/stop request as soon as a wheel touches down.
+        for i, state in enumerate(self.states):
+            if state["attempt"] is not None:
+                state["attempt"]["rolling"] |= bool(
+                    self.requested[i, :3].abs().max() > 1e-4
+                )
+                if state["mode"] in ("crouch", "hold", "push", "flight"):
+                    goal[i] = state["launch_command"]
         limit = (
             goal.new_tensor(
                 [p.linear_acceleration, p.linear_acceleration, p.yaw_acceleration]
@@ -292,7 +336,7 @@ class JumpController:
     def policy_actions(self, policy, observations):
         actions = policy.act_inference(observations).clone()
         actions[:, :4] = 0.0
-        # Small reaction torques control pitch in flight; do not run a
+        # Bounded wheel reaction torques control pitch in flight; do not run a
         # ground-trained wheel policy against freely spinning airborne wheels.
         for i, state in enumerate(self.states):
             if state["mode"] == "flight":
@@ -326,6 +370,13 @@ class JumpController:
                 attempt["longest_airborne_s"] = max(
                     attempt["longest_airborne_s"], attempt["airborne_run_s"]
                 )
+                if air:
+                    if not attempt["airborne_seen"]:
+                        attempt["takeoff_velocity_m_s"] = root[7:10].tolist()
+                    # Integrate only measured simultaneous contact-free flight.
+                    attempt["airborne_travel_m"] += (
+                        float(torch.linalg.vector_norm(root[7:9])) * e.dt
+                    )
                 attempt["airborne_seen"] |= air
                 attempt["peak_z"] = max(attempt["peak_z"], float(root[2]))
                 attempt["peak_clearance_m"] = max(attempt["peak_clearance_m"], gap)
@@ -341,7 +392,14 @@ class JumpController:
                 attempt["nonwheel_contact"] |= bool(info["lift_nonwheel_contact"][i])
                 attempt["peak_xy_displacement_m"] = max(
                     attempt["peak_xy_displacement_m"],
-                    float(torch.linalg.vector_norm(root[:2] - self.anchor_xy[i])),
+                    float(torch.linalg.vector_norm(root[:2] - state["origin_xy"])),
+                )
+                delta = root[:2] - state["origin_xy"]
+                lateral = -delta[0] * math.sin(state["origin_yaw"]) + delta[
+                    1
+                ] * math.cos(state["origin_yaw"])
+                attempt["peak_lateral_displacement_m"] = max(
+                    attempt["peak_lateral_displacement_m"], abs(float(lateral))
                 )
                 contact = bool((info["lift_wheel_contact_norm_n"][i] > 5.0).any())
                 if (
@@ -349,6 +407,7 @@ class JumpController:
                     and attempt["airborne_seen"]
                     and contact
                 ):
+                    attempt["touchdown_velocity_m_s"] = root[7:10].tolist()
                     state.update(mode="land", start=self.time, stable=0.0)
                     self.events.append(dict(event="touchdown", env=i, time_s=self.time))
             if bool(dones[i]):

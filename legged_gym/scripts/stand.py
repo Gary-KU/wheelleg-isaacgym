@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Space: one small jump after standing; X: stop; arrows: drive; R: reset."""
+"""Space: jump from a stable stand or straight roll; X: stop; arrows: drive; R: reset."""
 
 import argparse
 import hashlib
@@ -17,6 +17,12 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--headless", action="store_true")
     parser.add_argument("--auto-jumps", type=int, default=0)
+    parser.add_argument(
+        "--jump-speed",
+        type=float,
+        default=0.0,
+        help="Headless validation: steady straight speed (m/s); stop for the final 8 s",
+    )
     parser.add_argument("--seconds", type=float, default=300.0)
     parser.add_argument("--num-envs", type=int, default=1)
     parser.add_argument("--sim-device", default="cpu")
@@ -47,6 +53,10 @@ def main():
         or not 0 <= args.seed < 2**32
     ):
         parser.error("Use positive finite duration/counts and a valid seed")
+    if not math.isfinite(args.jump_speed) or abs(args.jump_speed) > 0.6:
+        parser.error("Jump validation speed must be within -0.6..0.6 m/s")
+    if args.jump_speed and (not args.headless or args.seconds < 16):
+        parser.error("--jump-speed requires --headless and at least 16 seconds")
     if not args.headless and args.num_envs != 1:
         parser.error("Keyboard demonstration requires one robot")
     if not args.checkpoint.is_file():
@@ -110,11 +120,11 @@ def main():
             )
             keyboard.bind(env.gym, env.viewer, isaacgym.gymapi)
             print(
-                "点击仿真窗口：空格=站稳后跳一次；方向键=驾驶；X=停；Q/E=调腿长；R=重置。",
+                "点击仿真窗口：空格=站稳或匀速直行时跳一次；方向键=驾驶；X=停；Q/E=调腿长；R=重置。",
                 flush=True,
             )
             print(
-                "先松开方向键并站稳；跳跃中按空格不会排队。旧站立权重+显式跳跃控制，没有新训练。",
+                "先站稳或匀速直行；急加速、转向和恢复期间不接受起跳，空格不会排队。旧站立权重+显式跳跃控制，没有新训练。",
                 flush=True,
             )
         failures = timeouts = manual_resets = event_cursor = completed = 0
@@ -124,12 +134,18 @@ def main():
         finite = True
         started = time.perf_counter()
         last_finished = -100.0
+        last_driving = -100.0
         was_ready = False
         with torch.inference_mode():
             for step in range(steps):
                 if viewer_is_closed(env):
                     break
-                user = [0.0, 0.0, 0.0, args.length]
+                speed = (
+                    args.jump_speed
+                    if 2.0 <= controller.time < args.seconds - 8.0
+                    else 0.0
+                )
+                user = [speed, 0.0, 0.0, args.length]
                 jump_key = False
                 if keyboard is not None:
                     if keyboard.process_events(
@@ -154,14 +170,16 @@ def main():
                     s["mode"] == "idle" and s["stable"] >= cfg.jump.stable_seconds
                     for s in controller.states
                 )
-                ready = ready and not any(abs(v) > 1e-4 for v in user[:3])
                 if keyboard is not None and ready and not was_ready:
-                    print("已站稳，可以按空格跳跃。", flush=True)
+                    print("姿态和接触已稳定，可以按空格跳跃。", flush=True)
                 was_ready = ready
                 auto = (
                     finished_count < args.auto_jumps
                     and ready
                     and controller.time - last_finished >= 2.0
+                    and (
+                        not args.jump_speed or (controller.time >= 4.0 and speed != 0.0)
+                    )
                 )
                 if jump_key or auto:
                     controller.request_jump()
@@ -193,7 +211,7 @@ def main():
                         messages = {
                             "jump_started": "预蹲、起跳。",
                             "touchdown": "已落地，正在恢复站立。",
-                            "jump_ignored": "请先松开方向键并站稳；动作中不排队。",
+                            "jump_ignored": "请先站稳或保持匀速直行；急加速、转向和恢复期间不接受起跳。",
                             "flight_timeout": "未检测到完整落地，正在返回支撑姿态。",
                         }
                         if event["event"] == "jump_finished":
@@ -208,7 +226,11 @@ def main():
                     if event["event"] == "jump_finished":
                         last_finished = controller.time
                 event_cursor = len(controller.events)
+                if any(abs(v) > 1e-4 for v in user[:3]):
+                    last_driving = controller.time
                 row = dict(
+                    requested_commands=list(user),
+                    applied_commands=env.commands.cpu().tolist(),
                     time_s=controller.time,
                     modes=[s["mode"] for s in controller.states],
                     root=info["pre_reset_root_states"][:, :3].cpu().tolist(),
@@ -231,6 +253,7 @@ def main():
                 if (
                     controller.time >= 2.0
                     and controller.time - last_finished >= 2.0
+                    and controller.time - last_driving >= 2.0
                     and all(s["mode"] == "idle" for s in controller.states)
                     and not any(abs(v) > 1e-4 for v in user[:3])
                 ):
@@ -275,7 +298,7 @@ def main():
         )
         report = dict(
             status="passed" if passed else "incomplete_or_needs_improvement",
-            scope="Small flat-ground jumps with existing RL wheels and explicit leg control; no new RL training.",
+            scope="Standing and straight rolling flat-ground jumps with existing RL wheels and explicit leg control; no new RL training.",
             completed_steps=completed,
             environment_seconds=completed * env.dt,
             wall_seconds=time.perf_counter() - started,
@@ -288,6 +311,7 @@ def main():
             nonwheel_contact_steps=nonwheel_contact_steps,
             manual_resets=manual_resets,
             automatic_jumps_per_env=args.auto_jumps,
+            validation_speed_m_s=args.jump_speed,
             successful_jumps=successful,
             attempts=controller.attempts,
             unfinished_attempts=sum(

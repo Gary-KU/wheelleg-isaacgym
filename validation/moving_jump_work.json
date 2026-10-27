@@ -1,0 +1,1766 @@
+{
+  "date": "2026-10-27",
+  "scope": "Flat ground, existing standing policy plus torque-driven leg trajectory; no new RL training. Continuous forward/backward rolling jumps and higher default jump.",
+  "acceptance": {
+    "unchanged_joint_limit_nm": 9,
+    "unchanged_jump_peak_pitch_rad": 0.2,
+    "unchanged_jump_peak_roll_rad": 0.1,
+    "stationary_max_xy_displacement_m": 0.06,
+    "rolling_max_lateral_displacement_m": 0.06,
+    "rolling_recovery": "1.2 continuous seconds with both normal forces >5 N, posture/rate/length limits, forward speed error <0.08 m/s and lateral speed <0.025 m/s; no zero wheel speed requirement while driving",
+    "final_report": "Also requires quiet final stand, no physical/time resets or nonwheel contact, finite signals, all requested jumps complete and successful"
+  },
+  "changes": {
+    "extension_m": 0.19,
+    "radial_push_n_per_leg": 65,
+    "push_seconds": 0.1,
+    "air_pitch_kp": 20,
+    "air_pitch_kd": 2,
+    "air_differential_wheel_torque_limit_nm": 3,
+    "velocity_during_launch": "Captured at space press, preserved through crouch/hold/push/flight; latest user target resumes at contact",
+    "parking": "Original bounded target feedback preserved when stopped; moving launch never pulls back to takeoff point"
+  },
+  "standing_sample_protocol": "Zero user velocity, idle, at least 2 s after startup, jump completion and last nonzero user velocity. No samples excluded based on motion quality. Moving stop samples still include settling; final 3 s is reported separately.",
+  "source_sha256": {
+    "legged_gym/envs/wheelleg/control/jump.py": "4e0b90b8abe657bff89fc998742a357eeee74887f88d6f5e7d853353223d8c35",
+    "legged_gym/envs/wheelleg/jump_config.py": "71b0aab85d9cf76b2338488f6b82cc435fe956e12f5b767c109b97cafb3607a3",
+    "legged_gym/scripts/stand.py": "8d0c4e09895a84b44cec31f78043ec15e9ebf0bf0779f4a85df711ae2c48ecb7",
+    "tests/test_jump.py": "84d61109863cb138ceba46f10a314b5d5b1f4c5973569231f1fbe72897be5d26"
+  },
+  "shared_physics": {
+    "path": "legged_gym/envs/wheelleg/control/wheel_lift.py",
+    "WheelLiftEnv_AST_matches_HEAD": true,
+    "ast_sha256": "41d16b698cb312409f05151dac1e860ffcab8e2a072cad19779ea0bcc33d04ff",
+    "note": "Unrelated pre-existing WheelLiftKeyboard/test changes remain local and are not part of this change; new stand uses JumpKeyboard."
+  },
+  "protocols": [
+    {
+      "protocol": "stand",
+      "command": "./stand.sh --headless --auto-jumps 4 --seconds 38 --report validation/moving_jump_stand.json",
+      "status": "passed",
+      "scope": "Standing and straight rolling flat-ground jumps with existing RL wheels and explicit leg control; no new RL training.",
+      "completed_steps": 1900,
+      "environment_seconds": 38.0,
+      "num_envs": 1,
+      "finite_outputs": true,
+      "physical_failure_resets": 0,
+      "time_limit_resets": 0,
+      "closure_error_peak_m": 0.00508411880582571,
+      "active_joint_torque_peak_nm": 9.0,
+      "nonwheel_contact_steps": 0,
+      "manual_resets": 0,
+      "automatic_jumps_per_env": 4,
+      "validation_speed_m_s": 0.0,
+      "successful_jumps": 4,
+      "attempts": [
+        {
+          "env": 0,
+          "start_s": 1.68,
+          "standing_z": 0.16218894720077515,
+          "peak_z": 0.22395636141300201,
+          "peak_clearance_m": 0.048538871109485626,
+          "airborne_run_s": 0.0,
+          "longest_airborne_s": 0.18,
+          "airborne_seen": true,
+          "peak_pitch_rad": 0.160125270485878,
+          "peak_roll_rad": 0.0003469250223133713,
+          "nonwheel_contact": false,
+          "peak_xy_displacement_m": 0.018471352756023407,
+          "peak_lateral_displacement_m": 0.0001427964452886954,
+          "requested_velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rolling": false,
+          "max_upward_velocity": 1.2288315296173096,
+          "airborne_travel_m": 0.0023490379750728606,
+          "takeoff_velocity_m_s": [
+            0.005629913415759802,
+            -0.00015550132957287133,
+            0.5509142279624939
+          ],
+          "touchdown_velocity_m_s": [
+            0.10208602994680405,
+            -0.0026234257966279984,
+            -0.01804552786052227
+          ],
+          "finish_s": 5.64,
+          "body_rise_m": 0.06176741421222687,
+          "recovered": true,
+          "failure": null,
+          "success": true
+        },
+        {
+          "env": 0,
+          "start_s": 7.66,
+          "standing_z": 0.16218900680541992,
+          "peak_z": 0.2239561527967453,
+          "peak_clearance_m": 0.0485374853014946,
+          "airborne_run_s": 0.0,
+          "longest_airborne_s": 0.18,
+          "airborne_seen": true,
+          "peak_pitch_rad": 0.16001810133457184,
+          "peak_roll_rad": 0.0003888603823725134,
+          "nonwheel_contact": false,
+          "peak_xy_displacement_m": 0.017796920612454414,
+          "peak_lateral_displacement_m": 0.00015402788994833827,
+          "requested_velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rolling": false,
+          "max_upward_velocity": 1.2288415431976318,
+          "airborne_travel_m": 0.002274197125807405,
+          "takeoff_velocity_m_s": [
+            0.006166281644254923,
+            -0.0001403879141435027,
+            0.5509226322174072
+          ],
+          "touchdown_velocity_m_s": [
+            0.10254381597042084,
+            -0.002931201132014394,
+            -0.01809498853981495
+          ],
+          "finish_s": 11.620000000000001,
+          "body_rise_m": 0.06176714599132538,
+          "recovered": true,
+          "failure": null,
+          "success": true
+        },
+        {
+          "env": 0,
+          "start_s": 13.64,
+          "standing_z": 0.1621890366077423,
+          "peak_z": 0.223955437541008,
+          "peak_clearance_m": 0.04853912442922592,
+          "airborne_run_s": 0.0,
+          "longest_airborne_s": 0.18,
+          "airborne_seen": true,
+          "peak_pitch_rad": 0.1600094735622406,
+          "peak_roll_rad": 0.00032687964267097414,
+          "nonwheel_contact": false,
+          "peak_xy_displacement_m": 0.017807619646191597,
+          "peak_lateral_displacement_m": 0.0001386381482006982,
+          "requested_velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rolling": false,
+          "max_upward_velocity": 1.2288283109664917,
+          "airborne_travel_m": 0.0022730647865682845,
+          "takeoff_velocity_m_s": [
+            0.006174086127430201,
+            -0.00018645722593646497,
+            0.5509120225906372
+          ],
+          "touchdown_velocity_m_s": [
+            0.10254517942667007,
+            -0.002480852883309126,
+            -0.017941810190677643
+          ],
+          "finish_s": 17.6,
+          "body_rise_m": 0.061766400933265686,
+          "recovered": true,
+          "failure": null,
+          "success": true
+        },
+        {
+          "env": 0,
+          "start_s": 19.62,
+          "standing_z": 0.16218891739845276,
+          "peak_z": 0.22395561635494232,
+          "peak_clearance_m": 0.04853998124599457,
+          "airborne_run_s": 0.0,
+          "longest_airborne_s": 0.18,
+          "airborne_seen": true,
+          "peak_pitch_rad": 0.16000451147556305,
+          "peak_roll_rad": 0.00031956101884134114,
+          "nonwheel_contact": false,
+          "peak_xy_displacement_m": 0.017802372574806213,
+          "peak_lateral_displacement_m": 0.00013956386828795075,
+          "requested_velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rolling": false,
+          "max_upward_velocity": 1.2288249731063843,
+          "airborne_travel_m": 0.0022727201879024508,
+          "takeoff_velocity_m_s": [
+            0.006178015377372503,
+            -0.00020932871848344803,
+            0.5509142279624939
+          ],
+          "touchdown_velocity_m_s": [
+            0.10254546999931335,
+            -0.0024384630378335714,
+            -0.01797010377049446
+          ],
+          "finish_s": 23.580000000000002,
+          "body_rise_m": 0.06176669895648956,
+          "recovered": true,
+          "failure": null,
+          "success": true
+        }
+      ],
+      "unfinished_attempts": 0,
+      "final_modes": [
+        "idle"
+      ],
+      "final_stable": true,
+      "final_offset_xy_m": [
+        [
+          0.010155908763408661,
+          -0.0005447758594527841
+        ]
+      ],
+      "standing_metrics": {
+        "samples": 624,
+        "seconds": 12.48,
+        "wheel_rms_rad_s": 0.0010432914132252336,
+        "wheel_peak_rad_s": 0.007202146574854851,
+        "pitch_rms_rad": 0.002944965846836567,
+        "roll_rms_rad": 9.653685992816463e-06,
+        "xy_span_m": [
+          [
+            5.103647708892822e-05,
+            0.0004125090781599283
+          ]
+        ]
+      },
+      "collision_model": "sphere_tread",
+      "fixed_base": false,
+      "external_body_support": false,
+      "root_state_writes_outside_resets": false,
+      "joint_torque_limit_nm": 9.0,
+      "closure_model": "external_force_compliant_approximation",
+      "checkpoint_sha256": "8ddcbbb3db19b3e4523f63c623381fa46867e75088e3b2e0095cf3e9ab077305",
+      "keyboard_enabled": false
+    },
+    {
+      "protocol": "forward",
+      "command": "./stand.sh --headless --auto-jumps 3 --seconds 32 --jump-speed .6 --record-trace --report validation/moving_jump_forward.json",
+      "status": "passed",
+      "scope": "Standing and straight rolling flat-ground jumps with existing RL wheels and explicit leg control; no new RL training.",
+      "completed_steps": 1600,
+      "environment_seconds": 32.0,
+      "num_envs": 1,
+      "finite_outputs": true,
+      "physical_failure_resets": 0,
+      "time_limit_resets": 0,
+      "closure_error_peak_m": 0.005157636012881994,
+      "active_joint_torque_peak_nm": 9.0,
+      "nonwheel_contact_steps": 0,
+      "manual_resets": 0,
+      "automatic_jumps_per_env": 3,
+      "validation_speed_m_s": 0.6,
+      "successful_jumps": 3,
+      "attempts": [
+        {
+          "env": 0,
+          "start_s": 4.96,
+          "standing_z": 0.16218528151512146,
+          "peak_z": 0.22386027872562408,
+          "peak_clearance_m": 0.04859571158885956,
+          "airborne_run_s": 0.0,
+          "longest_airborne_s": 0.18,
+          "airborne_seen": true,
+          "peak_pitch_rad": 0.1823100447654724,
+          "peak_roll_rad": 0.00023570795019622892,
+          "nonwheel_contact": false,
+          "peak_xy_displacement_m": 1.6030282974243164,
+          "peak_lateral_displacement_m": 0.00015938178694341332,
+          "requested_velocity": [
+            0.6000000238418579,
+            0.0,
+            0.0
+          ],
+          "rolling": true,
+          "max_upward_velocity": 1.2280638217926025,
+          "airborne_travel_m": 0.10335460424423218,
+          "takeoff_velocity_m_s": [
+            0.5928505659103394,
+            -0.0003539755998644978,
+            0.5500718951225281
+          ],
+          "touchdown_velocity_m_s": [
+            0.7046075463294983,
+            -0.0012378693791106343,
+            -0.013133677653968334
+          ],
+          "finish_s": 7.62,
+          "body_rise_m": 0.061674997210502625,
+          "recovered": true,
+          "failure": null,
+          "success": true
+        },
+        {
+          "env": 0,
+          "start_s": 9.64,
+          "standing_z": 0.16218657791614532,
+          "peak_z": 0.2238548994064331,
+          "peak_clearance_m": 0.0485585555434227,
+          "airborne_run_s": 0.0,
+          "longest_airborne_s": 0.18,
+          "airborne_seen": true,
+          "peak_pitch_rad": 0.1822248101234436,
+          "peak_roll_rad": 0.0004436048329807818,
+          "nonwheel_contact": false,
+          "peak_xy_displacement_m": 1.6014729738235474,
+          "peak_lateral_displacement_m": 0.0003393609949853271,
+          "requested_velocity": [
+            0.6000000238418579,
+            0.0,
+            0.0
+          ],
+          "rolling": true,
+          "max_upward_velocity": 1.2279454469680786,
+          "airborne_travel_m": 0.10305377244949342,
+          "takeoff_velocity_m_s": [
+            0.5911333560943604,
+            -0.00021791894687339664,
+            0.549977719783783
+          ],
+          "touchdown_velocity_m_s": [
+            0.7026150226593018,
+            -0.002564400201663375,
+            -0.012301100417971611
+          ],
+          "finish_s": 12.3,
+          "body_rise_m": 0.06166832149028778,
+          "recovered": true,
+          "failure": null,
+          "success": true
+        },
+        {
+          "env": 0,
+          "start_s": 14.32,
+          "standing_z": 0.1621837466955185,
+          "peak_z": 0.22384068369865417,
+          "peak_clearance_m": 0.048549726605415344,
+          "airborne_run_s": 0.0,
+          "longest_airborne_s": 0.18,
+          "airborne_seen": true,
+          "peak_pitch_rad": 0.18308046460151672,
+          "peak_roll_rad": 0.00038726386264897883,
+          "nonwheel_contact": false,
+          "peak_xy_displacement_m": 1.5993443727493286,
+          "peak_lateral_displacement_m": 0.00020990404300391674,
+          "requested_velocity": [
+            0.6000000238418579,
+            0.0,
+            0.0
+          ],
+          "rolling": true,
+          "max_upward_velocity": 1.227768898010254,
+          "airborne_travel_m": 0.10281104683876037,
+          "takeoff_velocity_m_s": [
+            0.5898292660713196,
+            -0.0002757035836111754,
+            0.5498046875
+          ],
+          "touchdown_velocity_m_s": [
+            0.7017421722412109,
+            -0.002329070819541812,
+            -0.011058221571147442
+          ],
+          "finish_s": 16.98,
+          "body_rise_m": 0.06165693700313568,
+          "recovered": true,
+          "failure": null,
+          "success": true
+        }
+      ],
+      "unfinished_attempts": 0,
+      "final_modes": [
+        "idle"
+      ],
+      "final_stable": true,
+      "final_offset_xy_m": [
+        [
+          0.009709358215332031,
+          -6.541376933455467e-05
+        ]
+      ],
+      "standing_metrics": {
+        "samples": 302,
+        "seconds": 6.04,
+        "wheel_rms_rad_s": 0.20482243597507477,
+        "wheel_peak_rad_s": 0.860440731048584,
+        "pitch_rms_rad": 0.01095869205892086,
+        "roll_rms_rad": 1.4214137991075404e-05,
+        "xy_span_m": [
+          [
+            13.27379322052002,
+            0.0048364861868321896
+          ]
+        ]
+      },
+      "collision_model": "sphere_tread",
+      "fixed_base": false,
+      "external_body_support": false,
+      "root_state_writes_outside_resets": false,
+      "joint_torque_limit_nm": 9.0,
+      "closure_model": "external_force_compliant_approximation",
+      "checkpoint_sha256": "8ddcbbb3db19b3e4523f63c623381fa46867e75088e3b2e0095cf3e9ab077305",
+      "keyboard_enabled": false,
+      "final_three_seconds": {
+        "wheel_rms_rad_s": 0.006721722064862857,
+        "speed_rms_m_s": 0.00039150062900172254,
+        "xy_span_m": [
+          [
+            0.00037288665771484375,
+            2.2426247596740723e-06
+          ]
+        ]
+      }
+    },
+    {
+      "protocol": "backward",
+      "command": "./stand.sh --headless --auto-jumps 3 --seconds 32 --jump-speed -.6 --record-trace --report validation/moving_jump_backward.json",
+      "status": "passed",
+      "scope": "Standing and straight rolling flat-ground jumps with existing RL wheels and explicit leg control; no new RL training.",
+      "completed_steps": 1600,
+      "environment_seconds": 32.0,
+      "num_envs": 1,
+      "finite_outputs": true,
+      "physical_failure_resets": 0,
+      "time_limit_resets": 0,
+      "closure_error_peak_m": 0.005156466271728277,
+      "active_joint_torque_peak_nm": 9.0,
+      "nonwheel_contact_steps": 0,
+      "manual_resets": 0,
+      "automatic_jumps_per_env": 3,
+      "validation_speed_m_s": -0.6,
+      "successful_jumps": 3,
+      "attempts": [
+        {
+          "env": 0,
+          "start_s": 4.48,
+          "standing_z": 0.1621873378753662,
+          "peak_z": 0.22387395799160004,
+          "peak_clearance_m": 0.048616088926792145,
+          "airborne_run_s": 0.0,
+          "longest_airborne_s": 0.18,
+          "airborne_seen": true,
+          "peak_pitch_rad": 0.18420438468456268,
+          "peak_roll_rad": 0.0003386925673112273,
+          "nonwheel_contact": false,
+          "peak_xy_displacement_m": 1.5570275783538818,
+          "peak_lateral_displacement_m": 0.00012808226165361702,
+          "requested_velocity": [
+            -0.6000000238418579,
+            0.0,
+            0.0
+          ],
+          "rolling": true,
+          "max_upward_velocity": 1.2281726598739624,
+          "airborne_travel_m": 0.1109491515159607,
+          "takeoff_velocity_m_s": [
+            -0.5976928472518921,
+            -0.0003168887342326343,
+            0.5501314401626587
+          ],
+          "touchdown_velocity_m_s": [
+            -0.4842420816421509,
+            -0.0021451327484101057,
+            -0.015416872687637806
+          ],
+          "finish_s": 7.12,
+          "body_rise_m": 0.061686620116233826,
+          "recovered": true,
+          "failure": null,
+          "success": true
+        },
+        {
+          "env": 0,
+          "start_s": 9.14,
+          "standing_z": 0.16219189763069153,
+          "peak_z": 0.22387975454330444,
+          "peak_clearance_m": 0.048613712191581726,
+          "airborne_run_s": 0.0,
+          "longest_airborne_s": 0.18,
+          "airborne_seen": true,
+          "peak_pitch_rad": 0.1836523711681366,
+          "peak_roll_rad": 0.0003148504183627665,
+          "nonwheel_contact": false,
+          "peak_xy_displacement_m": 1.5541250705718994,
+          "peak_lateral_displacement_m": 0.00022815444390289485,
+          "requested_velocity": [
+            -0.6000000238418579,
+            0.0,
+            0.0
+          ],
+          "rolling": true,
+          "max_upward_velocity": 1.2281417846679688,
+          "airborne_travel_m": 0.11093291521072388,
+          "takeoff_velocity_m_s": [
+            -0.5976539850234985,
+            -0.0004596726503223181,
+            0.5500962734222412
+          ],
+          "touchdown_velocity_m_s": [
+            -0.48451945185661316,
+            -0.002117474563419819,
+            -0.01552941370755434
+          ],
+          "finish_s": 11.78,
+          "body_rise_m": 0.061687856912612915,
+          "recovered": true,
+          "failure": null,
+          "success": true
+        },
+        {
+          "env": 0,
+          "start_s": 13.8,
+          "standing_z": 0.16219373047351837,
+          "peak_z": 0.2238878756761551,
+          "peak_clearance_m": 0.04862285405397415,
+          "airborne_run_s": 0.0,
+          "longest_airborne_s": 0.18,
+          "airborne_seen": true,
+          "peak_pitch_rad": 0.183076411485672,
+          "peak_roll_rad": 0.00030685559613630176,
+          "nonwheel_contact": false,
+          "peak_xy_displacement_m": 1.552192211151123,
+          "peak_lateral_displacement_m": 0.00020329959806986153,
+          "requested_velocity": [
+            -0.6000000238418579,
+            0.0,
+            0.0
+          ],
+          "rolling": true,
+          "max_upward_velocity": 1.2282207012176514,
+          "airborne_travel_m": 0.1107290005683899,
+          "takeoff_velocity_m_s": [
+            -0.5965383052825928,
+            -0.00035446917172521353,
+            0.5501724481582642
+          ],
+          "touchdown_velocity_m_s": [
+            -0.48370784521102905,
+            -0.0021636728197336197,
+            -0.01623302325606346
+          ],
+          "finish_s": 16.44,
+          "body_rise_m": 0.06169414520263672,
+          "recovered": true,
+          "failure": null,
+          "success": true
+        }
+      ],
+      "unfinished_attempts": 0,
+      "final_modes": [
+        "idle"
+      ],
+      "final_stable": true,
+      "final_offset_xy_m": [
+        [
+          0.00974273681640625,
+          -2.6285415515303612e-05
+        ]
+      ],
+      "standing_metrics": {
+        "samples": 302,
+        "seconds": 6.04,
+        "wheel_rms_rad_s": 0.21621091663837433,
+        "wheel_peak_rad_s": 0.8406960368156433,
+        "pitch_rms_rad": 0.0077962675131857395,
+        "roll_rms_rad": 1.4667748473584652e-05,
+        "xy_span_m": [
+          [
+            12.925851821899414,
+            0.0035396707244217396
+          ]
+        ]
+      },
+      "collision_model": "sphere_tread",
+      "fixed_base": false,
+      "external_body_support": false,
+      "root_state_writes_outside_resets": false,
+      "joint_torque_limit_nm": 9.0,
+      "closure_model": "external_force_compliant_approximation",
+      "checkpoint_sha256": "8ddcbbb3db19b3e4523f63c623381fa46867e75088e3b2e0095cf3e9ab077305",
+      "keyboard_enabled": false,
+      "final_three_seconds": {
+        "wheel_rms_rad_s": 0.0034356191184838625,
+        "speed_rms_m_s": 0.00026680136989117487,
+        "xy_span_m": [
+          [
+            0.00014495849609375,
+            1.823529601097107e-06
+          ]
+        ]
+      }
+    },
+    {
+      "protocol": "four",
+      "command": "./stand.sh --headless --auto-jumps 3 --seconds 35 --num-envs 4 --report validation/moving_jump_four.json",
+      "status": "passed",
+      "scope": "Standing and straight rolling flat-ground jumps with existing RL wheels and explicit leg control; no new RL training.",
+      "completed_steps": 1750,
+      "environment_seconds": 35.0,
+      "num_envs": 4,
+      "finite_outputs": true,
+      "physical_failure_resets": 0,
+      "time_limit_resets": 0,
+      "closure_error_peak_m": 0.005092932377010584,
+      "active_joint_torque_peak_nm": 9.0,
+      "nonwheel_contact_steps": 0,
+      "manual_resets": 0,
+      "automatic_jumps_per_env": 3,
+      "validation_speed_m_s": 0.0,
+      "successful_jumps": 12,
+      "attempts": [
+        {
+          "env": 0,
+          "start_s": 1.68,
+          "standing_z": 0.16218896210193634,
+          "peak_z": 0.22395651042461395,
+          "peak_clearance_m": 0.048543766140937805,
+          "airborne_run_s": 0.0,
+          "longest_airborne_s": 0.18,
+          "airborne_seen": true,
+          "peak_pitch_rad": 0.16018931567668915,
+          "peak_roll_rad": 0.00028712835046462715,
+          "nonwheel_contact": false,
+          "peak_xy_displacement_m": 0.018488114699721336,
+          "peak_lateral_displacement_m": 0.00013926863903179765,
+          "requested_velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rolling": false,
+          "max_upward_velocity": 1.2288345098495483,
+          "airborne_travel_m": 0.0023517926409840585,
+          "takeoff_velocity_m_s": [
+            0.005617101676762104,
+            -0.00023884991242084652,
+            0.5509148240089417
+          ],
+          "touchdown_velocity_m_s": [
+            0.10212235152721405,
+            -0.0022030214313417673,
+            -0.01811656728386879
+          ],
+          "finish_s": 5.64,
+          "body_rise_m": 0.06176754832267761,
+          "recovered": true,
+          "failure": null,
+          "success": true
+        },
+        {
+          "env": 1,
+          "start_s": 1.68,
+          "standing_z": 0.16218888759613037,
+          "peak_z": 0.22395461797714233,
+          "peak_clearance_m": 0.0485343337059021,
+          "airborne_run_s": 0.0,
+          "longest_airborne_s": 0.18,
+          "airborne_seen": true,
+          "peak_pitch_rad": 0.16016356647014618,
+          "peak_roll_rad": 0.0003717749787028879,
+          "nonwheel_contact": false,
+          "peak_xy_displacement_m": 0.01845179684460163,
+          "peak_lateral_displacement_m": 0.00014137857942841947,
+          "requested_velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rolling": false,
+          "max_upward_velocity": 1.2288275957107544,
+          "airborne_travel_m": 0.0023514886572957036,
+          "takeoff_velocity_m_s": [
+            0.005613154266029596,
+            -0.00011292597628198564,
+            0.5509052872657776
+          ],
+          "touchdown_velocity_m_s": [
+            0.10208997130393982,
+            -0.0027847294695675373,
+            -0.017805414274334908
+          ],
+          "finish_s": 5.64,
+          "body_rise_m": 0.06176573038101196,
+          "recovered": true,
+          "failure": null,
+          "success": true
+        },
+        {
+          "env": 2,
+          "start_s": 1.68,
+          "standing_z": 0.16218902170658112,
+          "peak_z": 0.2239544540643692,
+          "peak_clearance_m": 0.04852442443370819,
+          "airborne_run_s": 0.0,
+          "longest_airborne_s": 0.18,
+          "airborne_seen": true,
+          "peak_pitch_rad": 0.160238116979599,
+          "peak_roll_rad": 0.0006468665669672191,
+          "nonwheel_contact": false,
+          "peak_xy_displacement_m": 0.018458012491464615,
+          "peak_lateral_displacement_m": 0.0004676753596868366,
+          "requested_velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rolling": false,
+          "max_upward_velocity": 1.2288196086883545,
+          "airborne_travel_m": 0.0023528638016432524,
+          "takeoff_velocity_m_s": [
+            0.005609510466456413,
+            0.0002844936680048704,
+            0.5508910417556763
+          ],
+          "touchdown_velocity_m_s": [
+            0.10212377458810806,
+            -0.005197520367801189,
+            -0.017843862995505333
+          ],
+          "finish_s": 5.64,
+          "body_rise_m": 0.061765432357788086,
+          "recovered": true,
+          "failure": null,
+          "success": true
+        },
+        {
+          "env": 3,
+          "start_s": 1.68,
+          "standing_z": 0.1621886044740677,
+          "peak_z": 0.22395162284374237,
+          "peak_clearance_m": 0.048547111451625824,
+          "airborne_run_s": 0.0,
+          "longest_airborne_s": 0.18,
+          "airborne_seen": true,
+          "peak_pitch_rad": 0.16017867624759674,
+          "peak_roll_rad": 0.00026859910576604307,
+          "nonwheel_contact": false,
+          "peak_xy_displacement_m": 0.01842273585498333,
+          "peak_lateral_displacement_m": 0.0005402049282565713,
+          "requested_velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rolling": false,
+          "max_upward_velocity": 1.2287806272506714,
+          "airborne_travel_m": 0.002361993212252855,
+          "takeoff_velocity_m_s": [
+            0.005539278499782085,
+            -0.0001279825228266418,
+            0.550865113735199
+          ],
+          "touchdown_velocity_m_s": [
+            0.1020161435008049,
+            -0.0024824596475809813,
+            -0.017237089574337006
+          ],
+          "finish_s": 5.64,
+          "body_rise_m": 0.06176301836967468,
+          "recovered": true,
+          "failure": null,
+          "success": true
+        },
+        {
+          "env": 0,
+          "start_s": 7.66,
+          "standing_z": 0.16218891739845276,
+          "peak_z": 0.22395554184913635,
+          "peak_clearance_m": 0.04853823035955429,
+          "airborne_run_s": 0.0,
+          "longest_airborne_s": 0.18,
+          "airborne_seen": true,
+          "peak_pitch_rad": 0.15998335182666779,
+          "peak_roll_rad": 0.0003482601896394044,
+          "nonwheel_contact": false,
+          "peak_xy_displacement_m": 0.017796549946069717,
+          "peak_lateral_displacement_m": 0.00014836106856819242,
+          "requested_velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rolling": false,
+          "max_upward_velocity": 1.2288283109664917,
+          "airborne_travel_m": 0.002272711554542184,
+          "takeoff_velocity_m_s": [
+            0.006175012327730656,
+            -0.00018255290342494845,
+            0.5509146451950073
+          ],
+          "touchdown_velocity_m_s": [
+            0.10252609103918076,
+            -0.002654044423252344,
+            -0.01794416829943657
+          ],
+          "finish_s": 11.620000000000001,
+          "body_rise_m": 0.061766624450683594,
+          "recovered": true,
+          "failure": null,
+          "success": true
+        },
+        {
+          "env": 1,
+          "start_s": 7.66,
+          "standing_z": 0.16218841075897217,
+          "peak_z": 0.22395263612270355,
+          "peak_clearance_m": 0.0485369935631752,
+          "airborne_run_s": 0.0,
+          "longest_airborne_s": 0.18,
+          "airborne_seen": true,
+          "peak_pitch_rad": 0.1600135713815689,
+          "peak_roll_rad": 0.0003069974482059479,
+          "nonwheel_contact": false,
+          "peak_xy_displacement_m": 0.017805011942982674,
+          "peak_lateral_displacement_m": 0.00014303166244644672,
+          "requested_velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rolling": false,
+          "max_upward_velocity": 1.2288050651550293,
+          "airborne_travel_m": 0.0022736881859600545,
+          "takeoff_velocity_m_s": [
+            0.006171471904963255,
+            -0.00020967473392374814,
+            0.5508899092674255
+          ],
+          "touchdown_velocity_m_s": [
+            0.10253234207630157,
+            -0.00233743479475379,
+            -0.017553113400936127
+          ],
+          "finish_s": 11.620000000000001,
+          "body_rise_m": 0.061764225363731384,
+          "recovered": true,
+          "failure": null,
+          "success": true
+        },
+        {
+          "env": 2,
+          "start_s": 7.66,
+          "standing_z": 0.16218896210193634,
+          "peak_z": 0.2239527702331543,
+          "peak_clearance_m": 0.04851807653903961,
+          "airborne_run_s": 0.0,
+          "longest_airborne_s": 0.18,
+          "airborne_seen": true,
+          "peak_pitch_rad": 0.16004236042499542,
+          "peak_roll_rad": 0.0005841645761393011,
+          "nonwheel_contact": false,
+          "peak_xy_displacement_m": 0.017774907872080803,
+          "peak_lateral_displacement_m": 0.00048100759158842266,
+          "requested_velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rolling": false,
+          "max_upward_velocity": 1.2287797927856445,
+          "airborne_travel_m": 0.0022749740071594713,
+          "takeoff_velocity_m_s": [
+            0.006161287426948547,
+            0.00014999171253293753,
+            0.5508778095245361
+          ],
+          "touchdown_velocity_m_s": [
+            0.10254175215959549,
+            -0.0043794927187263966,
+            -0.017550645396113396
+          ],
+          "finish_s": 11.620000000000001,
+          "body_rise_m": 0.06176380813121796,
+          "recovered": true,
+          "failure": null,
+          "success": true
+        },
+        {
+          "env": 3,
+          "start_s": 7.66,
+          "standing_z": 0.1621888428926468,
+          "peak_z": 0.2239540070295334,
+          "peak_clearance_m": 0.04853854328393936,
+          "airborne_run_s": 0.0,
+          "longest_airborne_s": 0.18,
+          "airborne_seen": true,
+          "peak_pitch_rad": 0.1600383222103119,
+          "peak_roll_rad": 0.0003654209431260824,
+          "nonwheel_contact": false,
+          "peak_xy_displacement_m": 0.017717985436320305,
+          "peak_lateral_displacement_m": 0.0005408498691394925,
+          "requested_velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rolling": false,
+          "max_upward_velocity": 1.22882878780365,
+          "airborne_travel_m": 0.0022860724478960034,
+          "takeoff_velocity_m_s": [
+            0.006075989920645952,
+            -7.556598575320095e-05,
+            0.5509097576141357
+          ],
+          "touchdown_velocity_m_s": [
+            0.10246015340089798,
+            -0.0031943831127136946,
+            -0.017790433019399643
+          ],
+          "finish_s": 11.620000000000001,
+          "body_rise_m": 0.0617651641368866,
+          "recovered": true,
+          "failure": null,
+          "success": true
+        },
+        {
+          "env": 0,
+          "start_s": 13.64,
+          "standing_z": 0.16218900680541992,
+          "peak_z": 0.22395586967468262,
+          "peak_clearance_m": 0.04853835701942444,
+          "airborne_run_s": 0.0,
+          "longest_airborne_s": 0.18,
+          "airborne_seen": true,
+          "peak_pitch_rad": 0.16005012392997742,
+          "peak_roll_rad": 0.000370268477126956,
+          "nonwheel_contact": false,
+          "peak_xy_displacement_m": 0.0178071241825819,
+          "peak_lateral_displacement_m": 0.00014896092761773616,
+          "requested_velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rolling": false,
+          "max_upward_velocity": 1.2288427352905273,
+          "airborne_travel_m": 0.0022733178548514843,
+          "takeoff_velocity_m_s": [
+            0.006175071466714144,
+            -0.0001431993005098775,
+            0.5509213805198669
+          ],
+          "touchdown_velocity_m_s": [
+            0.10257669538259506,
+            -0.00278598559089005,
+            -0.01805422455072403
+          ],
+          "finish_s": 17.6,
+          "body_rise_m": 0.061766862869262695,
+          "recovered": true,
+          "failure": null,
+          "success": true
+        },
+        {
+          "env": 1,
+          "start_s": 13.64,
+          "standing_z": 0.1621881127357483,
+          "peak_z": 0.22395369410514832,
+          "peak_clearance_m": 0.04853719472885132,
+          "airborne_run_s": 0.0,
+          "longest_airborne_s": 0.18,
+          "airborne_seen": true,
+          "peak_pitch_rad": 0.16004043817520142,
+          "peak_roll_rad": 0.00031475102878175676,
+          "nonwheel_contact": false,
+          "peak_xy_displacement_m": 0.017768612131476402,
+          "peak_lateral_displacement_m": 0.00013626138388644904,
+          "requested_velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rolling": false,
+          "max_upward_velocity": 1.228804349899292,
+          "airborne_travel_m": 0.0022693965025246143,
+          "takeoff_velocity_m_s": [
+            0.006206341553479433,
+            -0.0001943537499755621,
+            0.5508955121040344
+          ],
+          "touchdown_velocity_m_s": [
+            0.10258931666612625,
+            -0.0023966270964592695,
+            -0.01771402359008789
+          ],
+          "finish_s": 17.6,
+          "body_rise_m": 0.061765581369400024,
+          "recovered": true,
+          "failure": null,
+          "success": true
+        },
+        {
+          "env": 2,
+          "start_s": 13.64,
+          "standing_z": 0.16218893229961395,
+          "peak_z": 0.22395524382591248,
+          "peak_clearance_m": 0.048552557826042175,
+          "airborne_run_s": 0.0,
+          "longest_airborne_s": 0.18,
+          "airborne_seen": true,
+          "peak_pitch_rad": 0.16002461314201355,
+          "peak_roll_rad": 0.00022941264614928514,
+          "nonwheel_contact": false,
+          "peak_xy_displacement_m": 0.017806490883231163,
+          "peak_lateral_displacement_m": 0.0003768211754504591,
+          "requested_velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rolling": false,
+          "max_upward_velocity": 1.2288336753845215,
+          "airborne_travel_m": 0.002274702498689294,
+          "takeoff_velocity_m_s": [
+            0.0061688050627708435,
+            -0.0003095183928962797,
+            0.5509182810783386
+          ],
+          "touchdown_velocity_m_s": [
+            0.10255540907382965,
+            -0.0018780420068651438,
+            -0.01791035197675228
+          ],
+          "finish_s": 17.6,
+          "body_rise_m": 0.06176631152629852,
+          "recovered": true,
+          "failure": null,
+          "success": true
+        },
+        {
+          "env": 3,
+          "start_s": 13.64,
+          "standing_z": 0.1621888130903244,
+          "peak_z": 0.22395087778568268,
+          "peak_clearance_m": 0.04852274805307388,
+          "airborne_run_s": 0.0,
+          "longest_airborne_s": 0.18,
+          "airborne_seen": true,
+          "peak_pitch_rad": 0.16008926928043365,
+          "peak_roll_rad": 0.0005568781634792686,
+          "nonwheel_contact": false,
+          "peak_xy_displacement_m": 0.017691869288682938,
+          "peak_lateral_displacement_m": 0.0005410898011177778,
+          "requested_velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rolling": false,
+          "max_upward_velocity": 1.228804111480713,
+          "airborne_travel_m": 0.0022876230254769325,
+          "takeoff_velocity_m_s": [
+            0.0060689980164170265,
+            0.00011603433813434094,
+            0.5508726835250854
+          ],
+          "touchdown_velocity_m_s": [
+            0.1024714782834053,
+            -0.004166843835264444,
+            -0.017196539789438248
+          ],
+          "finish_s": 17.6,
+          "body_rise_m": 0.061762064695358276,
+          "recovered": true,
+          "failure": null,
+          "success": true
+        }
+      ],
+      "unfinished_attempts": 0,
+      "final_modes": [
+        "idle",
+        "idle",
+        "idle",
+        "idle"
+      ],
+      "final_stable": true,
+      "final_offset_xy_m": [
+        [
+          0.0101582957431674,
+          -0.0004129190929234028
+        ],
+        [
+          0.010120749473571777,
+          -0.0003963184426538646
+        ],
+        [
+          0.010157162323594093,
+          0.0015752315521240234
+        ],
+        [
+          0.010113000869750977,
+          0.0019364356994628906
+        ]
+      ],
+      "standing_metrics": {
+        "samples": 772,
+        "seconds": 15.44,
+        "wheel_rms_rad_s": 0.0008149431087076664,
+        "wheel_peak_rad_s": 0.00743062561377883,
+        "pitch_rms_rad": 0.0029452741146087646,
+        "roll_rms_rad": 1.2563074960780796e-05,
+        "xy_span_m": [
+          [
+            5.0339847803115845e-05,
+            0.00027804129058495164
+          ],
+          [
+            2.7179718017578125e-05,
+            0.00026591820642352104
+          ],
+          [
+            4.916824400424957e-05,
+            0.0009208917617797852
+          ],
+          [
+            2.86102294921875e-05,
+            0.001170516014099121
+          ]
+        ]
+      },
+      "collision_model": "sphere_tread",
+      "fixed_base": false,
+      "external_body_support": false,
+      "root_state_writes_outside_resets": false,
+      "joint_torque_limit_nm": 9.0,
+      "closure_model": "external_force_compliant_approximation",
+      "checkpoint_sha256": "8ddcbbb3db19b3e4523f63c623381fa46867e75088e3b2e0095cf3e9ab077305",
+      "keyboard_enabled": false
+    },
+    {
+      "protocol": "height08",
+      "command": "./stand.sh --headless --auto-jumps 2 --seconds 25 --length .08 --report validation/moving_jump_height08.json",
+      "status": "passed",
+      "scope": "Standing and straight rolling flat-ground jumps with existing RL wheels and explicit leg control; no new RL training.",
+      "completed_steps": 1250,
+      "environment_seconds": 25.0,
+      "num_envs": 1,
+      "finite_outputs": true,
+      "physical_failure_resets": 0,
+      "time_limit_resets": 0,
+      "closure_error_peak_m": 0.005276157520711422,
+      "active_joint_torque_peak_nm": 9.0,
+      "nonwheel_contact_steps": 0,
+      "manual_resets": 0,
+      "automatic_jumps_per_env": 2,
+      "validation_speed_m_s": 0.0,
+      "successful_jumps": 2,
+      "attempts": [
+        {
+          "env": 0,
+          "start_s": 1.74,
+          "standing_z": 0.1420058161020279,
+          "peak_z": 0.2035932093858719,
+          "peak_clearance_m": 0.04287990182638168,
+          "airborne_run_s": 0.0,
+          "longest_airborne_s": 0.16,
+          "airborne_seen": true,
+          "peak_pitch_rad": 0.1359512209892273,
+          "peak_roll_rad": 0.0002764815872069448,
+          "nonwheel_contact": false,
+          "peak_xy_displacement_m": 0.027495870366692543,
+          "peak_lateral_displacement_m": 0.00013317610137164593,
+          "requested_velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rolling": false,
+          "max_upward_velocity": 1.0782188177108765,
+          "airborne_travel_m": 0.0015438562538474798,
+          "takeoff_velocity_m_s": [
+            0.010370566509664059,
+            -0.00011314945732010528,
+            0.39437854290008545
+          ],
+          "touchdown_velocity_m_s": [
+            0.14754320681095123,
+            -0.00044069404248148203,
+            -0.5243375897407532
+          ],
+          "finish_s": 5.24,
+          "body_rise_m": 0.061587393283843994,
+          "recovered": true,
+          "failure": null,
+          "success": true
+        },
+        {
+          "env": 0,
+          "start_s": 7.26,
+          "standing_z": 0.14200575649738312,
+          "peak_z": 0.20359164476394653,
+          "peak_clearance_m": 0.04288158565759659,
+          "airborne_run_s": 0.0,
+          "longest_airborne_s": 0.16,
+          "airborne_seen": true,
+          "peak_pitch_rad": 0.13591226935386658,
+          "peak_roll_rad": 0.0002527116157580167,
+          "nonwheel_contact": false,
+          "peak_xy_displacement_m": 0.026576688513159752,
+          "peak_lateral_displacement_m": 0.000131701395730488,
+          "requested_velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rolling": false,
+          "max_upward_velocity": 1.0781891345977783,
+          "airborne_travel_m": 0.0014813531376421452,
+          "takeoff_velocity_m_s": [
+            0.010887556709349155,
+            -0.00014133204240351915,
+            0.39437347650527954
+          ],
+          "touchdown_velocity_m_s": [
+            0.14805327355861664,
+            -0.00033407160663045943,
+            -0.5241900086402893
+          ],
+          "finish_s": 10.76,
+          "body_rise_m": 0.061585888266563416,
+          "recovered": true,
+          "failure": null,
+          "success": true
+        }
+      ],
+      "unfinished_attempts": 0,
+      "final_modes": [
+        "idle"
+      ],
+      "final_stable": true,
+      "final_offset_xy_m": [
+        [
+          0.013036837801337242,
+          -0.00025353929959237576
+        ]
+      ],
+      "standing_metrics": {
+        "samples": 613,
+        "seconds": 12.26,
+        "wheel_rms_rad_s": 0.000983705511316657,
+        "wheel_peak_rad_s": 0.006578322499990463,
+        "pitch_rms_rad": 0.004003556910902262,
+        "roll_rms_rad": 1.5086599887581542e-05,
+        "xy_span_m": [
+          [
+            0.0001402227208018303,
+            0.00012817340029869229
+          ]
+        ]
+      },
+      "collision_model": "sphere_tread",
+      "fixed_base": false,
+      "external_body_support": false,
+      "root_state_writes_outside_resets": false,
+      "joint_torque_limit_nm": 9.0,
+      "closure_model": "external_force_compliant_approximation",
+      "checkpoint_sha256": "8ddcbbb3db19b3e4523f63c623381fa46867e75088e3b2e0095cf3e9ab077305",
+      "keyboard_enabled": false
+    },
+    {
+      "protocol": "height14",
+      "command": "./stand.sh --headless --auto-jumps 2 --seconds 25 --length .14 --report validation/moving_jump_height14.json",
+      "status": "passed",
+      "scope": "Standing and straight rolling flat-ground jumps with existing RL wheels and explicit leg control; no new RL training.",
+      "completed_steps": 1250,
+      "environment_seconds": 25.0,
+      "num_envs": 1,
+      "finite_outputs": true,
+      "physical_failure_resets": 0,
+      "time_limit_resets": 0,
+      "closure_error_peak_m": 0.0034320277627557516,
+      "active_joint_torque_peak_nm": 9.0,
+      "nonwheel_contact_steps": 0,
+      "manual_resets": 0,
+      "automatic_jumps_per_env": 2,
+      "validation_speed_m_s": 0.0,
+      "successful_jumps": 2,
+      "attempts": [
+        {
+          "env": 0,
+          "start_s": 1.6400000000000001,
+          "standing_z": 0.20241311192512512,
+          "peak_z": 0.23715181648731232,
+          "peak_clearance_m": 0.02268536388874054,
+          "airborne_run_s": 0.0,
+          "longest_airborne_s": 0.12000000000000001,
+          "airborne_seen": true,
+          "peak_pitch_rad": 0.06834109127521515,
+          "peak_roll_rad": 0.00016323821910191327,
+          "nonwheel_contact": false,
+          "peak_xy_displacement_m": 0.00422178627923131,
+          "peak_lateral_displacement_m": 6.301239045569673e-05,
+          "requested_velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rolling": false,
+          "max_upward_velocity": 0.9068911075592041,
+          "airborne_travel_m": 0.0007252959813922645,
+          "takeoff_velocity_m_s": [
+            -0.004498114809393883,
+            -7.908415864221752e-05,
+            0.24864225089550018
+          ],
+          "touchdown_velocity_m_s": [
+            0.017783481627702713,
+            -0.0015326999127864838,
+            -0.10993152111768723
+          ],
+          "finish_s": 4.82,
+          "body_rise_m": 0.034738704562187195,
+          "recovered": true,
+          "failure": null,
+          "success": true
+        },
+        {
+          "env": 0,
+          "start_s": 6.84,
+          "standing_z": 0.20241563022136688,
+          "peak_z": 0.23715603351593018,
+          "peak_clearance_m": 0.022687748074531555,
+          "airborne_run_s": 0.0,
+          "longest_airborne_s": 0.12000000000000001,
+          "airborne_seen": true,
+          "peak_pitch_rad": 0.06770138442516327,
+          "peak_roll_rad": 0.0001234827213920653,
+          "nonwheel_contact": false,
+          "peak_xy_displacement_m": 0.004203200805932283,
+          "peak_lateral_displacement_m": 5.8213743614032865e-05,
+          "requested_velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rolling": false,
+          "max_upward_velocity": 0.9069406390190125,
+          "airborne_travel_m": 0.0006538070738315582,
+          "takeoff_velocity_m_s": [
+            -0.0039273519068956375,
+            -0.00013297717669047415,
+            0.2486775666475296
+          ],
+          "touchdown_velocity_m_s": [
+            0.018055405467748642,
+            -0.0012256392510607839,
+            -0.11026574671268463
+          ],
+          "finish_s": 10.02,
+          "body_rise_m": 0.03474040329456329,
+          "recovered": true,
+          "failure": null,
+          "success": true
+        }
+      ],
+      "unfinished_attempts": 0,
+      "final_modes": [
+        "idle"
+      ],
+      "final_stable": true,
+      "final_offset_xy_m": [
+        [
+          0.005244046449661255,
+          -0.00011120447015855461
+        ]
+      ],
+      "standing_metrics": {
+        "samples": 650,
+        "seconds": 13.0,
+        "wheel_rms_rad_s": 0.00195525586605072,
+        "wheel_peak_rad_s": 0.01061172690242529,
+        "pitch_rms_rad": 0.001789218164049089,
+        "roll_rms_rad": 9.927807695930824e-06,
+        "xy_span_m": [
+          [
+            0.00012837350368499756,
+            5.3597279475070536e-05
+          ]
+        ]
+      },
+      "collision_model": "sphere_tread",
+      "fixed_base": false,
+      "external_body_support": false,
+      "root_state_writes_outside_resets": false,
+      "joint_torque_limit_nm": 9.0,
+      "closure_model": "external_force_compliant_approximation",
+      "checkpoint_sha256": "8ddcbbb3db19b3e4523f63c623381fa46867e75088e3b2e0095cf3e9ab077305",
+      "keyboard_enabled": false
+    },
+    {
+      "protocol": "quiet60",
+      "command": "./stand.sh --headless --seconds 60 --report validation/moving_jump_quiet60.json",
+      "status": "passed",
+      "scope": "Standing and straight rolling flat-ground jumps with existing RL wheels and explicit leg control; no new RL training.",
+      "completed_steps": 3000,
+      "environment_seconds": 60.0,
+      "num_envs": 1,
+      "finite_outputs": true,
+      "physical_failure_resets": 0,
+      "time_limit_resets": 0,
+      "closure_error_peak_m": 0.001231485279276967,
+      "active_joint_torque_peak_nm": 3.063033103942871,
+      "nonwheel_contact_steps": 0,
+      "manual_resets": 0,
+      "automatic_jumps_per_env": 0,
+      "validation_speed_m_s": 0.0,
+      "successful_jumps": 0,
+      "attempts": [],
+      "unfinished_attempts": 0,
+      "final_modes": [
+        "idle"
+      ],
+      "final_stable": true,
+      "final_offset_xy_m": [
+        [
+          0.010153660550713539,
+          1.140428366852575e-06
+        ]
+      ],
+      "standing_metrics": {
+        "samples": 2901,
+        "seconds": 58.02,
+        "wheel_rms_rad_s": 0.00236537866294384,
+        "wheel_peak_rad_s": 0.024219229817390442,
+        "pitch_rms_rad": 0.0029445148538798094,
+        "roll_rms_rad": 1.5400331903947517e-05,
+        "xy_span_m": [
+          [
+            0.0005521522834897041,
+            8.236084454438242e-07
+          ]
+        ]
+      },
+      "collision_model": "sphere_tread",
+      "fixed_base": false,
+      "external_body_support": false,
+      "root_state_writes_outside_resets": false,
+      "joint_torque_limit_nm": 9.0,
+      "closure_model": "external_force_compliant_approximation",
+      "checkpoint_sha256": "8ddcbbb3db19b3e4523f63c623381fa46867e75088e3b2e0095cf3e9ab077305",
+      "keyboard_enabled": false
+    }
+  ],
+  "release_in_flight": {
+    "protocol": "At +0.6 m/s request a jump once stable (4.96 s), release driving 0.80 s after request during measured flight; latest stop target takes effect at touchdown. Run 22 s total.",
+    "summary": {
+      "args": {
+        "speed": 0.6,
+        "force": 65.0,
+        "extend": 0.19,
+        "push": 0.1,
+        "kp": 20.0,
+        "kd": 2.0,
+        "limit": 3.0,
+        "seconds": 22,
+        "jumps": 1,
+        "length": 0.1,
+        "release_offset": 0.8,
+        "output": "/tmp/roll_release.json"
+      },
+      "attempts": [
+        {
+          "env": 0,
+          "start_s": 4.96,
+          "standing_z": 0.16218528151512146,
+          "peak_z": 0.22386027872562408,
+          "peak_clearance_m": 0.04859571158885956,
+          "airborne_run_s": 0.0,
+          "longest_airborne_s": 0.18,
+          "airborne_seen": true,
+          "peak_pitch_rad": 0.18750712275505066,
+          "peak_roll_rad": 0.00023570795019622892,
+          "nonwheel_contact": false,
+          "peak_xy_displacement_m": 0.9205372333526611,
+          "peak_lateral_displacement_m": 0.00016704683366697282,
+          "requested_velocity": [
+            0.6000000238418579,
+            0.0,
+            0.0
+          ],
+          "rolling": true,
+          "max_upward_velocity": 1.2280638217926025,
+          "airborne_travel_m": 0.10335460424423218,
+          "takeoff_velocity_m_s": [
+            0.5928505659103394,
+            -0.0003539755998644978,
+            0.5500718951225281
+          ],
+          "touchdown_velocity_m_s": [
+            0.7046075463294983,
+            -0.0012378693791106343,
+            -0.013133677653968334
+          ],
+          "finish_s": 9.06,
+          "body_rise_m": 0.061674997210502625,
+          "recovered": true,
+          "failure": null,
+          "success": true
+        }
+      ],
+      "started": 1,
+      "failures": 0,
+      "mode": "idle",
+      "stable": 12.919999999999813,
+      "max_stable": 12.919999999999813,
+      "peak_pitch": 0.1970399022102356,
+      "peak_roll": 0.00023570795019622892,
+      "closure_peak": 0.005150130949914455,
+      "torque_peak": 9.0,
+      "final_wheel_rms": 0.0003120432829668603,
+      "final_velocity": [
+        8.455057832179591e-05,
+        -2.2568849090021104e-05,
+        -2.5368672140757553e-06
+      ]
+    }
+  },
+  "tuning_candidates": [
+    {
+      "args": {
+        "speed": 0.6,
+        "force": 60,
+        "extend": 0.18,
+        "push": 0.1,
+        "kp": 4,
+        "kd": 0.4,
+        "limit": 0.25,
+        "seconds": 22,
+        "jumps": 2,
+        "length": 0.1
+      },
+      "failures": 0,
+      "attempts": [
+        {
+          "success": false,
+          "peak_clearance_m": 0.03927003592252731,
+          "peak_pitch_rad": 0.23328906297683716,
+          "longest_airborne_s": 0.16,
+          "failure": null
+        },
+        {
+          "success": false,
+          "peak_clearance_m": 0.0392739400267601,
+          "peak_pitch_rad": 0.2332853376865387,
+          "longest_airborne_s": 0.16,
+          "failure": null
+        }
+      ],
+      "decision": "Exploration only; candidates exceeding 0.20 rad peak pitch were rejected without relaxing the limit. Production defaults were verified through stand.sh above."
+    },
+    {
+      "args": {
+        "speed": -0.6,
+        "force": 60,
+        "extend": 0.18,
+        "push": 0.1,
+        "kp": 4,
+        "kd": 0.4,
+        "limit": 0.25,
+        "seconds": 22,
+        "jumps": 2,
+        "length": 0.1
+      },
+      "failures": 0,
+      "attempts": [
+        {
+          "success": false,
+          "peak_clearance_m": 0.03928558528423309,
+          "peak_pitch_rad": 0.2332058697938919,
+          "longest_airborne_s": 0.16,
+          "failure": null
+        },
+        {
+          "success": false,
+          "peak_clearance_m": 0.03927590698003769,
+          "peak_pitch_rad": 0.23221860826015472,
+          "longest_airborne_s": 0.16,
+          "failure": null
+        }
+      ],
+      "decision": "Exploration only; candidates exceeding 0.20 rad peak pitch were rejected without relaxing the limit. Production defaults were verified through stand.sh above."
+    },
+    {
+      "args": {
+        "speed": 0.6,
+        "force": 65.0,
+        "extend": 0.19,
+        "push": 0.1,
+        "kp": 6.0,
+        "kd": 0.6,
+        "limit": 1.0,
+        "seconds": 22,
+        "jumps": 2,
+        "length": 0.1
+      },
+      "failures": 0,
+      "attempts": [
+        {
+          "success": false,
+          "peak_clearance_m": 0.04869955778121948,
+          "peak_pitch_rad": 0.2350018322467804,
+          "longest_airborne_s": 0.18,
+          "failure": null
+        },
+        {
+          "success": false,
+          "peak_clearance_m": 0.0486871600151062,
+          "peak_pitch_rad": 0.23496803641319275,
+          "longest_airborne_s": 0.18,
+          "failure": null
+        }
+      ],
+      "decision": "Exploration only; candidates exceeding 0.20 rad peak pitch were rejected without relaxing the limit. Production defaults were verified through stand.sh above."
+    },
+    {
+      "args": {
+        "speed": 0.6,
+        "force": 65.0,
+        "extend": 0.19,
+        "push": 0.1,
+        "kp": 12.0,
+        "kd": 1.2,
+        "limit": 2.0,
+        "seconds": 22,
+        "jumps": 2,
+        "length": 0.1
+      },
+      "failures": 0,
+      "attempts": [
+        {
+          "success": false,
+          "peak_clearance_m": 0.04864748567342758,
+          "peak_pitch_rad": 0.21024316549301147,
+          "longest_airborne_s": 0.18,
+          "failure": null
+        },
+        {
+          "success": false,
+          "peak_clearance_m": 0.04863569885492325,
+          "peak_pitch_rad": 0.2104165405035019,
+          "longest_airborne_s": 0.18,
+          "failure": null
+        }
+      ],
+      "decision": "Exploration only; candidates exceeding 0.20 rad peak pitch were rejected without relaxing the limit. Production defaults were verified through stand.sh above."
+    },
+    {
+      "args": {
+        "speed": 0.6,
+        "force": 70.0,
+        "extend": 0.2,
+        "push": 0.1,
+        "kp": 12.0,
+        "kd": 1.2,
+        "limit": 2.0,
+        "seconds": 22,
+        "jumps": 2,
+        "length": 0.1
+      },
+      "failures": 0,
+      "attempts": [
+        {
+          "success": false,
+          "peak_clearance_m": 0.05766421556472778,
+          "peak_pitch_rad": 0.24773672223091125,
+          "longest_airborne_s": 0.18,
+          "failure": null
+        },
+        {
+          "success": false,
+          "peak_clearance_m": 0.057638272643089294,
+          "peak_pitch_rad": 0.24773073196411133,
+          "longest_airborne_s": 0.18,
+          "failure": null
+        }
+      ],
+      "decision": "Exploration only; candidates exceeding 0.20 rad peak pitch were rejected without relaxing the limit. Production defaults were verified through stand.sh above."
+    },
+    {
+      "args": {
+        "speed": 0.6,
+        "force": 65.0,
+        "extend": 0.19,
+        "push": 0.1,
+        "kp": 20.0,
+        "kd": 2.0,
+        "limit": 3.0,
+        "seconds": 22,
+        "jumps": 2,
+        "length": 0.1
+      },
+      "failures": 0,
+      "attempts": [
+        {
+          "success": true,
+          "peak_clearance_m": 0.04859571158885956,
+          "peak_pitch_rad": 0.1823100447654724,
+          "longest_airborne_s": 0.18,
+          "failure": null
+        },
+        {
+          "success": true,
+          "peak_clearance_m": 0.04859832674264908,
+          "peak_pitch_rad": 0.18255414068698883,
+          "longest_airborne_s": 0.18,
+          "failure": null
+        }
+      ],
+      "decision": "Exploration only; candidates exceeding 0.20 rad peak pitch were rejected without relaxing the limit. Production defaults were verified through stand.sh above."
+    },
+    {
+      "args": {
+        "speed": -0.6,
+        "force": 65.0,
+        "extend": 0.19,
+        "push": 0.1,
+        "kp": 20.0,
+        "kd": 2.0,
+        "limit": 3.0,
+        "seconds": 22,
+        "jumps": 2,
+        "length": 0.1
+      },
+      "failures": 0,
+      "attempts": [
+        {
+          "success": true,
+          "peak_clearance_m": 0.048616088926792145,
+          "peak_pitch_rad": 0.18420438468456268,
+          "longest_airborne_s": 0.18,
+          "failure": null
+        },
+        {
+          "success": true,
+          "peak_clearance_m": 0.048624105751514435,
+          "peak_pitch_rad": 0.18341562151908875,
+          "longest_airborne_s": 0.18,
+          "failure": null
+        }
+      ],
+      "decision": "Exploration only; candidates exceeding 0.20 rad peak pitch were rejected without relaxing the limit. Production defaults were verified through stand.sh above."
+    }
+  ],
+  "automated_tests": {
+    "command": "./run.sh -m unittest discover -s tests",
+    "discovered": 268,
+    "passed": 267,
+    "skipped": 1,
+    "clean_staged_export_verified": true,
+    "note": "Full suite passed in an exported staged tree containing the committed WheelLiftKeyboard and test, independently of the two pre-existing local edits. Four stationary jumps also passed in that exported tree."
+  },
+  "limitations": [
+    "Only flat ground and straight motion validated; acceleration/turning does not arm a jump. Keep straight commands through recovery.",
+    "Default 10 cm stance: about 4.9 cm simultaneous wheel clearance, 0.18 s continuous flight, 6.2 cm body rise. Height changes with stance; 14 cm stance has less extension reserve.",
+    "Landing/parking has several seconds of transient wheel motion; steady-state RMS and stop transient RMS must not be conflated.",
+    "Existing compliant loop closure remains; peak closure error around 5.2 mm in these protocols. Native spherical tread/contact preset retained.",
+    "Foot contact evidence is sampled at 50 Hz, maximum contact norms are accumulated across 2 kHz physics substeps.",
+    "No hardware/MCU or stair-jump validation."
+  ]
+}
