@@ -10,3 +10,7 @@
 - NVIDIA Isaac Gym SDK、Conda 环境和 CUDA/PyTorch 安装包不包含在仓库中，应通过各自官方渠道获取并遵守相应许可。
 
 当前建议使用私人仓库；若之后公开或再分发，请分别核实机器人资产及其上游许可。
+
+框架迁移参考固定版本：Wheel-Legged-Gym `c354431e5633eb98d9663fa3fbe444201d2de383`。`legged_gym/envs/base/base_config.py`、RSL-RL 的 `OnPolicyRunner` 和 `VecEnv` 来自该版本并作了本地适配，BSD-3-Clause 副本见 `third_party/LEGGED_GYM_LICENSE`，各源文件保留版权头。
+
+SCUT `wheeled-legged_RL` 的 `1a26356d6f591734d4f6f666f5cead1a6925da67` 只用于闭链方法及 USD 关节数据核对；运行不依赖其代码和资产。许可副本见 `third_party/SCUT_REFERENCE_LICENSE`，说明见 `docs/SCUT_CLOSED_CHAIN.md`。

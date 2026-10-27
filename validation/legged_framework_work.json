@@ -1,0 +1,345 @@
+{
+  "date": "2026-10-27",
+  "framework_reference": {
+    "repository": "https://github.com/clearlab-sustech/Wheel-Legged-Gym",
+    "commit": "c354431e5633eb98d9663fa3fbe444201d2de383",
+    "adapted_components": [
+      "nested BaseConfig",
+      "task registry convention",
+      "six-value task step API with history",
+      "rsl_rl.OnPolicyRunner and VecEnv"
+    ]
+  },
+  "registered_tasks": [
+    "wheelleg_flat",
+    "wheelleg_stand",
+    "wheelleg_stairs"
+  ],
+  "physics_migration": {
+    "from": "wheelleg_gym/env.py at 525e909",
+    "to": "legged_gym/envs/base/legged_robot.py",
+    "ast_equivalence_checked": true,
+    "allowed_ast_changes": [
+      "relative imports become absolute shared-helper imports",
+      "ASSET_ROOT adjusted for deeper package location",
+      "class WheelLegGymEnv renamed LeggedRobot; old module aliases the real backend"
+    ],
+    "loop_model": "external_force_compliant_approximation",
+    "default_dt_s": 0.0005,
+    "control_dt_s": 0.02,
+    "new_native_loop_constraints": false
+  },
+  "tests": {
+    "working_tree": {
+      "total": 237,
+      "passed": 236,
+      "skipped": 1,
+      "failed": 0
+    },
+    "covered": [
+      "config isolation and registration",
+      "reward scales remove disabled terms and reject unknown names",
+      "flat reward numerical parity with legacy calculation",
+      "checkpoint layout rejection and execution overrides",
+      "six-value step / one history stack",
+      "pre-reset timeout observations",
+      "completed iteration and sample counters after resume",
+      "existing geometry, constraints, control, PPO and terrain regressions"
+    ],
+    "staged_snapshot_without_preexisting_edits": {
+      "total": 237,
+      "passed": 236,
+      "skipped": 1,
+      "failed": 0,
+      "method": "Exported the staged Git tree to a clean temporary directory and ran the complete test suite against only files included in this commit."
+    }
+  },
+  "old_policy_validation": {
+    "standing_continuous": {
+      "task": "wheelleg_stand",
+      "checkpoint": "logs/standing_support_20261022_093823/input/standing_hold.pt",
+      "completed_steps": 3000,
+      "environment_seconds": 60.0,
+      "wall_seconds": 59.902993124000204,
+      "num_envs": 1,
+      "physical_failures": 0,
+      "timeouts": 0,
+      "terrain_successes": 0,
+      "pitch_peak_rad": 0.029224948957562447,
+      "roll_peak_rad": 0.002622460713610053,
+      "closure_peak_m": 0.001359249697998166,
+      "observation_size": 198,
+      "keyboard_enabled": false,
+      "loop_model": "external_force_compliant_approximation"
+    },
+    "one_cm_stairs": {
+      "task": "wheelleg_stairs",
+      "checkpoint": "logs/stair_training_20261022_103417/evaluation/verified_level0.pt",
+      "completed_steps": 1300,
+      "environment_seconds": 26.0,
+      "wall_seconds": 43.93599962500002,
+      "num_envs": 4,
+      "physical_failures": 0,
+      "timeouts": 0,
+      "terrain_successes": 4,
+      "pitch_peak_rad": 0.26170670986175537,
+      "roll_peak_rad": 0.07899393886327744,
+      "closure_peak_m": 0.0014680147869512439,
+      "observation_size": 252,
+      "keyboard_enabled": false,
+      "loop_model": "external_force_compliant_approximation"
+    }
+  },
+  "bounded_training_validation": [
+    {
+      "progress": "logs/framework_migration_cpu_20261027/2026-10-27_15-51-19_997798_/progress.json",
+      "checkpoint": "logs/framework_migration_cpu_20261027/2026-10-27_15-51-19_997798_/model_2.pt",
+      "checkpoint_sha256": "6451064dc1c6e8346013fd63164c43955f5f82b3913a4acf9590397a7d6185e1",
+      "saved_iteration": 2,
+      "saved_total_steps": 400,
+      "sim_device": "cpu",
+      "num_envs": 8,
+      "progress_metrics": {
+        "completed_iterations": 2,
+        "total_environment_steps": 400,
+        "value_loss": 5602.811484375,
+        "policy_loss": -0.007320886878296733,
+        "kl": 0.00823767646215856,
+        "loop_peak_m": 0.0014410085277631879,
+        "physical_failures": 10
+      },
+      "scope": "Bounded framework smoke/resume only. These new policies are untrained and not promoted for standing or terrain performance."
+    },
+    {
+      "progress": "logs/framework_migration_cpu_20261027/2026-10-27_15-54-26_598235_/progress.json",
+      "checkpoint": "logs/framework_migration_cpu_20261027/2026-10-27_15-54-26_598235_/model_3.pt",
+      "checkpoint_sha256": "68ea8bd987ef4c04e9af0afdbc5b5d558fc963231d5a3b602e615b9d4a32e66e",
+      "saved_iteration": 3,
+      "saved_total_steps": 600,
+      "sim_device": "cpu",
+      "num_envs": 8,
+      "progress_metrics": {
+        "completed_iterations": 3,
+        "total_environment_steps": 600,
+        "value_loss": 5860.60138671875,
+        "policy_loss": -0.01739010326564312,
+        "kl": 0.010889142123050987,
+        "loop_peak_m": 0.0013906997628509998,
+        "physical_failures": 7
+      },
+      "scope": "Bounded framework smoke/resume only. These new policies are untrained and not promoted for standing or terrain performance."
+    },
+    {
+      "progress": "logs/framework_migration_gpu_20261027/2026-10-27_15-51-54_207064_/progress.json",
+      "checkpoint": "logs/framework_migration_gpu_20261027/2026-10-27_15-51-54_207064_/model_3.pt",
+      "checkpoint_sha256": "8c4f26ba047a2894f043635643564095b292c00925c20cc6d1acd1315f5e3daa",
+      "saved_iteration": 3,
+      "saved_total_steps": 9600,
+      "sim_device": "cuda:0",
+      "num_envs": 128,
+      "progress_metrics": {
+        "completed_iterations": 3,
+        "total_environment_steps": 9600,
+        "value_loss": 4303.20525390625,
+        "policy_loss": -0.003853453118354082,
+        "kl": 0.008469913965091109,
+        "loop_peak_m": 0.0022703337017446756,
+        "physical_failures": 132
+      },
+      "scope": "Bounded framework smoke/resume only. These new policies are untrained and not promoted for standing or terrain performance."
+    },
+    {
+      "progress": "logs/framework_migration_gpu_20261027/2026-10-27_16-01-06_723105_/progress.json",
+      "checkpoint": "logs/framework_migration_gpu_20261027/2026-10-27_16-01-06_723105_/model_4.pt",
+      "checkpoint_sha256": "24eec8b8573eb4c0e6b3512529d8cfaea5141d1cefb11192f5a726e74ba18c1b",
+      "saved_iteration": 4,
+      "saved_total_steps": 12800,
+      "sim_device": "cuda:0",
+      "num_envs": 128,
+      "progress_metrics": {
+        "completed_iterations": 4,
+        "total_environment_steps": 12800,
+        "value_loss": 4960.62,
+        "policy_loss": -0.0051351977325975896,
+        "kl": 0.009489277196116745,
+        "loop_peak_m": 0.008290760219097137,
+        "physical_failures": 76
+      },
+      "scope": "Bounded framework smoke/resume only. These new policies are untrained and not promoted for standing or terrain performance."
+    }
+  ],
+  "legacy_entry_reverse_compatibility": {
+    "command": "./run.sh play.py --allow-approximate-loop --checkpoint <framework CPU model_3.pt> --headless --num-envs 1 --num-steps 10",
+    "completed_steps": 10,
+    "physical_failures": 0,
+    "timeouts": 0,
+    "scope": "Load/step smoke only; new three-update model not asserted stable."
+  },
+  "scut_closed_chain_reference": {
+    "repository": "https://github.com/scutrobotlab/wheeled-legged_RL",
+    "commit": "1a26356d6f591734d4f6f666f5cead1a6925da67",
+    "source": "source/agent_world/agent_world/assets/usd_files/wheelbipeV14_2_1/configuration/wheelbipeV14_2_physics.usd",
+    "loop_joints": [
+      {
+        "name": "left_f3r1_joint",
+        "type": "PhysicsSphericalJoint",
+        "exclude_from_articulation": true,
+        "physics:body0": [
+          "/wheelbipeV14_2/left_front3_link"
+        ],
+        "physics:body1": [
+          "/wheelbipeV14_2/left_rear1_link"
+        ],
+        "physics:localPos0": [
+          -0.11726000159978867,
+          -0.007499999832361937,
+          0.06689000129699707
+        ],
+        "physics:localPos1": [
+          -0.11339999735355377,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "name": "left_f4r2_joint",
+        "type": "PhysicsSphericalJoint",
+        "exclude_from_articulation": true,
+        "physics:body0": [
+          "/wheelbipeV14_2/left_front4_link"
+        ],
+        "physics:body1": [
+          "/wheelbipeV14_2/left_rear2_link"
+        ],
+        "physics:localPos0": [
+          -0.0966000035405159,
+          0.0,
+          0.0
+        ],
+        "physics:localPos1": [
+          -0.04777999967336655,
+          -0.013500000350177288,
+          0.046959999948740005
+        ]
+      },
+      {
+        "name": "left_s2r2_joint",
+        "type": "PhysicsSphericalJoint",
+        "exclude_from_articulation": true,
+        "physics:body0": [
+          "/wheelbipeV14_2/left_spring2_link"
+        ],
+        "physics:body1": [
+          "/wheelbipeV14_2/left_rear2_link"
+        ],
+        "physics:localPos0": [
+          -0.13300000131130219,
+          0.00795000046491623,
+          0.0
+        ],
+        "physics:localPos1": [
+          0.04758000001311302,
+          -0.014050000347197056,
+          -0.022919999435544014
+        ]
+      },
+      {
+        "name": "right_f3r1_joint",
+        "type": "PhysicsSphericalJoint",
+        "exclude_from_articulation": true,
+        "physics:body0": [
+          "/wheelbipeV14_2/right_front3_link"
+        ],
+        "physics:body1": [
+          "/wheelbipeV14_2/right_rear1_link"
+        ],
+        "physics:localPos0": [
+          -0.11726000159978867,
+          0.007499999832361937,
+          0.06689000129699707
+        ],
+        "physics:localPos1": [
+          -0.11339999735355377,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "name": "right_f4r2_joint",
+        "type": "PhysicsSphericalJoint",
+        "exclude_from_articulation": true,
+        "physics:body0": [
+          "/wheelbipeV14_2/right_front4_link"
+        ],
+        "physics:body1": [
+          "/wheelbipeV14_2/right_rear2_link"
+        ],
+        "physics:localPos0": [
+          -0.0966000035405159,
+          0.0,
+          0.0
+        ],
+        "physics:localPos1": [
+          -0.04777999967336655,
+          0.013500000350177288,
+          0.046959999948740005
+        ]
+      },
+      {
+        "name": "right_s2r2_joint",
+        "type": "PhysicsSphericalJoint",
+        "exclude_from_articulation": true,
+        "physics:body0": [
+          "/wheelbipeV14_2/right_spring2_link"
+        ],
+        "physics:body1": [
+          "/wheelbipeV14_2/right_rear2_link"
+        ],
+        "physics:localPos0": [
+          -0.13300000131130219,
+          -0.00795000046491623,
+          0.0
+        ],
+        "physics:localPos1": [
+          0.04758000001311302,
+          0.014050000347197056,
+          -0.022919999435544014
+        ]
+      }
+    ],
+    "note": "Read-only USD layer inspection with usd-core in /tmp; not installed in Isaac Gym environment."
+  },
+  "source_sha256": {
+    "wheelleg_gym/env.py": "5f4a356e0adbaf68c1b0f4d20c8422a4edf4beda902e1c84abd744f6ff287a7e",
+    "legged_gym/__init__.py": "1f6049264b8c87195daad06efc0fd72ac34028af49042cc90a2fb81b71690078",
+    "legged_gym/envs/__init__.py": "2fb697d5bc6345f60bb8ba5d06ca7a6205863b2f689d870b8727300b583cad95",
+    "legged_gym/envs/base/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "legged_gym/envs/base/base_config.py": "8ea6bf3f27e97c62a173f7d809281465be278b2b5c25ef4834f669009f51a65f",
+    "legged_gym/envs/base/legged_robot.py": "2cde139d079f79d0126da9d93c1356c70faebacd98450aae14e7271eaa8ad25b",
+    "legged_gym/envs/base/legged_robot_config.py": "77c8ca9cbf8860b290998865ac64d80200be594f2b18fd76dcb1f4fdda06c05b",
+    "legged_gym/envs/wheelleg/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "legged_gym/envs/wheelleg/wheelleg.py": "e5cb6acf73d1ae5a9fe29ca06581c04ab0772b260dc2a1a815d1ca08331f0d5c",
+    "legged_gym/envs/wheelleg/wheelleg_config.py": "b81609a27bab2623b2e182fafd759ff62aa4a7c90b167e20d895a43f8b38108e",
+    "legged_gym/scripts/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "legged_gym/scripts/list_tasks.py": "c69943c3d14badd83365bdab92a1a0af1d2d77c2358b7e64d93078d0aec224c2",
+    "legged_gym/scripts/play.py": "48962ede3667983a5c71c06a1d9dbec700ef59a3f4ae13bf7bcff2657f50c743",
+    "legged_gym/scripts/train.py": "97c15ebaf17e6d9765e48e0dfc271199992bb830a4f06abeae2159da8f754c11",
+    "legged_gym/utils/__init__.py": "3b92cc62e81d6990a9e29d1cd9b7b7f5999ae99257119e092d7f7e7bd3c748cf",
+    "legged_gym/utils/helpers.py": "765c62f08680d6f9e14f1316f5a74fdcc8266b58f68abdf0c76325eec0d72312",
+    "legged_gym/utils/task_registry.py": "9d76a091d7beaab21cd6163058ecb10045e56c8f8d89853b6dbcbde6e732d226",
+    "third_party/rsl_rl/runners/__init__.py": "ad0670196b0f6299bceddd5f78d2fa6c10b5e37a35d6ebf099f623b35e42af4b",
+    "third_party/rsl_rl/runners/on_policy_runner.py": "0e0df049217ed1e584094ce91b8f1acd126cd53986b2b1d3ff5fcd62352bc320",
+    "third_party/rsl_rl/env/__init__.py": "8434e0a09de407154c6e8ba37518b306ff0c56708238bc1640cc8bff48203c5d",
+    "third_party/rsl_rl/env/vec_env.py": "1fd86b7b4fbd4d5262c8bb431a94a3efe339f93ca578c4bca134682123d9e087",
+    "tests/test_legged_framework.py": "c6fcd8b6872c9a23bd1b4e27b1554e137bac95ffc88e6d7c38f925f537058b0b",
+    "setup.py": "eb5ac889775d863663571006a9c1b2add63b5938ab115e7d1b2b0a27b30a451f"
+  },
+  "limitations": [
+    "Framework migration does not resolve long-term creep, swaying, or learn a new gait.",
+    "The selected 1cm stair checkpoint remains the validated stair default; no new 2cm claim.",
+    "Existing native spherical loop joints in SCUT USD require its Isaac Sim/Lab path; no equivalent native joint implementation was added to Gym.",
+    "New runner supports feed-forward ActorCritic/PPO only; recurrent/estimator variants are not migrated.",
+    "CPU/CPU and CUDA/CUDA validated; split simulation/RL devices are unverified.",
+    "Two pre-existing local keyboard edits were preserved and excluded from this migration commit."
+  ]
+}

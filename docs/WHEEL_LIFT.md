@@ -89,5 +89,5 @@ cd /home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym
 | [lift.py](../lift.py) | 配置恢复、策略推理、有限时长评估与报告 |
 | [wheel_lift.py](../wheelleg_gym/wheel_lift.py) | `WheelLiftKeyboard` 的 Gym 按键订阅与按下沿处理；`AlternatingWheelLift` 状态机；`WheelLiftEnv` 独立腿目标、胎面代理、逐物理步接触统计；策略输入适配 |
 | [leg_control.py](../wheelleg_gym/leg_control.py) | 共用/独立腿长逆解和每腿支撑前馈 |
-| [env.py](../wheelleg_gym/env.py) | 共用仿真步进；新入口通过小型扩展接口接入，不改变原入口默认控制 |
+| [env.py](../legged_gym/envs/base/legged_robot.py) | 共用仿真步进；新入口通过小型扩展接口接入，不改变原入口默认控制 |
 | [test_wheel_lift.py](../tests/test_wheel_lift.py) | 几何、左右映射、支撑力、观测适配与失败门槛回归 |

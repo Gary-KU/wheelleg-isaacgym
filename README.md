@@ -3,6 +3,16 @@
 五连杆轮腿机器人的旧版 Isaac Gym 项目，可独立于 Isaac Sim / Isaac Lab 运行。
 这里包含导出的 URDF、闭环近似、环境、PPO 和播放入口，克隆后不需要上级 Isaac Lab 工程。
 
+**当前推荐使用 `legged_gym` 框架入口。** 物理环境已迁入 `legged_gym/envs/base/`，任务、配置、奖励和 `OnPolicyRunner` 已接入。先看[框架使用与代码阅读](docs/LEGGED_GYM.md)；[SCUT 闭链参考核对](docs/SCUT_CLOSED_CHAIN.md)说明原生 USD 闭链与当前 Gym 近似的区别。
+
+```bash
+conda activate isaacgym
+./run.sh legged_gym/scripts/play.py --task wheelleg_stand
+./run.sh legged_gym/scripts/train.py --task wheelleg_flat --num_envs 128 --headless
+```
+
+播放时点击仿真窗口，用方向键前后/转向、Q/E 调腿长。旧 `stand.sh`、`stairs.sh`、`lift.sh` 保留；下面的历史实测仍有参考价值，换框架本身没有消除已有稳定性限制。
+
 **换电脑使用：先看[公司电脑安装与学习指南](docs/COMPANY_SETUP.md)。** 仓库包含三份精选权重；NVIDIA Isaac Gym SDK 需要单独安装。
 
 **当前状态：平地前后行驶偏航已修正，静止俯仰晃动和长时间慢漂仍待改善；已加入五档阶梯训练，复杂阶梯仍待学习。**
@@ -35,6 +45,8 @@
 
 | 文档 | 内容 |
 | --- | --- |
+| [legged_gym 框架与命令](docs/LEGGED_GYM.md) | 新训练/播放、任务注册、配置继承、奖励、旧权重兼容 |
+| [SCUT 闭链参考](docs/SCUT_CLOSED_CHAIN.md) | 树外球铰 USD 定义与 Gym 近似连接的差异 |
 | [公司电脑安装与学习](docs/COMPANY_SETUP.md) | 克隆、环境安装、精选权重与日常同步 |
 | [代码导读](docs/CODE_GUIDE.md) | 阅读顺序、控制流程、动作/观测布局、各模块职责 |
 | [运行与参数](docs/USAGE.md) | 环境、模型检查、训练、键盘、评估、测试和兼容事项 |
@@ -49,7 +61,12 @@
 
 ```text
 IsaacGym/
-├── train.py                  # 训练入口
+├── legged_gym/               # 当前推荐框架，详见 docs/LEGGED_GYM.md
+│   ├── envs/base/            # 物理主体和基础嵌套配置
+│   ├── envs/wheelleg/        # 机器人任务、奖励和任务配置
+│   ├── utils/               # task_registry、参数和检查点
+│   └── scripts/             # train.py / play.py / list_tasks.py
+├── train.py                  # 旧训练入口（兼容保留）
 ├── play.py                   # 模型检查 / 权重播放 / 键盘控制
 ├── evaluate.py               # 无窗口策略评估
 ├── smoke_test.py             # 有限动作下的机构数值检查
@@ -62,7 +79,7 @@ IsaacGym/
 ├── wheelleg_gym/             # 自己实现的环境和训练适配
 │   ├── config.py             # 默认参数、动作顺序、PPO 配置
 │   ├── runtime_config.py     # 检查点恢复、稳定性预设与命令行覆盖
-│   ├── env.py                # 仿真、观测、奖励、终止与重置
+│   ├── env.py                # 兼容导入；物理已迁入 legged_gym/envs/base/
 │   ├── terrain.py            # 五档四上四下阶梯与地形高度查询
 │   ├── stair_rewards.py      # 阶梯进度、稳定性、失败与通过奖励
 │   ├── wheel_lift.py         # 换重心/抬轮/落轮状态机与接触测量
@@ -86,8 +103,8 @@ IsaacGym/
 └── validation/              # 精选评估摘要与历史状态索引
 ```
 
-建议阅读顺序：`config.py → train.py → env.py → constraints.py → training.py`。
-只想改奖励就先看 `env.py::_rewards()` 与 `rewards.py`；只想改键盘就看 `keyboard.py → play.py`。
+新框架建议阅读 `wheelleg_config.py → wheelleg.py → legged_robot.py → constraints.py → OnPolicyRunner`。
+改奖励先看 `WheelLeggedCfg.rewards.scales` 和 `WheelLegged._reward_...()`；旧入口的阅读顺序见[代码导读](docs/CODE_GUIDE.md)。
 
 ## 常用入口
 

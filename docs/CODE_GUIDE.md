@@ -1,5 +1,7 @@
 # 中文代码导读
 
+当前推荐从 [legged_gym 框架导读](LEGGED_GYM.md)开始：`legged_gym/envs/wheelleg/wheelleg_config.py → wheelleg.py → envs/base/legged_robot.py`。本文以下保留旧入口和共用物理的详细说明；`wheelleg_gym/env.py` 是兼容模块，物理主体已迁入新目录。
+
 本页解释代码如何连接。默认值以 [config.py](../wheelleg_gym/config.py) 为准，
 实验进展见 [EXPERIMENTS.md](EXPERIMENTS.md)。
 
@@ -10,7 +12,7 @@
 | 1 | [config.py](../wheelleg_gym/config.py) | 动作顺序与单位、物理默认值、观测维度、网络/PPO 参数 |
 | 2 | [train.py](../train.py) | 参数怎样变成环境和训练器 |
 | 2a | [runtime_config.py](../wheelleg_gym/runtime_config.py) | 检查点、稳定性预设与显式参数的优先级 |
-| 3 | [env.py](../wheelleg_gym/env.py) 的 `__init__()`、`step()` | 创建仿真，一次控制步的完整时序 |
+| 3 | [env.py](../legged_gym/envs/base/legged_robot.py) 的 `__init__()`、`step()` | 创建仿真，一次控制步的完整时序 |
 | 4 | `env.py` 的 `_kinematics()`、`_observations()`、`_rewards()` | 策略看到什么、优化什么 |
 | 5 | [kinematics.py](../wheelleg_gym/kinematics.py) | 五连杆几何、对称机构逆解 |
 | 6 | [constraints.py](../wheelleg_gym/constraints.py) | 树形 URDF 如何通过外力近似闭合 |

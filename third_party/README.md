@@ -18,3 +18,5 @@ are collected in `wheelleg_gym/config.py`; the runner still re-exports
 
 The vendored files avoid coupling this port to the neighbouring checkout or to
 Isaac Lab's newer RSL-RL/Python dependency versions.
+
+The legged_gym migration adds `runners/OnPolicyRunner` and `env/VecEnv` from Wheel-Legged-Gym commit `c354431e5633eb98d9663fa3fbe444201d2de383`. The runner imports this same vendored package, supports the existing feed-forward policy, consumes the six-value task API, retains the timeout-bootstrap fix in PPO, and fixes completed-iteration/save counters on resume. It records both nested and legacy config metadata and restores curriculum/optimizer state. The legacy small runner remains available for old scripts. Upstream recurrent/sequence classes and unrelated tasks/assets were not copied.

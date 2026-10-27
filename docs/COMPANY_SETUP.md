@@ -93,3 +93,7 @@ python -m pip install -r requirements.txt
 `.gitignore` 只放行三份精选权重和少量评估摘要；完整历史训练曲线、原始逐帧轨迹、其他权重仍在原电脑。后续产生的新日志默认也不会自动上传。确需保存新的精选结果时，要明确添加对应的忽略规则例外，再检查体积和内容。
 
 历史文档与 JSON 中的绝对路径是原实验记录，其他历史命令引用的权重也可能未随仓库提供。日常先使用本页的三个脚本。资产和第三方代码来源见 [NOTICE](../NOTICE.md)。
+
+## 新的 legged_gym 入口
+
+同步后使用 `./run.sh legged_gym/scripts/play.py --task wheelleg_stand` 查看精选站立权重；训练、目录和配置继承见 [框架指南](LEGGED_GYM.md)。旧脚本继续可用。运行新入口无需另装参考仓库；`pip install -e . --no-deps` 是可选的源码可编辑安装，本仓库不提供包含 SDK 的独立安装包。
