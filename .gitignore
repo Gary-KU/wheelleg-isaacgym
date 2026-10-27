@@ -54,3 +54,4 @@ build/
 dist/
 
 !/validation/moving_jump_work.json
+!/validation/manual_jump_work.json

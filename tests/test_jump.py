@@ -71,16 +71,27 @@ class JumpTests(unittest.TestCase):
         self.assertEqual(JumpKeyboard.KEYS["drive_stop"], "KEY_X")
         self.assertEqual(KeyboardDrive.KEYS["drive_stop"], "KEY_SPACE")
 
-    def test_jump_requires_stable_contact_and_rejects_acceleration(self):
-        self.assertFalse(self.controller.request_jump())
-        self.ready()
-        self.controller.before_step([0.2, 0, 0, 0.1])
-        self.assertFalse(self.controller.request_jump())
-        self.controller.before_step([0, 0, 0, 0.1])
-        self.ready()
+    def test_manual_jump_does_not_wait_for_startup_or_acceleration(self):
+        self.assertEqual(self.controller.states[0]["stable"], 0.0)
+        self.controller.before_step([0.6, 0, 0, 0.1])
         self.assertTrue(self.controller.request_jump())
         self.assertFalse(self.controller.request_jump())
         self.assertEqual(self.controller.states[0]["mode"], "crouch")
+
+    def test_accelerating_jump_holds_applied_velocity_instead_of_ramping_to_key_target(
+        self,
+    ):
+        for _ in range(5):
+            self.controller.before_step([0.6, 0, 0, 0.1])
+        applied = float(self.env.commands[0, 0])
+        self.assertLess(applied, 0.1)
+        self.assertTrue(self.controller.request_jump())
+        for _ in range(35):
+            self.tick()
+            self.assertAlmostEqual(float(self.env.commands[0, 0]), applied, places=6)
+        self.controller.states[0]["mode"] = "land"
+        self.controller.before_step()
+        self.assertGreater(float(self.env.commands[0, 0]), applied)
 
     def test_steady_forward_and_backward_roll_can_jump_without_braking(self):
         for speed in (-0.6, 0.6):
@@ -132,14 +143,32 @@ class JumpTests(unittest.TestCase):
         self.assertLess(float(self.env.commands[0, 0]), speed)
         self.assertGreater(float(self.env.commands[0, 0]), 0.0)
 
-    def test_turns_and_lateral_slip_do_not_arm_jump(self):
-        self.ready()
-        self.controller.before_step([0, 0, 2.0, 0.1])
+    def test_turning_slipping_and_tilt_do_not_cancel_manual_launch(self):
+        self.env.lin_vel[0] = torch.tensor([0.2, 0.1, 0.0])
+        self.env.pitch[0] = 0.15  # Exceeds the former prelaunch abort threshold.
+        self.env.roll[0] = 0.11
+        self.controller.before_step([0.6, 0, 2.0, 0.1])
+        self.assertTrue(self.controller.request_jump())
+        for _ in range(45):
+            self.tick()
+        self.assertEqual(self.controller.states[0]["mode"], "flight")
+        self.assertEqual(self.controller.attempts, [])
+
+    def test_touchdown_allows_next_jump_before_recovery_without_erasing_evidence(self):
+        self.assertTrue(self.controller.request_jump())
+        self.controller.states[0]["mode"] = "flight"
+        self.tick(self.env.info(clearance=(0.02, 0.02), contact=(0, 0)))
         self.assertFalse(self.controller.request_jump())
-        self.env.lin_vel[0] = torch.tensor([0.6, 0.1, 0.0])
-        self.controller.before_step([0.6, 0, 0, 0.1])
-        self.ready()
-        self.assertFalse(self.controller.request_jump())
+        self.tick(self.env.info())
+        self.assertEqual(self.controller.states[0]["mode"], "land")
+        self.assertTrue(self.controller.request_jump())
+        self.assertEqual(self.controller.states[0]["mode"], "crouch")
+        self.assertEqual(len(self.controller.attempts), 1)
+        previous = self.controller.attempts[0]
+        self.assertEqual(previous["failure"], "restarted_before_recovery")
+        self.assertFalse(previous["recovered"])
+        self.assertFalse(previous["success"])
+        self.assertTrue(previous["airborne_seen"])
 
     def test_push_duration_then_flight_has_no_support_force(self):
         self.ready()
@@ -184,16 +213,15 @@ class JumpTests(unittest.TestCase):
         self.assertFalse(self.controller.attempts[0]["success"])
         self.assertTrue(self.controller.attempts[0]["recovered"])
 
-    def test_physical_reset_blocks_repeated_jumps_until_explicit_reset(self):
-        self.ready()
+    def test_physical_reset_retains_failure_evidence_and_allows_manual_retry(self):
         self.controller.request_jump()
         self.tick(done=True)
         self.assertEqual(self.controller.states[0]["mode"], "blocked")
         self.assertFalse(self.controller.attempts[0]["success"])
-        self.assertFalse(self.controller.request_jump())
+        self.assertTrue(self.controller.request_jump())
+        self.assertEqual(self.controller.states[0]["mode"], "crouch")
         self.controller.reset()
-        self.assertEqual(self.controller.states[0]["mode"], "idle")
-        self.assertFalse(self.controller.request_jump())
+        self.assertTrue(self.controller.request_jump())
 
     def test_airborne_policy_does_not_spin_wheels_with_ground_policy(self):
         self.controller.states[0]["mode"] = "flight"

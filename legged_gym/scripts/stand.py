@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Space: jump from a stable stand or straight roll; X: stop; arrows: drive; R: reset."""
+"""Space: request a jump without readiness gates; X: stop; arrows: drive; R: reset."""
 
 import argparse
 import hashlib
@@ -120,11 +120,11 @@ def main():
             )
             keyboard.bind(env.gym, env.viewer, isaacgym.gymapi)
             print(
-                "点击仿真窗口：空格=站稳或匀速直行时跳一次；方向键=驾驶；X=停；Q/E=调腿长；R=重置。",
+                "点击仿真窗口：空格=起跳，无需等稳；方向键=驾驶；X=停；Q/E=调腿长；R=重置。",
                 flush=True,
             )
             print(
-                "先站稳或匀速直行；急加速、转向和恢复期间不接受起跳，空格不会排队。旧站立权重+显式跳跃控制，没有新训练。",
+                "加速、转向也能起跳；着地后可再次按空格，不用等恢复。预蹲/蹬伸/腾空中不重启动作、不排队。旧站立权重+显式跳跃控制，没有新训练。",
                 flush=True,
             )
         failures = timeouts = manual_resets = event_cursor = completed = 0
@@ -135,7 +135,6 @@ def main():
         started = time.perf_counter()
         last_finished = -100.0
         last_driving = -100.0
-        was_ready = False
         with torch.inference_mode():
             for step in range(steps):
                 if viewer_is_closed(env):
@@ -170,9 +169,6 @@ def main():
                     s["mode"] == "idle" and s["stable"] >= cfg.jump.stable_seconds
                     for s in controller.states
                 )
-                if keyboard is not None and ready and not was_ready:
-                    print("姿态和接触已稳定，可以按空格跳跃。", flush=True)
-                was_ready = ready
                 auto = (
                     finished_count < args.auto_jumps
                     and ready
@@ -211,14 +207,18 @@ def main():
                         messages = {
                             "jump_started": "预蹲、起跳。",
                             "touchdown": "已落地，正在恢复站立。",
-                            "jump_ignored": "请先站稳或保持匀速直行；急加速、转向和恢复期间不接受起跳。",
+                            "jump_ignored": "正在预蹲、蹬伸或腾空；着地后可再次按空格。",
                             "flight_timeout": "未检测到完整落地，正在返回支撑姿态。",
                         }
                         if event["event"] == "jump_finished":
                             message = (
-                                "跳跃完成。"
-                                if event["success"]
-                                else "本次动作未通过检查，请按 R 重置。"
+                                "上次落地恢复已由新起跳中断。"
+                                if event["failure"] == "restarted_before_recovery"
+                                else (
+                                    "跳跃完成。"
+                                    if event["success"]
+                                    else "本次未通过稳定性检查，仍可再次起跳；R 可复位。"
+                                )
                             )
                         else:
                             message = messages.get(event["event"], event["event"])

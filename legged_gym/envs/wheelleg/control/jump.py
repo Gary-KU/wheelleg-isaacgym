@@ -1,4 +1,4 @@
-"""Contact-gated standing and rolling jumps; all motion comes from capped joint torques.
+"""Manual standing and rolling jumps; all motion comes from capped joint torques.
 
 The wheel actor is an existing standing policy. Jumping is a leg trajectory,
 not a newly trained jumping policy. No root states are changed by this module.
@@ -40,7 +40,8 @@ class JumpKeyboard(KeyboardDrive):
 class JumpController:
     """Idle -> crouch -> hold -> push -> flight -> land -> recovered idle.
 
-    Repeated presses are ignored while airborne or recovering. Both
+    Manual requests do not require readiness. An executing launch cannot
+    restart in midair; after touchdown a new press can skip recovery. Both
     clearance and contact loss are required to count a real airborne interval.
     """
 
@@ -83,20 +84,26 @@ class JumpController:
         ]
         e.lift_lengths = e.lift_forces = None
 
+    @property
+    def can_jump(self):
+        """Allow a manual launch without speed, posture or settling gates."""
+        return all(s["mode"] in ("idle", "land", "blocked") for s in self.states)
+
     def request_jump(self):
-        if any(
-            s["mode"] != "idle" or s["stable"] + 1e-9 < self.jump.stable_seconds
-            for s in self.states
-        ):
+        if not self.can_jump:
             self.events.append(
                 dict(
                     event="jump_ignored",
                     time_s=self.time,
-                    reason="Wait for stable contact and steady straight driving; requests are not queued.",
+                    reason="Launch already executing; requests are not queued.",
                 )
             )
             return False
         for i, state in enumerate(self.states):
+            if state["attempt"] is not None:
+                # Keep the previous flight evidence; a manual restart does
+                # not certify that its landing recovery passed.
+                self._finish(i, "restarted_before_recovery")
             nominal = float(self.requested[i, 3])
             offset = nominal - self.jump.reference_length
             state.update(
@@ -107,7 +114,9 @@ class JumpController:
                 rolling=bool(self.requested[i, :3].abs().max() > 1e-4),
                 origin_xy=self.env.root_states[i, :2].clone(),
                 origin_yaw=float(self.env.yaw[i]),
-                launch_command=self.requested[i, :3].clone(),
+                # Capture the already applied ramp, not the eventual key target:
+                # a jump during acceleration must not keep accelerating while crouched.
+                launch_command=self.command_velocity[i].clone(),
                 crouch_length=max(0.06, self.jump.crouch_length + offset),
                 extension_length=min(0.20, self.jump.extension_length + offset),
             )
@@ -151,8 +160,8 @@ class JumpController:
             )
             & (e.dof_state[:, e.action_indices[4:], 1].abs().max(-1).values < 0.35)
         )
-        # Ground-trained balance can support a steady roll. Do not launch
-        # during acceleration, sharp turns or appreciable lateral slip.
+        # Readiness for the automatic test and measured landing recovery.
+        # Manual space presses do not depend on these thresholds.
         rolling = (
             ((e.lin_vel[:, 0] - self.requested[:, 0]).abs() < 0.08)
             & (e.lin_vel[:, 1].abs() < 0.025)
@@ -247,11 +256,6 @@ class JumpController:
                 mode = next_mode[mode]
                 state.update(mode=mode, start=self.time)
                 age = 0.0
-            if mode in ("crouch", "hold", "push") and (
-                abs(float(e.pitch[i])) > 0.12 or abs(float(e.roll[i])) > 0.10
-            ):
-                self._finish(i, "prelaunch_posture_limit")
-                continue
             if mode == "crouch":
                 x = min(1.0, age / j.crouch_seconds)
                 blend = x * x * (3 - 2 * x)
