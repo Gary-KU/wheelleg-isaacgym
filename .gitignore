@@ -63,3 +63,5 @@ dist/
 !/validation/sensor_balance_work.json
 
 !/validation/sensor_tracking_work.json
+
+!/validation/sensor_tracking_v2_work.json

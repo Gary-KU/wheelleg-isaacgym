@@ -264,6 +264,44 @@ class PPORunner:
                     ),
                     flush=True,
                 )
+                assessment = getattr(self.env, "assess_curriculum", None)
+                if assessment is not None:
+                    # An assessment can take a full episode. Protect the completed
+                    # update before testing, then refresh metadata after testing.
+                    if (
+                        self.log_dir is not None
+                        and self.iteration % self.config["save_interval"] == 0
+                    ):
+                        self.save(self.log_dir / "model_{}.pt".format(self.iteration))
+                    assessment_metrics = assessment(self.policy, self.iteration)
+                    if assessment_metrics is not None:
+                        # Assessment resets the simulation; no test transition enters PPO.
+                        observations, _ = self.env.get_observations()
+                        iteration_metrics[-1].update(assessment_metrics)
+                        if self.log_dir is not None:
+                            (self.log_dir / "progress.json").write_text(
+                                json.dumps(iteration_metrics[-1], indent=2) + "\n"
+                            )
+                        if self.writer is not None:
+                            for name, value in assessment_metrics.items():
+                                self.writer.add_scalar(name, value, self.iteration)
+                        if self.log_dir is not None:
+                            with (self.log_dir / "curriculum_evaluations.jsonl").open(
+                                "a"
+                            ) as stream:
+                                stream.write(
+                                    json.dumps(
+                                        dict(
+                                            iteration=self.iteration,
+                                            **assessment_metrics
+                                        )
+                                    )
+                                    + "\n"
+                                )
+                        print(
+                            "Curriculum assessment: " + json.dumps(assessment_metrics),
+                            flush=True,
+                        )
                 if (
                     self.log_dir is not None
                     and self.iteration % self.config["save_interval"] == 0

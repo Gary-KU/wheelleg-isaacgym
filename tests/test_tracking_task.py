@@ -58,6 +58,8 @@ class TrackingTaskTests(unittest.TestCase):
         cls.env.close()
 
     def setUp(self):
+        self.env.assessment_running = False
+        self.env.assessment_active[:] = False
         self.env.speed_levels[:] = 0
         self.env.tracking_failed[:] = False
         self.env.reset()
@@ -90,6 +92,8 @@ class TrackingTaskTests(unittest.TestCase):
 
     def test_completed_episode_needs_tracking_quality_before_promotion(self):
         e = self.env
+        e.assessment_running = True
+        e.assessment_active[:] = True
         e.episode_length_buf[:] = e.max_episode_length
         e.tracking_counts[:] = 400
         e.tracking_sums[:] = 0
@@ -105,6 +109,8 @@ class TrackingTaskTests(unittest.TestCase):
 
     def test_stationary_drift_and_heading_block_promotion(self):
         e = self.env
+        e.assessment_running = True
+        e.assessment_active[:] = True
         e.episode_length_buf[:] = e.max_episode_length
         e.tracking_counts[:] = 400
         e.tracking_sums[:] = 0
@@ -117,6 +123,8 @@ class TrackingTaskTests(unittest.TestCase):
 
     def test_stationary_trial_cannot_skip_motion_stage_and_failure_demotes(self):
         e = self.env
+        e.assessment_running = True
+        e.assessment_active[:] = True
         e.speed_levels[:] = 3
         e.command_targets[:, 0] = 0
         e.episode_length_buf[:] = e.max_episode_length
@@ -167,6 +175,122 @@ class TrackingTaskTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "warm-start"):
             TrackingWheelLegged.configure_execution(
                 cfg, args, {"legged_gym_env_config": {}}
+            )
+
+    def test_noisy_training_episode_does_not_grade_curriculum(self):
+        e = self.env
+        e.speed_levels[:] = 2
+        e.episode_length_buf[:] = e.max_episode_length
+        e.tracking_counts[:] = 400
+        e.tracking_sums[:] = 0
+        e.tracking_failed[0] = True
+        e._reset_idx(torch.arange(2))
+        self.assertEqual(e.speed_levels.tolist(), [2, 2])
+
+    def test_deterministic_assessment_promotes_and_restores_training_state(self):
+        class ZeroPolicy(torch.nn.Module):
+            def act_inference(self, obs):
+                return torch.zeros(len(obs), 6)
+
+        e = self.env
+        policy = ZeroPolicy()
+        old_length = e.max_episode_length
+        old_min, old_settle = (
+            e.cfg.curriculum.minimum_samples,
+            e.cfg.curriculum.settle_seconds,
+        )
+        try:
+            e.max_episode_length = 10
+            e.cfg.curriculum.minimum_samples = 1
+            e.cfg.curriculum.settle_seconds = 0
+            e.last_assessment_iteration = 0
+            result = e.assess_curriculum(policy, 1)
+            self.assertEqual(result["Assessment/promotions"], 2)
+            self.assertEqual(result["Assessment/steps"], 10)
+            self.assertTrue(policy.training)
+            self.assertFalse(e.assessment_running)
+            self.assertFalse(bool(e.assessment_active.any()))
+            self.assertEqual(e.episode_length_buf.tolist(), [0, 0])
+            self.assertIsNone(e.assess_curriculum(policy, 1))
+            self.assertIsNone(e.assess_curriculum(policy, 2))
+        finally:
+            e.max_episode_length = old_length
+            e.cfg.curriculum.minimum_samples, e.cfg.curriculum.settle_seconds = (
+                old_min,
+                old_settle,
+            )
+
+    def test_runner_assessment_is_outside_ppo_and_next_rollout_uses_reset_observation(
+        self,
+    ):
+        from legged_gym.learning.on_policy_runner import OnPolicyRunner
+        from legged_gym.utils import class_to_dict
+
+        e = self.env
+        old_length = e.max_episode_length
+        cc = e.cfg.curriculum
+        old_min, old_settle = cc.minimum_samples, cc.settle_seconds
+        try:
+            e.max_episode_length = 10
+            cc.minimum_samples, cc.settle_seconds = 1, 0
+            e.last_assessment_iteration = 0
+            _, cfg = task_registry.get_cfgs("wheelleg_sensor_tracking")
+            cfg.policy.actor_hidden_dims = cfg.policy.critic_hidden_dims = [16, 8]
+            cfg.runner.num_steps_per_env = 2
+            cfg.algorithm.num_learning_epochs = cfg.algorithm.num_mini_batches = 1
+            with tempfile.TemporaryDirectory() as folder:
+                runner = OnPolicyRunner(e, class_to_dict(cfg), folder, device="cpu")
+                runner.learn(1)
+                self.assertEqual(runner.tot_timesteps, 4)
+                self.assertEqual(e.episode_length_buf.tolist(), [0, 0])
+                lines = (
+                    (Path(folder) / "curriculum_evaluations.jsonl")
+                    .read_text()
+                    .splitlines()
+                )
+                self.assertEqual(len(lines), 1)
+                after_assessment = e.get_observations()[0].clone()
+                runner.learn(1)
+                torch.testing.assert_close(
+                    runner.alg.storage.observations[0], after_assessment
+                )
+                self.assertEqual(runner.tot_timesteps, 8)
+                self.assertEqual(
+                    len(
+                        (Path(folder) / "curriculum_evaluations.jsonl")
+                        .read_text()
+                        .splitlines()
+                    ),
+                    1,
+                )
+        finally:
+            e.max_episode_length = old_length
+            cc.minimum_samples, cc.settle_seconds = old_min, old_settle
+
+    def test_completed_update_is_saved_before_interrupted_assessment(self):
+        from unittest.mock import patch
+        from legged_gym.learning.on_policy_runner import OnPolicyRunner
+        from legged_gym.utils import class_to_dict
+
+        _, cfg = task_registry.get_cfgs("wheelleg_sensor_tracking")
+        cfg.policy.actor_hidden_dims = cfg.policy.critic_hidden_dims = [16, 8]
+        cfg.runner.num_steps_per_env = 2
+        cfg.runner.save_interval = 1
+        cfg.algorithm.num_learning_epochs = cfg.algorithm.num_mini_batches = 1
+        with tempfile.TemporaryDirectory() as folder:
+            runner = OnPolicyRunner(self.env, class_to_dict(cfg), folder, device="cpu")
+            with patch.object(
+                self.env,
+                "assess_curriculum",
+                side_effect=RuntimeError("interrupted assessment"),
+            ):
+                with self.assertRaisesRegex(RuntimeError, "interrupted assessment"):
+                    runner.learn(1)
+            saved = torch.load(Path(folder) / "model_1.pt", map_location="cpu")
+            self.assertEqual(saved["iter"], 1)
+            torch.testing.assert_close(
+                saved["model_state_dict"]["actor.0.weight"],
+                runner.alg.actor_critic.actor[0].weight,
             )
 
     def test_weights_only_keeps_new_config_and_fresh_optimizer(self):

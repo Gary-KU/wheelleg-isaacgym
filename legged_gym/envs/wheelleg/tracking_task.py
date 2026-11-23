@@ -1,5 +1,7 @@
 """Straight-speed curriculum; all extra truth is used for reward/evaluation only."""
 
+import time
+
 import torch
 
 from .sensor_task import SensorWheelLegged
@@ -29,6 +31,16 @@ class TrackingWheelLegged(SensorWheelLegged):
         )
         self.tracking_sums = torch.zeros(self.num_envs, 3, device=self.device)
         self.tracking_counts = torch.zeros(self.num_envs, device=self.device)
+        self.assessment_running = False
+        self.assessment_active = torch.zeros(
+            self.num_envs, dtype=torch.bool, device=self.device
+        )
+        self.assessment_rms = torch.zeros(self.num_envs, 3, device=self.device)
+        self.assessment_success = torch.zeros(
+            self.num_envs, dtype=torch.bool, device=self.device
+        )
+        self.assessment_failures = torch.zeros_like(self.assessment_success)
+        self.last_assessment_iteration = 0
         self.tracking_failed = torch.zeros(
             self.num_envs, dtype=torch.bool, device=self.device
         )
@@ -68,6 +80,7 @@ class TrackingWheelLegged(SensorWheelLegged):
     def _reset_idx(self, ids):
         if (
             self.cfg.curriculum.enabled
+            and self.assessment_running
             and len(ids)
             and bool((self.episode_length_buf[ids] > 0).any())
         ):
@@ -100,7 +113,15 @@ class TrackingWheelLegged(SensorWheelLegged):
                 & self.geometry_valid[ids]
             )
             # Demote early physical failures; explicit/manual resets don't count.
-            failed = self.tracking_failed[ids]
+            graded = self.assessment_active[ids]
+            failed = self.tracking_failed[ids] & graded
+            success &= graded
+            self.assessment_rms[ids] = torch.where(
+                graded[:, None], rms, self.assessment_rms[ids]
+            )
+            self.assessment_success[ids] |= success
+            self.assessment_failures[ids] |= failed
+            self.assessment_active[ids] = False
             self.speed_levels[ids] = (
                 self.speed_levels[ids] + success.long() - failed.long()
             ).clamp(0, len(cc.speeds) - 1)
@@ -134,10 +155,73 @@ class TrackingWheelLegged(SensorWheelLegged):
             torch.rand(len(ids), device=self.device)
             < self.cfg.commands.zero_command_fraction
         )
+        if self.assessment_running:
+            stopped[:] = False  # Every evaluation tests the current speed stage.
         self.command_targets[ids] = self.default_command
         self.command_targets[ids, 0] = torch.where(
             stopped, torch.zeros_like(speeds), speeds
         )
+
+    def assess_curriculum(self, policy, iteration):
+        """Grade deterministic actions outside PPO storage, then reset for fresh data."""
+        cc = self.cfg.curriculum
+        if (
+            not cc.enabled
+            or self.last_assessment_iteration == iteration
+            or (iteration != 1 and iteration % cc.assessment_interval)
+        ):
+            return None
+        print(
+            "Starting curriculum assessment with deterministic actions (up to one full episode).",
+            flush=True,
+        )
+        started = time.perf_counter()
+        previous_training = policy.training
+        before = self.speed_levels.clone()
+        self.reset()  # Discard the training rollout state before grading.
+        self.assessment_running = True
+        self.assessment_active[:] = True
+        self.assessment_success[:] = False
+        self.assessment_failures[:] = False
+        self.assessment_rms[:] = 0
+        self._sample_command_targets(torch.arange(self.num_envs, device=self.device))
+        steps = 0
+        try:
+            policy.eval()
+            with torch.inference_mode():
+                for _ in range(self.max_episode_length):
+                    obs, _ = self.get_observations()
+                    self.step(policy.act_inference(obs))
+                    steps += 1
+                    if not bool(self.assessment_active.any()):
+                        break
+            self.last_assessment_iteration = iteration
+            return {
+                "Assessment/promotions": int((self.speed_levels > before).sum()),
+                "Assessment/demotions": int((self.speed_levels < before).sum()),
+                "Assessment/physical_failures": int(self.assessment_failures.sum()),
+                "Assessment/mean_vx_error_m_s": float(self.assessment_rms[:, 0].mean()),
+                "Assessment/mean_lateral_speed_m_s": float(
+                    self.assessment_rms[:, 1].mean()
+                ),
+                "Assessment/mean_yaw_rate_error_rad_s": float(
+                    self.assessment_rms[:, 2].mean()
+                ),
+                "Assessment/max_speed_m_s": float(
+                    self.commands.new_tensor(cc.speeds)[self.speed_levels].max()
+                ),
+                "Curriculum/mean_speed_level": float(self.speed_levels.float().mean()),
+                "Curriculum/max_speed_m_s": float(
+                    self.commands.new_tensor(cc.speeds)[self.speed_levels].max()
+                ),
+                "Assessment/steps": steps,
+                "Assessment/wall_seconds": time.perf_counter() - started,
+            }
+        finally:
+            self.assessment_running = False
+            self.assessment_active[:] = False
+            policy.train(previous_training)
+            self.reset()  # Next PPO action must see this new observation, not pre-test data.
 
     def _reward_speed_error(self):
         return self._task_reward_terms["speed_error"]
@@ -191,10 +275,14 @@ class TrackingMetrics(WheelLegTrainingMetrics):
         return dict(
             super().checkpoint_metadata(),
             speed_curriculum_levels=self.env.speed_levels.cpu().tolist(),
+            curriculum_assessment_iteration=self.env.last_assessment_iteration,
         )
 
     def restore_checkpoint(self, state):
         super().restore_checkpoint(state)
+        self.env.last_assessment_iteration = state.get(
+            "curriculum_assessment_iteration", 0
+        )
         saved = state.get("speed_curriculum_levels")
         if saved is not None:
             levels = torch.tensor(saved, device=self.env.device, dtype=torch.long)

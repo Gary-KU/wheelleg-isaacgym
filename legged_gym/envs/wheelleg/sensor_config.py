@@ -123,6 +123,7 @@ class WheelLeggedTrackingCfg(WheelLeggedSensorCfg):
         yaw_rate_rms_limit = 0.06
         settle_seconds = 2.0
         minimum_samples = 300
+        assessment_interval = 100  # Separate deterministic episodes, not PPO samples.
 
     class rewards(WheelLeggedSensorCfg.rewards):
         linear_tracking_sigma = 0.10
@@ -146,4 +147,4 @@ class WheelLeggedTrackingCfgPPO(WheelLeggedSensorCfgPPO):
         num_learning_epochs = 2
 
     class runner(WheelLeggedSensorCfgPPO.runner):
-        experiment_name = "wheelleg_sensor_tracking"
+        experiment_name = "wheelleg_sensor_tracking_v2"

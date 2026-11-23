@@ -97,7 +97,7 @@ conda activate isaacgym
 
 新增 `wheelleg_sensor_tracking`，继续使用相同132维传感器输入，不给策略增加全局位置或仿真线速度。奖励增加前向速度误差、横向速度、偏航角速度以及停车时轮速的软惩罚。轮子仍可以转动来维持平衡，没有固定机体或强行锁轮。
 
-课程为 `0 → 0.2 → 0.4 → 0.6 → 0.8 → 1.0 m/s`，每个环境独立晋级。需要跑满16秒、至少300个稳定目标采样，停车级速度误差RMS<0.02 m/s、移动级<0.08 m/s，横向速度RMS<0.02 m/s、偏航角速度误差RMS<0.06 rad/s、结束时航向偏离<0.10 rad，且无物理失败、结束姿态合格。未达标不升速；物理失败降一级。移动阶段25%的回合仍练习停车，停车回合不能代替移动考核晋级。加速度限制0.4 m/s²。
+课程为 `0 → 0.2 → 0.4 → 0.6 → 0.8 → 1.0 m/s`，每个环境独立晋级。晋级考核使用单独的无动作探索回合，需要跑满16秒、至少300个稳定目标采样，停车级速度误差RMS<0.02 m/s、移动级<0.08 m/s，横向速度RMS<0.02 m/s、偏航角速度误差RMS<0.06 rad/s、结束时航向偏离<0.10 rad，且无物理失败、结束姿态合格。未达标不升速；物理失败降一级。移动阶段25%的回合仍练习停车，停车回合不能代替移动考核晋级。加速度限制0.4 m/s²。
 
 从旧第600轮策略开始新课程，用 `--warm-start`，它只载入actor和探索标准差，保留新任务配置，并重新初始化critic、优化器和训练计数；普通 `--resume` 会恢复旧配置，不适合跨课程初始化。
 
@@ -107,7 +107,7 @@ conda activate isaacgym
   --num_envs 64 --headless
 ```
 
-记录在 `logs/wheelleg_sensor_tracking/`。下次继续**同一课程**时才用：
+当前第二版记录在 `logs/wheelleg_sensor_tracking_v2/`，第一版保留在 `logs/wheelleg_sensor_tracking/`。下次继续**同一课程**时才用：
 
 ```bash
 ./run.sh legged_gym/scripts/train.py --task wheelleg_sensor_tracking \
@@ -121,15 +121,37 @@ conda activate isaacgym
 ```bash
 # 零指令：检查停稳与漂移
 ./run.sh legged_gym/scripts/play.py --task wheelleg_sensor_tracking \
-  --checkpoint logs/wheelleg_sensor_tracking/你的运行目录/model_N.pt \
+  --checkpoint logs/wheelleg_sensor_tracking_v2/你的运行目录/model_N.pt \
   --command 0 0 0 0.08 --headless --num_steps 3000 --report /tmp/standing_motion.json
 
 # 1.0 m/s直行：检查实际速度和偏航/横移，不仅看给定值
 ./run.sh legged_gym/scripts/play.py --task wheelleg_sensor_tracking \
-  --checkpoint logs/wheelleg_sensor_tracking/你的运行目录/model_N.pt \
+  --checkpoint logs/wheelleg_sensor_tracking_v2/你的运行目录/model_N.pt \
   --command 1.0 0 0 0.08 --headless --num_steps 3000 --report /tmp/forward_motion.json
 ```
 
 播放报告增加 `motion`：前向速度均值、速度误差RMS、横向速度RMS、停车速度RMS、各连续回合相对起点的位移和航向变化；排除重置瞬移，速度统计跳过重置后的前2秒。跨多回合的最大位移不能证明连续站立，应同时看失败次数。课程检查点保存各环境级别，播放时冻结晋级，固定前进指令也从零按训练时的加速度斜坡进入。
 
 代码：`tracking_task.py` 管理奖励与课程，`sensor_config.py` 管理阈值和速度级别，`diagnostics/motion_evaluation.py` 只做真值评价。没有修改URDF，也没有实机部署。
+
+## 第二版：把晋级考核从探索训练中分离
+
+第一版训练到580轮仍在停车级；独立2环境、30秒无探索复测，速度RMS约0.054 m/s、前后最大位移1.83 m、横向轨迹偏移0.57 m，没有倒地。它确实没有达到停车标准，不只是考核方式的问题。同时，训练中的探索轮子标准差仍约0.09，随机力矩会干扰严格停车考核，因此不能用带动作探索的训练回合直接判断最终表现。
+
+现在普通探索回合只用于PPO学习，不再直接升降级。在第1次更新和每100次更新后，使用当前策略均值动作做最多16秒的单独考核。传感器噪声、偏置、延迟仍保留；只关闭策略动作探索。考核开始与结束都重置环境，结束后PPO重新读取重置观测；考核的状态、动作与回报不写入PPO storage。每台机器人只按考核中的第一次回合结束评分，考核移动级别时不会抽到停车任务。
+
+门槛没有放宽，仍需满足停车/移动速度、横向速度、偏航、结束航向及姿态要求。升降级和保存的课程等级只由这些考核回合更新。
+
+曾测试加大速度误差惩罚（归一化尺度0.20降到0.05）、降低value_loss_coef到0.1并取消熵奖励的组合。16环境100次更新后，完整无探索考核的平均前向速度误差RMS由约0.045升到0.072 m/s，0台晋级，候选未通过，因此这组奖励/PPO参数已经撤回。当前默认仍用原来的0.20尺度、value_loss_coef=1和entropy_coef=0.001，只保留独立考核修复。没有把失败试验权重作为默认模型。
+
+第二版必须通过 `--warm-start` 开始新实验，不能用 `--resume` 加载第一版配置，否则旧奖励与优化器配置会覆盖新默认值。可选择自己的同布局权重；本机保留的80轮微调权重例子：
+
+```bash
+./run.sh legged_gym/scripts/train.py --task wheelleg_sensor_tracking \
+  --warm-start logs/sensor_tracking_initialization_20261123/tracking_refine_80.pt \
+  --num_envs 64 --headless
+```
+
+`Starting curriculum assessment ...` 表示正在考核，期间不会输出普通iteration行。结果写到控制台、TensorBoard、progress.json和 `curriculum_evaluations.jsonl`，包括 `Assessment/promotions`、速度误差、物理失败次数和考核耗时。训练总步数只统计PPO数据，考核步数单独记录。普通探索回合的RMS可以高于考核RMS，两者不应混为一谈。
+
+第二版验收记录见[独立课程考核修复](../validation/sensor_tracking_v2_work.json)。考核流程修复不等于停车控制已经解决，也不意味着已达到1.0 m/s。

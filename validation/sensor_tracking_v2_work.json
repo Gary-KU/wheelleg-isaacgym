@@ -1,0 +1,149 @@
+{
+  "date": "2026-11-23",
+  "scope": "Separate deterministic curriculum grading from noisy PPO training; reject an unsuccessful reward/PPO candidate.",
+  "old_training580_evaluation": {
+    "motion": {
+      "settle_seconds": 2.0,
+      "settled_samples": 2800,
+      "mean_forward_speed_m_s": 0.03750047832727432,
+      "mean_command_forward_speed_m_s": 0.0,
+      "rms_forward_speed_error_m_s": 0.053616151837069935,
+      "rms_lateral_speed_m_s": 0.00310101527828095,
+      "rms_yaw_rate_error_rad_s": 0.0258039906120671,
+      "stationary_rms_speed_m_s": 0.053705740821233576,
+      "stationary_peak_speed_m_s": 0.09661613404750824,
+      "segment_peak_forward_displacement_m": 1.834940791130066,
+      "segment_peak_cross_track_m": 0.5702754855155945,
+      "segment_peak_heading_change_rad": 0.5339347124099731,
+      "note": "Displacements are relative to each reset pose/heading; cross-track is meaningful for straight commands. Settled speed statistics exclude the first two seconds after each reset."
+    },
+    "task": "wheelleg_sensor_tracking",
+    "checkpoint": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/logs/wheelleg_sensor_tracking/2026-11-23_16-48-04_298831_/model_580.pt",
+    "completed_steps": 1500,
+    "environment_seconds": 30.0,
+    "wall_seconds": 34.25067964399932,
+    "num_envs": 2,
+    "physical_failures": 0,
+    "timeouts": 0,
+    "terrain_successes": 0,
+    "pitch_peak_rad": 0.033571455627679825,
+    "roll_peak_rad": 0.012190578505396843,
+    "closure_peak_m": 0.0013579657534137368,
+    "observation_size": 132,
+    "keyboard_enabled": false,
+    "loop_model": "external_force_compliant_approximation"
+  },
+  "assessment_design": {
+    "timing": "After update1 and each100 updates. Max one complete episode per environment.",
+    "actions": "Deterministic actor mean; physical sensor noise/bias/delay remain.",
+    "isolation": "Assessment transitions never enter PPO storage. Reset before and after assessment; next rollout reads fresh reset observations.",
+    "grading": "Only first assessment completion per env updates level. Noisy training completions do not promote/demote. No random stationary trials in moving-stage assessments.",
+    "checkpoint": "Save completed periodic update before assessment so interruption cannot lose it; save updated curriculum metadata after assessment.",
+    "logging": "TensorBoard, progress.json, training_summary.json, curriculum_evaluations.jsonl; evaluation steps/time separate from PPO environment steps."
+  },
+  "rejected_candidate": {
+    "initial_checkpoint": "logs/sensor_tracking_initialization_20261123/tracking_refine_80.pt",
+    "device": "cpu",
+    "num_envs": 16,
+    "updates": 100,
+    "candidate_parameters": {
+      "speed_error_scale": 0.05,
+      "value_loss_coef": 0.1,
+      "entropy_coef": 0.0
+    },
+    "full16second_assessments": [
+      {
+        "iteration": 1,
+        "Assessment/promotions": 0,
+        "Assessment/demotions": 0,
+        "Assessment/physical_failures": 0,
+        "Assessment/mean_vx_error_m_s": 0.04454794153571129,
+        "Assessment/mean_lateral_speed_m_s": 0.005163107067346573,
+        "Assessment/mean_yaw_rate_error_rad_s": 0.03783882409334183,
+        "Assessment/max_speed_m_s": 0.0,
+        "Assessment/steps": 800,
+        "Assessment/wall_seconds": 49.48717574999864
+      },
+      {
+        "iteration": 100,
+        "Assessment/promotions": 0,
+        "Assessment/demotions": 0,
+        "Assessment/physical_failures": 0,
+        "Assessment/mean_vx_error_m_s": 0.07157441228628159,
+        "Assessment/mean_lateral_speed_m_s": 0.005506973247975111,
+        "Assessment/mean_yaw_rate_error_rad_s": 0.028057795017957687,
+        "Assessment/max_speed_m_s": 0.0,
+        "Assessment/steps": 800,
+        "Assessment/wall_seconds": 51.67134774400074
+      }
+    ],
+    "decision": "Rejected: mean vx RMS rose from0.0445 to0.0716 m/s and no env promoted. Combination experiment; cannot attribute causality to an individual parameter."
+  },
+  "retained_configuration": {
+    "speed_error_scale": 0.2,
+    "value_loss_coef": 1.0,
+    "entropy_coef": 0.001,
+    "change": "Only deterministic grading and its reporting/checkpoint safety are retained; aggressive candidate parameters rolled back.",
+    "one_update_cpu2env_full16sec_assessment": [
+      {
+        "iteration": 1,
+        "Assessment/promotions": 0,
+        "Assessment/demotions": 0,
+        "Assessment/physical_failures": 0,
+        "Assessment/mean_vx_error_m_s": 0.05767979472875595,
+        "Assessment/mean_lateral_speed_m_s": 0.003455219091847539,
+        "Assessment/mean_yaw_rate_error_rad_s": 0.04943610727787018,
+        "Assessment/max_speed_m_s": 0.0,
+        "Curriculum/mean_speed_level": 0.0,
+        "Curriculum/max_speed_m_s": 0.0,
+        "Assessment/steps": 800,
+        "Assessment/wall_seconds": 18.857122763000007
+      }
+    ]
+  },
+  "gpu_integration": {
+    "num_envs": 4,
+    "updates": 2,
+    "assessment_episode_seconds": 2.0,
+    "minimum_samples": 50,
+    "settle_seconds": 0.5,
+    "results": [
+      {
+        "iteration": 1,
+        "Assessment/promotions": 0,
+        "Assessment/demotions": 0,
+        "Assessment/physical_failures": 0,
+        "Assessment/mean_vx_error_m_s": 0.03274882584810257,
+        "Assessment/mean_lateral_speed_m_s": 0.005035555921494961,
+        "Assessment/mean_yaw_rate_error_rad_s": 0.04540611803531647,
+        "Assessment/max_speed_m_s": 0.0,
+        "Curriculum/mean_speed_level": 0.0,
+        "Curriculum/max_speed_m_s": 0.0,
+        "Assessment/steps": 100,
+        "Assessment/wall_seconds": 15.264439467000557
+      },
+      {
+        "iteration": 2,
+        "Assessment/promotions": 2,
+        "Assessment/demotions": 0,
+        "Assessment/physical_failures": 0,
+        "Assessment/mean_vx_error_m_s": 0.032726362347602844,
+        "Assessment/mean_lateral_speed_m_s": 0.005019966512918472,
+        "Assessment/mean_yaw_rate_error_rad_s": 0.03137011453509331,
+        "Assessment/max_speed_m_s": 0.20000000298023224,
+        "Curriculum/mean_speed_level": 0.5,
+        "Curriculum/max_speed_m_s": 0.20000000298023224,
+        "Assessment/steps": 100,
+        "Assessment/wall_seconds": 15.427339706000566
+      }
+    ],
+    "limitation": "Shortened integration fixture; promotions here do NOT establish production16sec parking competence or1m/s."
+  },
+  "regression": {
+    "tests": 306,
+    "skipped": 1,
+    "working_tree": "pass",
+    "staged_export": "pass; unrelated local wheel_lift changes excluded"
+  },
+  "status": "Stop/straight1m/s goal NOT achieved. Old weights retained. Failed candidate not selected as default; no further long training started."
+}
