@@ -61,3 +61,5 @@ dist/
 !/validation/stm32_sensor_work.json
 
 !/validation/sensor_balance_work.json
+
+!/validation/sensor_tracking_work.json

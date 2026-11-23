@@ -82,6 +82,7 @@ assets/wheelleg/           同一份机器人资产
 | `wheelleg_stand` | 198 / 6 | 零速站立；默认播放 `standing_hold.pt` |
 | `wheelleg_stairs` | 252 / 6 | 五档阶梯课程；默认播放已验证的 1 cm 权重 |
 | `wheelleg_sensor` | 132 / 6 | 使用实机可获得的平面状态重新训练；无预置权重，见[传感器训练](STM32_SENSORS.md) |
+| `wheelleg_sensor_tracking` | 132 / 6 | 传感器观测，停稳与直行课程至1.0 m/s |
 
 ```bash
 ./run.sh legged_gym/scripts/play.py --task wheelleg_stairs --no_keyboard

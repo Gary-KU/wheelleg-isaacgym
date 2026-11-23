@@ -117,6 +117,24 @@ class TaskRegistry:
             raise ValueError(
                 "Task has no handler for command/terrain CLI overrides: " + name
             )
+        args.warm_start_path = None
+        if args.warm_start is not None:
+            import hashlib
+
+            warm = args.warm_start.expanduser().resolve()
+            if not warm.is_file():
+                raise ValueError("Warm-start checkpoint does not exist: " + str(warm))
+            weights = torch.load(str(warm), map_location="cpu")["model_state_dict"]
+            if weights["actor.0.weight"].shape[1] != env_cfg.env.num_observations:
+                raise ValueError(
+                    "Warm-start observation layout does not match task " + name
+                )
+            args.warm_start_path = warm
+            train_cfg.initialization_provenance = dict(
+                mode="actor_only",
+                checkpoint=str(warm),
+                sha256=hashlib.sha256(warm.read_bytes()).hexdigest(),
+            )
         args.checkpoint_path = checkpoint
         return env_cfg, train_cfg
 
@@ -163,6 +181,24 @@ class TaskRegistry:
         runner = OnPolicyRunner(
             env, class_to_dict(train_cfg), log_dir, device=args.rl_device
         )
+        if getattr(args, "warm_start_path", None) is not None:
+            import torch
+
+            weights = torch.load(str(args.warm_start_path), map_location=args.rl_device)
+            source = {
+                k: v
+                for k, v in weights["model_state_dict"].items()
+                if k.startswith("actor.") or k == "std"
+            }
+            target = runner.alg.actor_critic.state_dict()
+            expected = {k for k in target if k.startswith("actor.") or k == "std"}
+            if set(source) != expected:
+                raise ValueError("Warm-start actor architecture does not match task")
+            target.update(source)
+            runner.alg.actor_critic.load_state_dict(target, strict=True)
+            print(
+                "Warm-started actor/exploration weights; fresh critic, optimizer, counters and task configuration."
+            )
         if getattr(args, "checkpoint_path", None) is not None:
             runner.load(args.checkpoint_path, load_optimizer=args.mode == "train")
         if log_dir is not None:

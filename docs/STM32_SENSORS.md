@@ -90,3 +90,46 @@ conda activate isaacgym
 回归和短训练记录见[传感器任务验收](../validation/stm32_sensor_work.json)。这里只验证观测接口、CPU/GPU更新、保存/恢复及有限播放，没有声称已经训练出可站稳的新策略。
 
 平衡配置的短训练对比见[平衡训练调整记录](../validation/sensor_balance_work.json)。
+
+## 减少漂移并训练直行到1.0 m/s
+
+旧第600轮权重虽然不倒地，零速度复测仍有漂移：2个环境、30秒，前向速度均值约0.058 m/s，速度误差RMS约0.079 m/s；相对初始直线最大横向偏移2.34 m、最大航向变化2.47 rad。没有倒地不等于原地停稳，横向偏移还可能由缓慢转向累计而来。
+
+新增 `wheelleg_sensor_tracking`，继续使用相同132维传感器输入，不给策略增加全局位置或仿真线速度。奖励增加前向速度误差、横向速度、偏航角速度以及停车时轮速的软惩罚。轮子仍可以转动来维持平衡，没有固定机体或强行锁轮。
+
+课程为 `0 → 0.2 → 0.4 → 0.6 → 0.8 → 1.0 m/s`，每个环境独立晋级。需要跑满16秒、至少300个稳定目标采样，停车级速度误差RMS<0.02 m/s、移动级<0.08 m/s，横向速度RMS<0.02 m/s、偏航角速度误差RMS<0.06 rad/s、结束时航向偏离<0.10 rad，且无物理失败、结束姿态合格。未达标不升速；物理失败降一级。移动阶段25%的回合仍练习停车，停车回合不能代替移动考核晋级。加速度限制0.4 m/s²。
+
+从旧第600轮策略开始新课程，用 `--warm-start`，它只载入actor和探索标准差，保留新任务配置，并重新初始化critic、优化器和训练计数；普通 `--resume` 会恢复旧配置，不适合跨课程初始化。
+
+```bash
+./run.sh legged_gym/scripts/train.py --task wheelleg_sensor_tracking \
+  --warm-start logs/wheelleg_sensor_balance/2026-11-23_15-45-20_291561_/model_600.pt \
+  --num_envs 64 --headless
+```
+
+记录在 `logs/wheelleg_sensor_tracking/`。下次继续**同一课程**时才用：
+
+```bash
+./run.sh legged_gym/scripts/train.py --task wheelleg_sensor_tracking \
+  --resume --num_envs 64 --headless
+```
+
+检查 `Curriculum/max_speed_m_s`、`Curriculum/mean_speed_level`、实际 `Motion/mean_vx_m_s`、速度跟踪误差和横向速度。课程上限为1.0 m/s，不代表权重已经达到这个速度。
+
+训练到相应级别后再用实际测量验收，示例（替换为本课程权重）：
+
+```bash
+# 零指令：检查停稳与漂移
+./run.sh legged_gym/scripts/play.py --task wheelleg_sensor_tracking \
+  --checkpoint logs/wheelleg_sensor_tracking/你的运行目录/model_N.pt \
+  --command 0 0 0 0.08 --headless --num_steps 3000 --report /tmp/standing_motion.json
+
+# 1.0 m/s直行：检查实际速度和偏航/横移，不仅看给定值
+./run.sh legged_gym/scripts/play.py --task wheelleg_sensor_tracking \
+  --checkpoint logs/wheelleg_sensor_tracking/你的运行目录/model_N.pt \
+  --command 1.0 0 0 0.08 --headless --num_steps 3000 --report /tmp/forward_motion.json
+```
+
+播放报告增加 `motion`：前向速度均值、速度误差RMS、横向速度RMS、停车速度RMS、各连续回合相对起点的位移和航向变化；排除重置瞬移，速度统计跳过重置后的前2秒。跨多回合的最大位移不能证明连续站立，应同时看失败次数。课程检查点保存各环境级别，播放时冻结晋级，固定前进指令也从零按训练时的加速度斜坡进入。
+
+代码：`tracking_task.py` 管理奖励与课程，`sensor_config.py` 管理阈值和速度级别，`diagnostics/motion_evaluation.py` 只做真值评价。没有修改URDF，也没有实机部署。

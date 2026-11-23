@@ -102,3 +102,48 @@ class WheelLeggedSensorCfgPPO(WheelLeggedCfgPPO):
     class runner(WheelLeggedCfgPPO.runner):
         experiment_name = "wheelleg_sensor_balance"
         pretrained_checkpoint = None  # 198-input legacy policies are incompatible.
+
+
+class WheelLeggedTrackingCfg(WheelLeggedSensorCfg):
+    """Refine stopping, then advance straight speed only after successful episodes."""
+
+    class commands(WheelLeggedSensorCfg.commands):
+        random_commands = True
+        command_resample_seconds = 0.0  # One stop/straight target per episode.
+        linear_acceleration = 0.4
+        zero_command_fraction = 0.25
+
+    class curriculum:
+        enabled = True
+        speeds = (0.0, 0.2, 0.4, 0.6, 0.8, 1.0)
+        velocity_rms_limit = 0.08
+        stationary_velocity_rms_limit = 0.02
+        heading_error_limit = 0.10
+        lateral_rms_limit = 0.02
+        yaw_rate_rms_limit = 0.06
+        settle_seconds = 2.0
+        minimum_samples = 300
+
+    class rewards(WheelLeggedSensorCfg.rewards):
+        linear_tracking_sigma = 0.10
+        yaw_tracking_sigma = 0.08
+        speed_error_scale = 0.20
+        lateral_error_scale = 0.05
+        yaw_error_scale = 0.10
+        wheel_speed_scale = 2.0  # shaft rad/s; soft stop cost, never a wheel lock
+
+        class scales(WheelLeggedSensorCfg.rewards.scales):
+            speed_error = -2.0
+            lateral_speed = -1.0
+            yaw_rate_error = -0.5
+            stopped_wheel_speed = -0.2
+
+
+class WheelLeggedTrackingCfgPPO(WheelLeggedSensorCfgPPO):
+    class algorithm(WheelLeggedSensorCfgPPO.algorithm):
+        learning_rate = 0.00003
+        max_learning_rate = 0.00003
+        num_learning_epochs = 2
+
+    class runner(WheelLeggedSensorCfgPPO.runner):
+        experiment_name = "wheelleg_sensor_tracking"

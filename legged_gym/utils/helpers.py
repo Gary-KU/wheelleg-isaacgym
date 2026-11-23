@@ -82,6 +82,12 @@ def get_args(mode="train", argv=None):
     p.add_argument("--rl_device", "--rl-device")
     p.add_argument("--headless", action="store_true")
     p.add_argument("--resume", action="store_true")
+    p.add_argument(
+        "--warm_start",
+        "--warm-start",
+        type=Path,
+        help="Actor/exploration weights only; fresh critic, optimizer, counters and task config",
+    )
     p.add_argument("--checkpoint", help="model_N.pt path, or numeric checkpoint index")
     p.add_argument("--load_run", "--load-run", default="-1")
     p.add_argument("--run_name", "--run-name", default="")
@@ -115,5 +121,11 @@ def get_args(mode="train", argv=None):
         p.error("--seed must be in [0, 2**32)")
     if args.stair_level is not None and not 0 <= args.stair_level <= 4:
         p.error("--stair_level must be in [0,4]")
+    if args.warm_start and (
+        mode != "train" or args.resume or args.checkpoint is not None
+    ):
+        p.error(
+            "--warm-start requires train and cannot combine with --resume/--checkpoint"
+        )
     args.mode = mode
     return args

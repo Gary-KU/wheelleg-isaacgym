@@ -30,3 +30,14 @@ def register(registry):
             WheelLeggedSensorCfg(),
             WheelLeggedSensorCfgPPO(),
         )
+
+    from .tracking_task import TrackingWheelLegged
+    from .sensor_config import WheelLeggedTrackingCfg, WheelLeggedTrackingCfgPPO
+
+    if "wheelleg_sensor_tracking" not in registry.task_classes:
+        registry.register(
+            "wheelleg_sensor_tracking",
+            TrackingWheelLegged,
+            WheelLeggedTrackingCfg(),
+            WheelLeggedTrackingCfgPPO(),
+        )

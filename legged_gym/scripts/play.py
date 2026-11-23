@@ -9,9 +9,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 import isaacgym
 import torch
 from legged_gym.envs import register_tasks
+
 register_tasks()
 from legged_gym.utils import get_args, task_registry
 from legged_gym.envs.wheelleg.keyboard import KeyboardDrive
+from legged_gym.envs.wheelleg.diagnostics.motion_evaluation import MotionEvaluation
 
 
 def main():
@@ -41,6 +43,7 @@ def main():
             )
         pitch = roll = loop = 0.0
         physical_failures = timeouts = successes = completed = 0
+        motion = MotionEvaluation(env.root_states, env.dt)
         started = time.perf_counter()
         with torch.inference_mode():
             for step in range(args.num_steps):
@@ -61,6 +64,12 @@ def main():
                 obs, _, reward, done, info, _ = env.step(action)
                 if not bool(torch.isfinite(obs).all() and torch.isfinite(reward).all()):
                     raise RuntimeError("Non-finite playback")
+                motion.update(
+                    info["pre_reset_root_states"],
+                    info["pre_reset_commands"],
+                    done,
+                    env.root_states,
+                )
                 completed = step + 1
                 physical_failures += int(info["physical_failures"].sum())
                 timeouts += int(info["time_outs"].sum())
@@ -71,6 +80,7 @@ def main():
                 roll = max(roll, float(info["pre_reset_roll"].abs().max()))
                 loop = max(loop, float(info["loop_error_max"]))
         report = dict(
+            motion=motion.report(),
             task=args.task,
             checkpoint=str(args.checkpoint_path),
             completed_steps=completed,

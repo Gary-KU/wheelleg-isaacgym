@@ -30,6 +30,7 @@ conda activate isaacgym
 `wheelleg_flat`、`wheelleg_stand`、`wheelleg_stairs` 分别对应平地指令、零速站立、阶梯课程。训练默认 `cuda:0`；加 `--max_iterations 3` 可做有限接口检查。续训、指定权重和参数说明见[任务入口](docs/LEGGED_GYM.md)。根目录 `train.py`、`play.py`、`evaluate.py` 和现有 shell 脚本继续可用。
 
 面向 STM32 部署的观测训练使用新任务 `wheelleg_sensor`：只输入实机可获得的平面IMU/编码器状态、指令和上一拍动作，共132维。需重新训练；模型尺寸和电机输出仍需对齐，见[STM32传感器训练](docs/STM32_SENSORS.md)。
+减少停车漂移并逐级训练直行到1.0 m/s，使用 `wheelleg_sensor_tracking`；跨任务初始化用 `--warm-start`，实际速度与横移通过播放报告的 `motion` 字段验收。
 
 ## 代码从哪里读
 
