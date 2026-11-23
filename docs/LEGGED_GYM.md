@@ -20,7 +20,7 @@ cd /home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym
 | 2 | [wheelleg.py](../legged_gym/envs/wheelleg/wheelleg.py) | 任务、`_reward_...` 奖励、六返回值接口、旧检查点字段映射 |
 | 3 | [wheelleg_robot.py](../legged_gym/envs/wheelleg/wheelleg_robot.py) | 真实物理步进、URDF、闭环力、状态/观测、终止与自动重置 |
 
-日常默认值集中在 [wheelleg_config.py](../legged_gym/envs/wheelleg/wheelleg_config.py)。[register.py](../legged_gym/envs/wheelleg/register.py) 是当前三个任务的唯一注册清单；入口显式调用 [register_tasks()](../legged_gym/envs/__init__.py)，导入常量或工具不会自动加载机器人和 Gym。
+日常默认值集中在 [wheelleg_config.py](../legged_gym/envs/wheelleg/wheelleg_config.py)。[register.py](../legged_gym/envs/wheelleg/register.py) 是当前任务的唯一注册清单；入口显式调用 [register_tasks()](../legged_gym/envs/__init__.py)，导入常量或工具不会自动加载机器人和 Gym。
 
 ## 目录和调用关系
 
@@ -74,13 +74,14 @@ assets/wheelleg/           同一份机器人资产
 
 `--sim_device`、`--rl_device`、`--num_envs`、`--max_iterations` 等同时接受连字符拼法。完整选项用 `./run.sh legged_gym/scripts/train.py --help` 和播放入口的 `--help` 查询。
 
-## 三个任务
+## 注册任务
 
 | 名称 | 观测 / 动作 | 任务与默认权重 |
 | --- | --- | --- |
 | `wheelleg_flat` | 198 / 6 | 平地变速/转向/腿长指令训练；直接播放时默认用精选站立权重作检查 |
 | `wheelleg_stand` | 198 / 6 | 零速站立；默认播放 `standing_hold.pt` |
 | `wheelleg_stairs` | 252 / 6 | 五档阶梯课程；默认播放已验证的 1 cm 权重 |
+| `wheelleg_sensor` | 132 / 6 | 使用实机可获得的平面状态重新训练；无预置权重，见[传感器训练](STM32_SENSORS.md) |
 
 ```bash
 ./run.sh legged_gym/scripts/play.py --task wheelleg_stairs --no_keyboard

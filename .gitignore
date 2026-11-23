@@ -57,3 +57,5 @@ dist/
 !/validation/manual_jump_work.json
 !/validation/fast_landing_work.json
 !/validation/tall_stance_work.json
+
+!/validation/stm32_sensor_work.json

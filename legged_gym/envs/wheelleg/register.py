@@ -19,3 +19,14 @@ def register(registry):
     ):
         if name not in registry.task_classes:
             registry.register(name, WheelLegged, env_cfg(), train_cfg())
+
+    from .sensor_task import SensorWheelLegged
+    from .sensor_config import WheelLeggedSensorCfg, WheelLeggedSensorCfgPPO
+
+    if "wheelleg_sensor" not in registry.task_classes:
+        registry.register(
+            "wheelleg_sensor",
+            SensorWheelLegged,
+            WheelLeggedSensorCfg(),
+            WheelLeggedSensorCfgPPO(),
+        )

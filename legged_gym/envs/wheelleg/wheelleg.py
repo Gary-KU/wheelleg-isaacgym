@@ -138,6 +138,15 @@ class WheelLegged(WheelLegRobot):
         self.cfg = cfg
         self.environment_config = environment_kwargs(cfg)
         self.environment_config.update(sim_device=sim_device, headless=headless)
+        self._validate_observation_config(cfg)
+        self._prepare_reward_function()
+        super().__init__(**self.environment_config)
+        self.obs_history_length = 1  # obs_buf already contains all six frames
+        self.privileged_obs_buf = None
+        self.rew_buf = torch.zeros(self.num_envs, device=self.device)
+        self.extras = {}
+
+    def _validate_observation_config(self, cfg):
         expected = (
             31
             + 2 * cfg.observations.observe_leg_lengths
@@ -152,12 +161,6 @@ class WheelLegged(WheelLegRobot):
             raise ValueError(
                 "Config observation/action/history dimensions do not match the preserved layout"
             )
-        self._prepare_reward_function()
-        super().__init__(**self.environment_config)
-        self.obs_history_length = 1  # obs_buf already contains all six frames
-        self.privileged_obs_buf = None
-        self.rew_buf = torch.zeros(self.num_envs, device=self.device)
-        self.extras = {}
 
     def _prepare_reward_function(self):
         self.reward_scales = {}
@@ -172,12 +175,15 @@ class WheelLegged(WheelLegRobot):
                 self.reward_scales[name] = scale
                 self.reward_functions.append((name, function))
 
-    def _rewards(self, terminated):
-        self._task_reward_terms = (
+    def _compute_reward_terms(self, terminated):
+        return (
             stair_task_reward_terms(self, terminated)
             if self.terrain_model is not None
             else flat_reward_terms(self, terminated)
         )
+
+    def _rewards(self, terminated):
+        self._task_reward_terms = self._compute_reward_terms(terminated)
         self.reward_terms = {
             name: self.reward_scales[name] * function()
             for name, function in self.reward_functions

@@ -25,14 +25,19 @@ class WheelLegTrainingMetrics:
 
     def update(self, observations, rewards, dones, infos):
         command = infos["pre_reset_commands"]
-        # Linear velocity in the final observation uses body coordinates.
-        frame_size = getattr(
-            self.env, "observation_frame_size", OBSERVATION_BASE_FRAME_SIZE
-        )
-        measured = observations[:, -frame_size:].clone()
-        ids = infos.get("terminal_env_ids")
-        if ids is not None:
-            measured[ids] = infos["terminal_observation"][:, -frame_size:]
+        velocity_provider = getattr(self.env, "training_body_linear_velocity", None)
+        if velocity_provider is not None:
+            forward_velocity = velocity_provider(infos)[:, 0]
+        else:
+            # Legacy layouts keep their exact terminal-safe velocity extraction.
+            frame_size = getattr(
+                self.env, "observation_frame_size", OBSERVATION_BASE_FRAME_SIZE
+            )
+            measured = observations[:, -frame_size:].clone()
+            ids = infos.get("terminal_env_ids")
+            if ids is not None:
+                measured[ids] = infos["terminal_observation"][:, -frame_size:]
+            forward_velocity = measured[:, 0] / 1.5
         torque = infos["pre_reset_applied_torques"]
         delta = torque - infos["pre_reset_previous_torques"]
         self.motion_sums += torch.stack(
@@ -42,7 +47,7 @@ class WheelLegTrainingMetrics:
                 infos["pre_reset_ang_vel"][:, :2].square().sum(-1).mean(),
                 delta.square().mean(),
                 (torque.abs() >= TORQUE_LIMIT - 0.001).float().mean(),
-                (measured[:, 0] / 1.5 - command[:, 0]).square().mean(),
+                (forward_velocity - command[:, 0]).square().mean(),
                 (infos["pre_reset_ang_vel"][:, 2] - command[:, 2]).square().mean(),
                 (infos["pre_reset_leg_length"] - command[:, 3:4]).square().mean(),
             )
