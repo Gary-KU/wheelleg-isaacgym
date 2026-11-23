@@ -32,7 +32,18 @@ class SensorWheelLegged(WheelLegged):
         terms.update(
             lin_vel_z=(self.lin_vel[:, 2] * 1.5).square(),
             hip_pose=pose_errors.abs().sum(-1),
-            upright=torch.exp(-(1 + self.projected_gravity[:, 2]).square() / 0.02),
+            upright=torch.exp(
+                -(self.pitch.square() + self.roll.square())
+                / self.cfg.rewards.upright_sigma**2
+            ),
+            tracking_lin_vel=torch.exp(
+                -(self.commands[:, :2] - self.lin_vel[:, :2]).square().sum(-1)
+                / self.cfg.rewards.linear_tracking_sigma**2
+            ),
+            tracking_ang_vel=torch.exp(
+                -(self.commands[:, 2] - self.ang_vel[:, 2]).square()
+                / self.cfg.rewards.yaw_tracking_sigma**2
+            ),
             angular_motion=(self.ang_vel[:, :2] * 0.5).square().sum(-1),
         )
         return terms

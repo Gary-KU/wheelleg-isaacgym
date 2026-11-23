@@ -10,7 +10,11 @@ import torch
 from legged_gym.envs import register_tasks
 from legged_gym.envs.wheelleg.model.kinematics import fivebar
 from legged_gym.envs.wheelleg.model.constraints import quat_rotate_inverse
-from legged_gym.envs.wheelleg.sensor_config import WheelLeggedSensorCfg
+from legged_gym.envs.wheelleg.sensor_config import (
+    WheelLeggedSensorCfg,
+    WheelLeggedSensorCfgPPO,
+)
+from legged_gym.learning.policy import make_policy
 from legged_gym.envs.wheelleg.sensor_observations import (
     FRAME_FIELDS,
     FRAME_SIZE,
@@ -25,6 +29,26 @@ from legged_gym.utils import get_args, task_registry
 
 
 class SensorContractTests(unittest.TestCase):
+    def test_small_actor_initialization_is_opt_in_and_checkpoint_load_is_exact(self):
+        args = dict(
+            actor_hidden_dims=[16, 8],
+            critic_hidden_dims=[16, 8],
+            init_noise_std=[0.08] * 4 + [0.2] * 2,
+        )
+        torch.manual_seed(42)
+        original = make_policy(132, 6, "cpu", args)
+        torch.manual_seed(42)
+        balanced = make_policy(132, 6, "cpu", dict(args, actor_output_scale=0.01))
+        torch.testing.assert_close(
+            balanced.actor[-1].weight, original.actor[-1].weight * 0.01
+        )
+        torch.testing.assert_close(balanced.actor[-1].bias, torch.zeros(6))
+        torch.testing.assert_close(balanced.critic[0].weight, original.critic[0].weight)
+        balanced.load_state_dict(original.state_dict())
+        torch.testing.assert_close(balanced.actor[-1].weight, original.actor[-1].weight)
+        cfg = WheelLeggedSensorCfgPPO()
+        self.assertLessEqual(cfg.algorithm.max_learning_rate, 0.0001)
+
     def test_frame_layout_and_units(self):
         sensors = torch.arange(13, dtype=torch.float32)[None]
         commands = torch.tensor([[0.2, 0, -0.3, 0.1]])
@@ -200,6 +224,7 @@ class SensorTaskTests(unittest.TestCase):
         env.lin_vel[:, 2] = 2.0
         env.ang_vel[:, :2] = torch.tensor([2.0, 4.0])
         env.projected_gravity[:, 2] = -1.0
+        env.pitch[:] = env.roll[:] = 0.0
         done = torch.zeros(2, dtype=torch.bool)
         before = env._compute_reward_terms(done)
         env.slice_obs[:] = 999.0
@@ -209,6 +234,20 @@ class SensorTaskTests(unittest.TestCase):
         torch.testing.assert_close(after["lin_vel_z"], torch.full((2,), 9.0))
         torch.testing.assert_close(after["angular_motion"], torch.full((2,), 5.0))
         torch.testing.assert_close(after["upright"], torch.ones(2))
+
+    def test_balance_profile_penalizes_tilt_and_starts_with_stationary_commands(self):
+        env = self.env
+        self.assertFalse(env.cfg.commands.random_commands)
+        torch.testing.assert_close(env.commands[:, :3], torch.zeros(2, 3))
+        env.pitch[:] = torch.tensor([0.0, 0.15])
+        env.roll[:] = 0.0
+        terms = env._compute_reward_terms(torch.zeros(2, dtype=torch.bool))
+        self.assertAlmostEqual(float(terms["upright"][0]), 1.0)
+        self.assertLess(float(terms["upright"][1]), 0.12)
+        env.pitch[:] = 0.0
+        env.roll[:] = 0.15
+        rolled = env._compute_reward_terms(torch.zeros(2, dtype=torch.bool))
+        torch.testing.assert_close(rolled["upright"], terms["upright"][1].expand(2))
 
     def test_training_velocity_metric_uses_pre_reset_body_velocity(self):
         env = self.env

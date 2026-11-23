@@ -1,0 +1,119 @@
+{
+  "date": "2026-11-23",
+  "scope": "Stationary sensor-task training profile, not model/URDF alignment or a proven balancing policy.",
+  "baseline_commit": "f9c948f",
+  "comparison": {
+    "num_envs": 16,
+    "seed": 42,
+    "device": "cpu",
+    "iterations_each": 30,
+    "note": "Combined-profile sanity comparison: commands, rewards, initialization and PPO settings differ. Single seed, not an isolated reward ablation. Raw reward and value loss are not comparable across reward scales. User original GPU64 training kept running independently."
+  },
+  "runs": {
+    "baseline": {
+      "source": "/tmp/sensor_balance_baseline/2026-11-23_15-36-39_129014_/training_summary.json",
+      "iterations": 30,
+      "environment_steps": 12000,
+      "first": {
+        "Policy/kl": 74.62542568206787,
+        "Policy/learning_rate": 1e-05,
+        "Episode/mean_completed_duration_s": 0.35066666666666674,
+        "Motion/rms_pitch_rad": 0.14637033473902733,
+        "Episode/physical_failures": 15,
+        "Loss/value": 2865.009873046875
+      },
+      "last10_mean": {
+        "Policy/kl": 0.017317032470920823,
+        "Policy/learning_rate": 1e-05,
+        "Episode/mean_completed_duration_s": 0.4806410258304351,
+        "Motion/rms_pitch_rad": 0.15717159187277344,
+        "Episode/physical_failures": 16.6,
+        "Loss/value": 3650.41661328125
+      }
+    },
+    "tuned": {
+      "source": "/tmp/sensor_balance_tuned/2026-11-23_15-36-49_402046_/training_summary.json",
+      "iterations": 30,
+      "environment_steps": 12000,
+      "first": {
+        "Policy/kl": 0.0003097891809981472,
+        "Policy/learning_rate": 0.0001,
+        "Episode/mean_completed_duration_s": 0.4254545454545454,
+        "Motion/rms_pitch_rad": 0.14329236904709605,
+        "Episode/physical_failures": 11,
+        "Loss/value": 315.01772054036456
+      },
+      "last10_mean": {
+        "Policy/kl": 0.0012998079257765009,
+        "Policy/learning_rate": 0.0001,
+        "Episode/mean_completed_duration_s": 0.5168847875368644,
+        "Motion/rms_pitch_rad": 0.15223376233494723,
+        "Episode/physical_failures": 15.4,
+        "Loss/value": 303.60185457865396
+      }
+    },
+    "gpu": {
+      "source": "/tmp/sensor_balance_gpu/2026-11-23_15-37-06_721564_/training_summary.json",
+      "iterations": 2,
+      "environment_steps": 800,
+      "first": {
+        "Policy/kl": 0.001416090817656368,
+        "Policy/learning_rate": 0.0001,
+        "Episode/mean_completed_duration_s": 0.3485714285714286,
+        "Motion/rms_pitch_rad": 0.11163461891926989,
+        "Episode/physical_failures": 7,
+        "Loss/value": 361.0857213338216
+      },
+      "last10_mean": {
+        "Policy/kl": 0.0017646826557514335,
+        "Policy/learning_rate": 0.0001,
+        "Episode/mean_completed_duration_s": 0.4542857164049906,
+        "Motion/rms_pitch_rad": 0.13955938165331094,
+        "Episode/physical_failures": 12.5,
+        "Loss/value": 298.9916934967041
+      }
+    }
+  },
+  "result": "Early excessive KL and immediate learning-rate floor resolved in these short runs. Last10 mean completed durations 0.481 vs 0.517 seconds; no demonstrated stable standing or meaningful convergence.",
+  "regression": {
+    "tests": 292,
+    "skipped": 1,
+    "result": "pass",
+    "staged_tree_result": "292 tests, skipped1, pass; excludes unrelated local wheel_lift keyboard edits"
+  },
+  "changes": {
+    "commands": "Fixed zero vx/yaw, 0.08 m leg length. No automatic motion curriculum.",
+    "rewards": "Pitch/roll squared tilt exponential, broader initial velocity tracking, lower constant rewards and termination magnitude; absolute-yaw reward disabled.",
+    "initialization": "Opt-in actor final weights x0.01, zero bias; std hips0.08/wheels0.20. Loading weights overrides initialization exactly.",
+    "ppo": "LR capped 1e-4, 3epochs/4minibatches, entropy0.001; no global PPO implementation changes.",
+    "logs": "New runs logs/wheelleg_sensor_balance, old logs and live process unchanged."
+  },
+  "limitations": [
+    "30 updates are insufficient to claim stable standing; additional training/evaluation required.",
+    "Neither URDF nor actuator/geometry parameters have been aligned to real hardware.",
+    "Existing sensor checkpoint configuration overrides new defaults on resume; restart without resume for this profile.",
+    "No checkpoint from these smoke tests is bundled as a stable policy."
+  ],
+  "playback": {
+    "task": "wheelleg_sensor",
+    "checkpoint": "/tmp/sensor_balance_gpu/2026-11-23_15-37-06_721564_/model_2.pt",
+    "completed_steps": 100,
+    "environment_seconds": 2.0,
+    "wall_seconds": 2.2710695470000246,
+    "num_envs": 1,
+    "physical_failures": 2,
+    "timeouts": 0,
+    "terrain_successes": 0,
+    "pitch_peak_rad": 0.3727159798145294,
+    "roll_peak_rad": 0.001997555373236537,
+    "closure_peak_m": 0.0013318663695827127,
+    "observation_size": 132,
+    "keyboard_enabled": false,
+    "loop_model": "external_force_compliant_approximation"
+  },
+  "resume": {
+    "source": "/tmp/sensor_balance_resume/2026-11-23_15-38-33_462667_/training_summary.json",
+    "completed_iterations": 3,
+    "result": "GPU checkpoint iteration2 restored on CPU and completed iteration3"
+  }
+}

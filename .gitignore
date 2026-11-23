@@ -59,3 +59,5 @@ dist/
 !/validation/tall_stance_work.json
 
 !/validation/stm32_sensor_work.json
+
+!/validation/sensor_balance_work.json

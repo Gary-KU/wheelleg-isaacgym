@@ -11,7 +11,7 @@ conda activate isaacgym
 ./run.sh legged_gym/scripts/train.py --task wheelleg_sensor --num_envs 16 \
   --max_iterations 2 --headless
 
-# 本任务自己的权重保存到 logs/wheelleg_sensor/，续训同一任务
+# 本任务自己的权重保存到 logs/wheelleg_sensor_balance/，续训同一任务
 ./run.sh legged_gym/scripts/train.py --task wheelleg_sensor --num_envs 64 \
   --resume --max_iterations 100 --headless
 ```
@@ -20,8 +20,18 @@ conda activate isaacgym
 
 ```bash
 ./run.sh legged_gym/scripts/play.py --task wheelleg_sensor \
-  --checkpoint logs/wheelleg_sensor/你的运行目录/model_N.pt --keyboard
+  --checkpoint logs/wheelleg_sensor_balance/你的运行目录/model_N.pt --keyboard
 ```
+
+## 先站稳的训练配置
+
+当前 `wheelleg_sensor` 默认固定8 cm腿长，前进和转向指令都为零，先学静止平衡；不会自动进入运动课程。站立达到要求后，再单独扩展速度和腿长范围。原来的随机运动实验仍在 `logs/wheelleg_sensor/`，新的平衡实验保存在 `logs/wheelleg_sensor_balance/`。
+
+这次调整同时包含奖励与优化器配置，不能将新旧 reward 数值直接比较。姿态奖励使用 `exp(-(pitch²+roll²)/0.1²)`，15°附近不会再接近满分；速度/角速度跟踪采用较宽的早期训练尺度。直立、腿长等常量正奖励降低，倒地扣分由100改为10，减小早期critic回报量级；去掉对不可观测绝对航向的奖励约束。
+
+初始actor输出层缩小到原来的0.01倍且偏置清零，髋部/轮子探索标准差分别为0.08/0.20；学习率从1e-4开始并限制上限为1e-4，每次更新3个epoch、4个minibatch。这是待持续评估的平衡配置，不是已经收敛的策略。
+
+**从头启动本配置时不要加 `--resume` 或指定旧权重**，否则保存的旧指令、奖励与PPO配置会覆盖新默认值。新目录训练出的权重才使用上面的续训命令。已经运行中的Python进程不会自动采用文件修改，需要在原训练终端按Ctrl+C后重新启动。
 
 新任务每帧22维，使用5帧历史加当前帧，共132维。字段顺序、缩放、历史帧数和传感器扰动配置一起保存在权重的 `legged_gym_env_config.sensors` 中。旧的198/252维权重不能直接加载；入口会拒绝观测尺寸不匹配的权重。原有 `stand.sh`、精选权重和其他任务保留原来的观测与控制方式。
 
@@ -78,3 +88,5 @@ conda activate isaacgym
 | [sensor_task.py](../legged_gym/envs/wheelleg/sensor_task.py) | 在原物理后端上生成新观测，处理重置与指令更新 |
 
 回归和短训练记录见[传感器任务验收](../validation/stm32_sensor_work.json)。这里只验证观测接口、CPU/GPU更新、保存/恢复及有限播放，没有声称已经训练出可站稳的新策略。
+
+平衡配置的短训练对比见[平衡训练调整记录](../validation/sensor_balance_work.json)。
