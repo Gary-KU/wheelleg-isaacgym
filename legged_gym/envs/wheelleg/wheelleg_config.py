@@ -1,9 +1,7 @@
-"""Robot defaults and task overrides: the one place to edit normal runs.
+"""日常运行的配置入口：环境/控制 → 指令/观测 → 奖励 → PPO → 各任务覆盖。
 
-The small exploration noise here is intentional. Legacy command-line training
-keeps its historical TRAIN_CONFIG profile for old experiment reproduction.
+子任务只覆盖不同的参数；旧根目录命令的历史参数单独保留在 compat/。
 """
-
 
 from legged_gym.envs.base.base_config import BaseConfig
 from legged_gym.envs.wheelleg.constants import FLAT_REWARD_SCALES, DEFAULT_LEG_KD
@@ -14,7 +12,7 @@ class WheelLeggedCfg(BaseConfig):
 
     class env:
         num_envs = 64
-        num_observations = 198  # 33 values x 6 frames; do not stack a second time
+        num_observations = 198  # 33 维 × 6 帧，训练器不能再堆叠一次
         num_privileged_obs = None
         num_actions = 6
         obs_history_length = 1
@@ -22,16 +20,16 @@ class WheelLeggedCfg(BaseConfig):
         fix_base = False
 
     class sim:
-        dt = 0.0005
+        dt = 0.0005  # s，物理频率 2 kHz
         physics_solver = "tgs"
         physics_threads = 4
 
     class control:
-        decimation = 40
+        decimation = 40  # 每 40 个物理步更新动作一次，控制频率 50 Hz
         leg_control = "hip_pd"
         leg_kp = 80.0
         leg_kd = DEFAULT_LEG_KD
-        leg_feedforward_force = 22.4649
+        leg_feedforward_force = 22.4649  # 每腿径向支撑力 N，经雅可比变成关节力矩
         hip_target_scale = 0.2
         wheel_control = "heading"
         heading_kp = 6.0
@@ -40,6 +38,7 @@ class WheelLeggedCfg(BaseConfig):
         wheel_balance_scale = 1.0
 
     class commands:
+        # [前进速度 m/s, 侧向速度 m/s, 转向速度 rad/s, 有效腿长 m]
         command = (0.0, 0.0, 0.0, 0.08)
         random_commands = True
         forward_speed_range = (-0.6, 0.6)
@@ -78,7 +77,7 @@ class WheelLeggedCfg(BaseConfig):
         viewer_height = 720
 
     class rewards:
-        # Preserve the existing per-control-step reward convention (no extra dt).
+        # 奖励按每个控制步计算，系数不再额外乘 dt。
         tracking_penalties = True
         stability_rewards = True
         support_rewards = True
@@ -107,6 +106,7 @@ class WheelLeggedCfg(BaseConfig):
             yaw_error = FLAT_REWARD_SCALES["yaw_error"]
 
 
+# 策略网络与 PPO 参数；以下任务继承这些默认值。
 class WheelLeggedCfgPPO(BaseConfig):
     seed = 42
     initialization_provenance = None
@@ -143,6 +143,7 @@ class WheelLeggedCfgPPO(BaseConfig):
         run_name = ""
 
 
+# 任务覆盖：站立 → 阶梯；实机传感器任务见 sensor_config.py。
 class WheelLeggedStandCfg(WheelLeggedCfg):
     class commands(WheelLeggedCfg.commands):
         random_commands = False

@@ -6,12 +6,12 @@ Python 源码统一位于 `legged_gym/`。机器人代码按任务集中，共�
 
 ```text
 legged_gym/
-  scripts/                       注册任务 train.py / play.py / list_tasks.py；统一演示 stand.py
+  scripts/                       注册任务 train.py / play.py / list_tasks.py；模型 preview_model.py，演示 stand.py
   envs/
     __init__.py                  显式 register_tasks()，调用各机器人 register()
     base/base_config.py          嵌套配置实例化
     wheelleg/
-      register.py                flat / stand / stairs 注册清单
+      register.py                flat / stand / stairs / sensor / sensor_tracking 注册清单
       wheelleg_config.py         机器人环境与 PPO 默认值、任务覆盖
       wheelleg.py                任务接口、配置 hooks、显式奖励方法
       wheelleg_robot.py          WheelLegRobot：物理、观测、终止、重置
@@ -21,7 +21,10 @@ legged_gym/
       rewards.py                 平地奖励计算
       stair_rewards.py           阶梯命名奖励项
       observation_upgrade.py     186→198 维权重转换
-      model/                     kinematics.py / constraints.py / initial_pose.py
+      model/                     geometry.py / kinematics.py / constraints.py / initial_pose.py
+      sensor_config.py           传感器站立与速度课程配置
+      sensor_task.py             132 维可实机获取状态的任务
+      tracking_task.py           停车/直行目标及速度课程
       control/                   leg_control.py / wheel_control.py / wheel_lift.py
       diagnostics/               training_metrics.py / support_metrics.py
                                  evaluation_metrics.py / playback_log.py
@@ -33,7 +36,7 @@ legged_gym/
   utils/                         通用参数、配置序列化、权重选择、任务注册器
   compat/                        根目录命令的 cli.py / runtime_config.py
 third_party/rsl_rl/               ActorCritic / PPO / rollout 存储与来源许可
-assets/wheelleg/                  同一份 URDF、网格、闭合点与导出校验
+assets/wheelleg/                  同一份 URDF、网格、闭合点元数据与模型指纹
 ```
 
 `envs/base/` 只保留 `BaseConfig`，物理类明确命名为 `WheelLegRobot`。几何、闭环、腿轮控制和诊断都在轮腿目录内，其他机器人可以建立自己的同级目录。
@@ -52,7 +55,8 @@ assets/wheelleg/                  同一份 URDF、网格、闭合点与导出�
 | --- | --- |
 | 根目录 `train.py` | 原参数集和 `--profile` 训练，调用共用 `PPORunner` |
 | 根目录 `play.py`、`evaluate.py` | 现有播放与评估，供演示和工具调用 |
-| `stand.sh`、`stairs.sh`、`train_stairs.sh` | 固定权重/参数的演示与续训命令 |
+| `preview_model.sh` | 无策略的 CAD 模型检查 |
+| `stand.sh`、`stairs.sh`、`train_stairs.sh` | 显式指定新权重播放，或从头训练 |
 | `lift.py`、`lift.sh` | 原地抬轮专用入口 |
 | `smoke_test.py` | 有限动作下的机构数值检查 |
 
@@ -62,14 +66,4 @@ assets/wheelleg/                  同一份 URDF、网格、闭合点与导出�
 
 [tools/](../tools/README.md) 区分当前诊断/转换/评估、兼容实验流程和归档脚本。[tests/](../tests/) 覆盖几何、控制、奖励、配置恢复、超时估值、任务接口和物理回归。新任务与机器人还需针对自身工况验证。
 
-Git 中保留的三份检查点有明确用途：
-
-| 文件 | 用途 |
-| --- | --- |
-| `logs/standing_support_20261022_093823/input/standing_hold.pt` | 平地站立/驾驶与抬轮演示的轮子策略 |
-| `logs/stair_training_20261022_103417/evaluation/verified_level0.pt` | 已复测 1 cm 阶梯演示 |
-| `logs/stair_training_20261022_103417/input/stage4_start.pt` | 2 cm 及以上课程的独立续训起点，尚未通过相应验收 |
-
-`logs/` 另保留驾驶对比、稳定性比较和精选准备/评估报告；`validation/` 保留精选验收摘要。其余本机实验产物由 `.gitignore` 忽略。结构调整继续使用这些资产、权重和证据；历史文档中的部分本机路径可能不随克隆提供。
-
-[整理前 README](archive/README_20261027_before_readability_cleanup.md) 保存当时完整的状态叙述和旧目录名称，历史正文保持原样。阅读历史数字与路径时以记录时间和对应检查点为准。
+Git 保留的旧检查点和历史验收报告属于替换前模型。当前 CAD 模型需要重新训练；新权重带模型指纹，加载时必须匹配。当前检查记录见 [CAD 模型检查](../validation/cad_model_replacement.json)。

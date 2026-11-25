@@ -1,4 +1,4 @@
-"""Opt-in MCU-obtainable observations; source dimensions/motor model are unchanged."""
+"""实机可获取状态的任务配置：观测/噪声 → 站立训练 → 速度课程。"""
 
 from .wheelleg_config import WheelLeggedCfg, WheelLeggedCfgPPO
 from .sensor_observations import (
@@ -15,7 +15,7 @@ class WheelLeggedSensorCfg(WheelLeggedCfg):
         num_observations = OBSERVATION_SIZE
 
     class commands(WheelLeggedCfg.commands):
-        # Stage one: balance before velocity, turning or height tracking.
+        # 起步先学习零速支撑，再由 tracking 任务逐级增加速度。
         random_commands = False
         command = (0.0, 0.0, 0.0, 0.08)
         forward_speed_range = (0.0, 0.0)

@@ -4,6 +4,7 @@ import math
 from pathlib import Path
 
 from legged_gym import LEGGED_GYM_ROOT_DIR
+from legged_gym.envs.wheelleg.model.geometry import require_model_checkpoint
 from legged_gym.envs.wheelleg.wheelleg_robot import ASSET_ROOT, WheelLegRobot
 from legged_gym.utils.helpers import class_to_dict
 import torch
@@ -94,6 +95,8 @@ class WheelLegged(WheelLegRobot):
     """Task owns config/reward registration; base owns real physics and resets."""
 
     restore_legacy_environment = staticmethod(restore_environment_config)
+    # 模型专用校验由任务提供，共用注册器无需知道机器人资产路径。
+    validate_checkpoint = staticmethod(require_model_checkpoint)
 
     @staticmethod
     def configure_execution(cfg, args, checkpoint_state):

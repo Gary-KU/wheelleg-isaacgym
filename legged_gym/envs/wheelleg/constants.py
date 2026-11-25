@@ -17,6 +17,9 @@ NUM_ACTIONS = len(ACTION_JOINTS)
 ACTION_SCALES = (0.5, 0.5, 0.5, 0.5, 10.0, 10.0)  # 原始动作 → N·m
 TORQUE_LIMIT = 9.0  # 每个主动关节的力矩限幅，N·m
 
+# 新 CAD 直接使用连杆惯量，旧模型的大人工转子惯量已移除。
+DEFAULT_LEG_KD = 0.2  # 髋阻尼，N·m·s/rad；惯量实测后需重新核对。
+
 # 物理步与策略控制步分开：默认每次动作执行 40 个物理步。
 DEFAULT_PHYSICS_DT = 0.0005  # s
 DEFAULT_CONTROL_DT = 0.02  # s
@@ -92,6 +95,3 @@ FLAT_REWARD_SCALES = {
     "stability": 1.0,
     "yaw_error": -0.5,
 }
-
-# CAD link inertia is used directly; the old 4.0 damping relied on large armature.
-DEFAULT_LEG_KD = 0.2  # Nm s/rad; validate again after real inertia identification.

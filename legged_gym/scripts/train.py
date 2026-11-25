@@ -14,6 +14,7 @@ from legged_gym.utils import get_args, task_registry
 def main():
     args = get_args("train")
     torch.set_num_threads(1)
+    # 先解析独立配置，再创建物理环境，最后创建策略/训练器。
     env_cfg, train_cfg = task_registry.prepare_cfgs(args.task, args)
     env, _ = task_registry.make_env(args.task, args=args, env_cfg=env_cfg)
     try:

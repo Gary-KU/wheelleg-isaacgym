@@ -1,4 +1,4 @@
-"""Shared PPO training engine for the legacy and registered task interfaces."""
+"""共用训练循环：收集 rollout → 估计回报 → PPO 更新 → 指标与检查点。"""
 
 from copy import deepcopy
 from pathlib import Path
@@ -8,6 +8,7 @@ import time
 import torch
 
 from .policy import make_policy, scalar, viewer_is_closed
+from legged_gym.utils.checkpoints import validate_model_fingerprint
 
 from rsl_rl.algorithms import PPO
 
@@ -61,10 +62,9 @@ class PPORunner:
         self.writer = None
 
     def load(self, checkpoint, load_optimizer=True):
+        """先校验模型身份，再恢复网络和训练状态；优化器恢复可单独关闭。"""
         state = torch.load(str(checkpoint), map_location=self.device)
-        if getattr(self.env, "asset_fingerprint", None) is not None:
-            from legged_gym.envs.wheelleg.model.geometry import require_model_checkpoint
-            require_model_checkpoint(state)
+        validate_model_fingerprint(state, getattr(self.env, "asset_fingerprint", None))
         self.policy.load_state_dict(state["model_state_dict"], strict=True)
         if load_optimizer and "optimizer_state_dict" in state:
             self.algorithm.optimizer.load_state_dict(state["optimizer_state_dict"])
@@ -90,6 +90,7 @@ class PPORunner:
         return state.get("infos")
 
     def save(self, checkpoint, infos=None):
+        """先写临时文件再替换，避免中断留下半个检查点。"""
         checkpoint = Path(checkpoint)
         temporary = checkpoint.with_suffix(checkpoint.suffix + ".tmp")
         state = {
@@ -114,6 +115,7 @@ class PPORunner:
         temporary.replace(checkpoint)
 
     def learn(self, num_iterations, init_at_random_ep_len=False, reset_env=True):
+        """num_iterations 是本次新增迭代数；一轮先采样固定步数，再更新网络。"""
         if self.log_dir is not None:
             from torch.utils.tensorboard import SummaryWriter
 
@@ -155,6 +157,7 @@ class PPORunner:
                 timeouts = 0
                 if self.metrics_collector is not None:
                     self.metrics_collector.reset()
+                # 采样阶段不反向传播；PPO 保存本轮轨迹，统一在后面更新。
                 with torch.inference_mode():
                     for _ in range(self.config["num_steps_per_env"]):
                         if viewer_is_closed(self.env):
@@ -201,6 +204,7 @@ class PPORunner:
                             infos.get("time_outs", torch.zeros(1)).sum().item()
                         )
                     self.algorithm.compute_returns(observations)
+                # 采样结束后统一反向传播；这一段才更新策略和价值网络。
                 value_loss, policy_loss, kl, _ = self.algorithm.update()
                 if not all(
                     torch.isfinite(parameter).all()

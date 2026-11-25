@@ -1,0 +1,22 @@
+{
+  "date": "2026-11-25",
+  "scope": "Logical code cleanup and Chinese comments; no controller/reward tuning or policy training",
+  "changes": [
+    "Shortened WheelLegRobot.step from 166 to 111 lines by extracting action preparation and physical substeps",
+    "Kept CAD asset root and dimensions in model/geometry.py",
+    "Moved model fingerprint comparison into robot-independent utils/checkpoints.py; task supplies validation hook",
+    "Added Chinese comments for update timing, units, action order and terminal-state handling",
+    "Rewrote CODE_GUIDE around config -> model -> physics -> control -> observation -> reward/reset -> PPO; corrected old model parameters"
+  ],
+  "validation": {
+    "regression_tests": 308,
+    "status": "passed",
+    "gpu_tests_enabled": true,
+    "command": "WHEELLEG_TEST_DEVICE=cuda:0 ./run.sh -m unittest discover -s tests",
+    "additional_initial_pose_cpu_gpu_tests": 7
+  },
+  "preserved_local_changes": [
+    "legged_gym/envs/wheelleg/control/wheel_lift.py",
+    "tests/test_wheel_lift.py"
+  ]
+}

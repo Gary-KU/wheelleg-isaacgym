@@ -68,7 +68,9 @@ class ExtensionBoundaryTests(unittest.TestCase):
             "custom",
             object,
             SimpleNamespace(
-                seed=0, env=SimpleNamespace(num_envs=1, num_observations=5)
+                seed=0,
+                env=SimpleNamespace(num_envs=1, num_observations=5),
+                asset=SimpleNamespace(file="another_robot.urdf"),
             ),
             SimpleNamespace(seed=7, runner=SimpleNamespace(experiment_name="custom")),
         )

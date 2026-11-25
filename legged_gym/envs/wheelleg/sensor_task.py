@@ -1,4 +1,4 @@
-"""Registered task with a sensor-only actor/critic input and unchanged physics."""
+"""沿用同一物理模型，策略只看 IMU/编码器可获取状态；奖励仍可使用仿真真值。"""
 
 import torch
 

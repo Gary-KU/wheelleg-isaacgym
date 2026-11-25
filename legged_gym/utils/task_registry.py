@@ -72,9 +72,9 @@ class TaskRegistry:
                 raise ValueError(
                     "Checkpoint observation layout does not match task " + name
                 )
-            from legged_gym.envs.wheelleg.model.geometry import require_model_checkpoint
-            if hasattr(env_cfg, "asset"):
-                require_model_checkpoint(state)
+            validate = getattr(task_class, "validate_checkpoint", None)
+            if validate is not None:
+                validate(state)
             if "legged_gym_env_config" in state:
                 update_class_from_dict(env_cfg, state["legged_gym_env_config"])
             else:
@@ -128,9 +128,9 @@ class TaskRegistry:
             if not warm.is_file():
                 raise ValueError("Warm-start checkpoint does not exist: " + str(warm))
             warm_state = torch.load(str(warm), map_location="cpu")
-            from legged_gym.envs.wheelleg.model.geometry import require_model_checkpoint
-            if hasattr(env_cfg, "asset"):
-                require_model_checkpoint(warm_state)
+            validate = getattr(task_class, "validate_checkpoint", None)
+            if validate is not None:
+                validate(warm_state)
             weights = warm_state["model_state_dict"]
             if weights["actor.0.weight"].shape[1] != env_cfg.env.num_observations:
                 raise ValueError(

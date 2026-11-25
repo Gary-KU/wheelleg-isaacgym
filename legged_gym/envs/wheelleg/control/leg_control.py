@@ -10,7 +10,7 @@ from legged_gym.envs.wheelleg.model.geometry import UPPER, LOWER, HIP_SPAN, HIP_
 
 
 def hip_targets(leg_lengths):
-    """LF,LH,RF,RH targets from shared [N] or independent [N,2] lengths."""
+    """腿长 [N] 或左右独立腿长 [N,2] → 四髋目标，顺序为左前/左后/右前/右后。"""
     if leg_lengths.ndim == 1:
         leg_lengths = leg_lengths[:, None].expand(-1, 2)
     if leg_lengths.ndim != 2 or leg_lengths.shape[1] != 2:
@@ -21,7 +21,7 @@ def hip_targets(leg_lengths):
 
 
 def hip_pd_torques(positions, velocities, targets, kp=80.0, kd=DEFAULT_LEG_KD):
-    """Unclipped Nm; add residual first, then apply the physical torque limit."""
+    """输出未限幅 PD 力矩（N·m）；与前馈和 RL 残差相加后，环境统一限幅。"""
     if positions.ndim != 2 or positions.shape[1] != 4:
         raise ValueError("Hip positions must have shape [N,4]")
     if velocities.shape != positions.shape or targets.shape != positions.shape:

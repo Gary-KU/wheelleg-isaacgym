@@ -1,14 +1,13 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Task equations adapted from the WheelLegRobot Isaac Lab environment.
-"""GPU vector environment with explicitly approximate five-bar closure.
+"""轮腿并行物理环境：初始化 → 状态计算 → 控制步进 → 回合重置。
 
-The URDF contains both branches, with the two closing hinges represented by
-external spring/damper wrenches. This is not a rigid closed articulation.
+URDF 保存两条树形支链，model/constraints.py 用弹簧阻尼力近似闭合。
+策略、键盘和奖励通过任务接口接入，共用这里的物理步进。
 """
 
 import json
 import math
-from pathlib import Path
 
 # Isaac Gym must be imported before torch.
 from isaacgym import gymapi, gymtorch
@@ -16,7 +15,7 @@ import numpy as np
 import torch
 
 from legged_gym.envs.wheelleg.model.constraints import ClosureForces, quat_rotate_inverse
-from legged_gym.envs.wheelleg.model.geometry import WHEEL_RADIUS, asset_fingerprint
+from legged_gym.envs.wheelleg.model.geometry import ASSET_ROOT, WHEEL_RADIUS, asset_fingerprint
 from legged_gym.envs.wheelleg.model.kinematics import fivebar, inverse_symmetric
 from legged_gym.envs.wheelleg.commands import sample_command_targets, slew_commands, validate_command_limits
 from legged_gym.envs.wheelleg.constants import (
@@ -33,8 +32,6 @@ from legged_gym.envs.wheelleg.rewards import weighted_flat_reward_terms
 from legged_gym.envs.wheelleg.stair_rewards import stair_task_reward_terms
 from legged_gym.envs.wheelleg.control.leg_control import hip_targets, hip_pd_torques, hip_support_torques
 
-
-ASSET_ROOT = Path(__file__).resolve().parents[3] / "assets" / "wheelleg"
 
 
 class WheelLegRobot:
@@ -196,6 +193,8 @@ class WheelLegRobot:
         except BaseException:
             self.close()
             raise
+
+    # ---------- 初始化：场景 → URDF → 张量和闭环模型 ----------
 
     def _create_sim(self):
         """创建 PhysX、地面和求解参数，选择 CPU 或 GPU 物理。"""
@@ -428,6 +427,8 @@ class WheelLegRobot:
         self.stair_ground_height = torch.zeros(n, device=d)
         self.terrain_scan_offsets = torch.tensor([[x, y] for x in (.1, .25, .45) for y in (-.12, 0., .12)], device=d)
 
+    # ---------- 状态：SDK 张量 → 机体坐标状态 → 策略观测 ----------
+
     def _refresh(self):
         self.gym.refresh_actor_root_state_tensor(self.sim)
         self.gym.refresh_dof_state_tensor(self.sim)
@@ -436,7 +437,7 @@ class WheelLegRobot:
             self.gym.refresh_net_contact_force_tensor(self.sim)
 
     def _kinematics(self):
-        """由根姿态和关节状态计算机体速度、姿态、左右腿长与腿角。"""
+        """从当前张量计算腿长、姿态和机体速度，不推进仿真。"""
         q = self.root_states[:, 3:7]
         self.lin_vel = quat_rotate_inverse(q, self.root_states[:, 7:10])
         self.ang_vel = quat_rotate_inverse(q, self.root_states[:, 10:13])
@@ -464,7 +465,7 @@ class WheelLegRobot:
                 wheel_xy, self.environment_indices, self.terrain_levels).mean(-1)
 
     def _observations(self, advance_history=True):
-        """生成 31/33 维当前帧，并与五帧历史拼接；重置时可不推进历史。"""
+        """组装当前帧；只有物理控制步结束时才推进历史，重置/改指令时不推进。"""
         dl1, dl4 = inverse_symmetric(self.length_l)
         dr1, dr4 = inverse_symmetric(self.length_r)
         pos_errors = torch.stack((self.phi_l1-dl1, self.phi_l4-dl4,
@@ -546,6 +547,8 @@ class WheelLegRobot:
             "base_contact": contact_norm[:, self.body_names.index("base_link")] > 20.0,
         }
 
+    # ---------- 控制：动作只在 step() 入口更新，反馈在物理子步更新 ----------
+
     def _hip_targets(self):
         """Default shared leg length; a task may provide independent left/right targets."""
         return hip_targets(self.commands[:, 3])
@@ -573,65 +576,11 @@ class WheelLegRobot:
         self.actions.copy_(actions.to(self.device).clamp(-100, 100))
         before_wheel_xy = (self.rb_states[:, self.wheel_indices, :2].mean(1).clone()
                            if self.terrain_model is not None else None)
-        self.torques.zero_()
-        effort = self.actions * self.actions.new_tensor(ACTION_SCALES)
-        if self.leg_control == "hip_target":
-            effort[:, :4] = 0.0
-        if self.wheel_control == "heading":
-            from legged_gym.envs.wheelleg.control.wheel_control import balance_heading_torques
-            effort[:, 4:] = balance_heading_torques(
-                self.wheel_balance_scale*effort[:, 4:], self.total_yaw-self.target_yaw,
-                self.ang_vel[:, 2]-self.commands[:, 2], self.ang_vel[:, 1],
-                self.heading_kp, self.heading_kd, self.wheel_pitch_damping, TORQUE_LIMIT)
-        elif self.heading_kp or self.heading_kd:
-            # Both wheel joint axes are mirrored in this asset. Equal positive
-            # joint torques turn towards positive yaw (LF wheel axis is -Y,
-            # RF wheel axis is +Y). The reference integrates
-            # commanded yaw rate, so turning commands still advance the target.
-            heading_bias = (self.heading_kp*(self.total_yaw-self.target_yaw)
-                            +self.heading_kd*(self.ang_vel[:, 2]-self.commands[:, 2])).clamp(-1.0, 1.0)
-            effort[:, 4:] -= heading_bias[:, None]
-        self.torques[:, self.action_indices] = effort.clamp(-TORQUE_LIMIT, TORQUE_LIMIT)
-        targets = self._hip_targets() if self.leg_control in ("hip_pd", "hip_target") else None
-        if self.leg_control == "hip_target":
-            targets = (targets+self.hip_target_scale*self.actions[:, :4].clamp(-1, 1)).clamp(self.hip_lower, self.hip_upper)
-        # A slowly varying load feedforward uses the measured five-bar Jacobian
-        # once per 50Hz control period; the stabilizing PD still runs at 2kHz.
-        support_bias = self._leg_support_bias()
-        torque_peak = (torch.zeros_like(self.actions) if targets is not None
-                       else self.torques[:, self.action_indices].abs().clone())
-        saturation_sum = torch.zeros_like(self.actions)
-        peak_error = torch.zeros_like(self.last_step_loop_error)
-        physics_callback = self._physics_step_callback
-        for _ in range(self.decimation):
-            if targets is not None:
-                # The learned residual is held at 50Hz; physical feedback is
-                # recomputed at every physics step using freshly read DOF state.
-                pd = self._hip_pd_torques(targets)
-                total = effort.clone()
-                total[:, :4] += pd
-                if support_bias is not None:
-                    # Radial support is a joint-torque bias, never an upward
-                    # external body force. It shares the same 9Nm actuator cap.
-                    total[:, :4] += support_bias
-                active = total.clamp(-TORQUE_LIMIT, TORQUE_LIMIT)
-                self.torques[:, self.action_indices] = active
-                torque_peak = torch.maximum(torque_peak, active.abs())
-                saturation_sum += (active.abs() >= TORQUE_LIMIT-1e-5).float()
-            forces, moments = self.closure.compute(self.rb_states)
-            self.gym.apply_rigid_body_force_tensors(self.sim,
-                gymtorch.unwrap_tensor(forces), gymtorch.unwrap_tensor(moments), gymapi.ENV_SPACE)
-            self.gym.set_dof_actuation_force_tensor(self.sim, gymtorch.unwrap_tensor(self.torques))
-            self.gym.simulate(self.sim)
-            self.gym.fetch_results(self.sim, True)
-            self.gym.refresh_rigid_body_state_tensor(self.sim)
-            if targets is not None:
-                self.gym.refresh_dof_state_tensor(self.sim)
-            if physics_callback is not None:
-                physics_callback()
-            peak_error = torch.maximum(peak_error, self.closure.errors(self.rb_states))
-        self._refresh()
-        self.last_step_loop_error.copy_(peak_error)
+        # 1. 动作 → 控制目标 → 多个物理子步（默认 50 Hz / 2 kHz）。
+        effort, targets = self._prepare_control()
+        peak_error, torque_peak, saturation = self._simulate_control(effort, targets)
+
+        # 2. 刷新派生状态和当前观测，再计算奖励与结束原因。
         self.episode_length_buf += 1
         self._kinematics()
         yaw_delta = self.yaw-self.last_yaw
@@ -684,8 +633,7 @@ class WheelLegRobot:
                 "pre_reset_applied_torques": self.torques[:, self.action_indices].clone(),
                 "pre_reset_previous_torques": self.last_applied_torques.clone(),
                 "pre_reset_peak_abs_torques": torque_peak,
-                "pre_reset_torque_saturation_fraction": (saturation_sum/self.decimation
-                    if targets is not None else (torque_peak >= TORQUE_LIMIT-1e-5).float()),
+                "pre_reset_torque_saturation_fraction": saturation,
                 "termination_reasons": termination_reasons,
                 "reward_terms": {name: value.clone() for name, value in self.reward_terms.items()},
                 "approximate_loop": True}
@@ -701,6 +649,7 @@ class WheelLegRobot:
                         pre_reset_wheel_states=self.rb_states[:, self.wheel_indices].clone(),
                         pre_reset_contact_forces=self.contact_forces.clone())
         info.update(self._extra_step_info())
+        # 3. 先保存终止前信息，再重置对应环境；其余环境的历史不前移。
         ids = dones.nonzero(as_tuple=False).flatten()
         self.last_actions.copy_(self.actions)
         self.last_applied_torques.copy_(self.torques[:, self.action_indices])
@@ -722,14 +671,79 @@ class WheelLegRobot:
             step_obs[ids] = reset_obs[ids]
             self.obs_buf = step_obs
             self.history[ids, -1] = self.slice_obs[ids]
-        # Reward and terminal diagnostics use the command that generated the
-        # action. Only then prepare the command seen by the next policy call.
+        # 4. 最后准备下一拍指令；本拍奖励始终对应本拍实际使用的指令。
         info["command_resamples"] = self._advance_random_commands(dones)
         if self.viewer is not None:
             self.gym.step_graphics(self.sim)
             self.gym.draw_viewer(self.viewer, self.sim, self.viewer_show_collisions)
             self.gym.sync_frame_time(self.sim)
         return self.obs_buf, None, rewards, dones, info
+
+    def _prepare_control(self):
+        """把六维动作转换为腿部目标和轮子力矩；关节顺序见 ACTION_JOINTS。"""
+        self.torques.zero_()
+        effort = self.actions * self.actions.new_tensor(ACTION_SCALES)
+        if self.leg_control == "hip_target":
+            effort[:, :4] = 0.0
+        if self.wheel_control == "heading":
+            from legged_gym.envs.wheelleg.control.wheel_control import balance_heading_torques
+            effort[:, 4:] = balance_heading_torques(
+                self.wheel_balance_scale*effort[:, 4:], self.total_yaw-self.target_yaw,
+                self.ang_vel[:, 2]-self.commands[:, 2], self.ang_vel[:, 1],
+                self.heading_kp, self.heading_kd, self.wheel_pitch_damping, TORQUE_LIMIT)
+        elif self.heading_kp or self.heading_kd:
+            # 左右轮轴镜像：同号关节力矩产生转向，异号产生前后运动。
+            # 航向目标由转向速度积分得到，不能把转向指令始终拉回初始朝向。
+            heading_bias = (self.heading_kp*(self.total_yaw-self.target_yaw)
+                            +self.heading_kd*(self.ang_vel[:, 2]-self.commands[:, 2])).clamp(-1.0, 1.0)
+            effort[:, 4:] -= heading_bias[:, None]
+        self.torques[:, self.action_indices] = effort.clamp(-TORQUE_LIMIT, TORQUE_LIMIT)
+        targets = self._hip_targets() if self.leg_control in ("hip_pd", "hip_target") else None
+        if self.leg_control == "hip_target":
+            targets = (targets+self.hip_target_scale*self.actions[:, :4].clamp(-1, 1)).clamp(self.hip_lower, self.hip_upper)
+        return effort, targets
+
+    def _simulate_control(self, effort, targets):
+        """执行一个控制周期的 PhysX 子步，返回闭环误差和力矩统计。"""
+        # 支撑前馈每个控制步算一次；髋 PD 和闭环力则每个物理步重新计算。
+        support_bias = self._leg_support_bias()
+        torque_peak = (torch.zeros_like(self.actions) if targets is not None
+                       else self.torques[:, self.action_indices].abs().clone())
+        saturation_sum = torch.zeros_like(self.actions)
+        peak_error = torch.zeros_like(self.last_step_loop_error)
+        physics_callback = self._physics_step_callback
+        for _ in range(self.decimation):
+            if targets is not None:
+                # RL 动作在整个控制周期保持，PD 使用子步内最新的关节状态。
+                pd = self._hip_pd_torques(targets)
+                total = effort.clone()
+                total[:, :4] += pd
+                if support_bias is not None:
+                    # 前馈叠加到髋力矩上，与 PD/RL 一起接受 ±9 Nm 限幅。
+                    total[:, :4] += support_bias
+                active = total.clamp(-TORQUE_LIMIT, TORQUE_LIMIT)
+                self.torques[:, self.action_indices] = active
+                torque_peak = torch.maximum(torque_peak, active.abs())
+                saturation_sum += (active.abs() >= TORQUE_LIMIT-1e-5).float()
+            forces, moments = self.closure.compute(self.rb_states)
+            self.gym.apply_rigid_body_force_tensors(self.sim,
+                gymtorch.unwrap_tensor(forces), gymtorch.unwrap_tensor(moments), gymapi.ENV_SPACE)
+            self.gym.set_dof_actuation_force_tensor(self.sim, gymtorch.unwrap_tensor(self.torques))
+            self.gym.simulate(self.sim)
+            self.gym.fetch_results(self.sim, True)
+            self.gym.refresh_rigid_body_state_tensor(self.sim)
+            if targets is not None:
+                self.gym.refresh_dof_state_tensor(self.sim)
+            if physics_callback is not None:
+                physics_callback()
+            peak_error = torch.maximum(peak_error, self.closure.errors(self.rb_states))
+        self._refresh()
+        self.last_step_loop_error.copy_(peak_error)
+        saturation = (saturation_sum/self.decimation if targets is not None
+                      else (torque_peak >= TORQUE_LIMIT-1e-5).float())
+        return peak_error, torque_peak, saturation
+
+    # ---------- 回合与指令：只重置结束的环境，不清空其他环境的历史 ----------
 
     def _reset_idx(self, ids):
         """只恢复指定机器人，避免改动其他机器人的状态与历史。"""
