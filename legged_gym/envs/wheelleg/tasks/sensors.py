@@ -2,10 +2,10 @@
 
 import torch
 
-from .wheelleg import WheelLegged
-from .model.kinematics import inverse_symmetric
-from .model.constraints import quat_rotate_inverse
-from .sensor_observations import (
+from legged_gym.envs.wheelleg.tasks.base import WheelLegged
+from legged_gym.envs.wheelleg.model.kinematics import inverse_symmetric
+from legged_gym.envs.wheelleg.model.constraints import quat_rotate_inverse
+from legged_gym.envs.wheelleg.observations.sensors import (
     COMMAND_SLICE,
     FRAME_SIZE,
     FRAME_FIELDS,

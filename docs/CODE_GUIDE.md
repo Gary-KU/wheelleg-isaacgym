@@ -6,13 +6,13 @@
 
 | 顺序 | 文件 | 解决什么问题 |
 | --- | --- | --- |
-| 1 | [wheelleg_config.py](../legged_gym/envs/wheelleg/wheelleg_config.py) | 环境数量、物理步长、控制方式、指令范围、奖励和 PPO 参数 |
+| 1 | [config/base.py](../legged_gym/envs/wheelleg/config/base.py) | 环境数量、物理步长、控制方式、指令范围、奖励和 PPO 参数 |
 | 2 | [model/geometry.py](../legged_gym/envs/wheelleg/model/geometry.py) | 从资产元数据读取尺寸，给全部计算提供共同来源 |
 | 3 | [model/kinematics.py](../legged_gym/envs/wheelleg/model/kinematics.py)、[initial_pose.py](../legged_gym/envs/wheelleg/model/initial_pose.py) | 髋角与腿长怎样转换，初始姿态怎样闭合并落在地面上 |
-| 4 | [wheelleg_robot.py](../legged_gym/envs/wheelleg/wheelleg_robot.py) | 创建仿真、读取状态、执行 `step()`、终止和重置 |
+| 4 | [robot.py](../legged_gym/envs/wheelleg/robot.py) | 创建仿真、读取状态、执行 `step()`、终止和重置 |
 | 5 | [control/leg_control.py](../legged_gym/envs/wheelleg/control/leg_control.py)、[wheel_control.py](../legged_gym/envs/wheelleg/control/wheel_control.py) | 髋 PD、径向支撑前馈、轮子力矩和航向控制 |
-| 6 | [sensor_observations.py](../legged_gym/envs/wheelleg/sensor_observations.py)、[sensor_task.py](../legged_gym/envs/wheelleg/sensor_task.py) | 编码器/IMU 状态、噪声与延迟、132 维策略输入 |
-| 7 | [rewards.py](../legged_gym/envs/wheelleg/rewards.py)、[tracking_task.py](../legged_gym/envs/wheelleg/tracking_task.py) | 奖励分项、停车/直行目标和速度课程 |
+| 6 | [observations/sensors.py](../legged_gym/envs/wheelleg/observations/sensors.py)、[tasks/sensors.py](../legged_gym/envs/wheelleg/tasks/sensors.py) | 编码器/IMU 状态、噪声与延迟、132 维策略输入 |
+| 7 | [rewards/flat.py](../legged_gym/envs/wheelleg/rewards/flat.py)、[tasks/tracking.py](../legged_gym/envs/wheelleg/tasks/tracking.py) | 奖励分项、停车/直行目标和速度课程 |
 | 8 | [learning/ppo_trainer.py](../legged_gym/learning/ppo_trainer.py) | 采样、计算回报、PPO 更新、日志和保存 |
 
 不必先读 `tools/`、`diagnostics/` 或 `compat/`。它们分别负责检查工具、统计报告和专项工具参数。
@@ -22,13 +22,13 @@
 ```text
 scripts/train.py                 解析参数
   → utils/task_registry.py       选择任务，复制配置，校验检查点
-  → wheelleg.py                  将配置接到物理环境和奖励接口
+  → tasks/base.py                  将配置接到物理环境和奖励接口
   → WheelLegRobot                创建 PhysX 场景和机器人
   → learning/task_runner.py      适配任务接口
   → learning/ppo_trainer.py      采样并训练
 ```
 
-[register.py](../legged_gym/envs/wheelleg/register.py) 列出任务对应的环境类和配置类。传感器任务用 `sensor_config.py`，跳跃控制参数用 `jump_config.py`；子任务只覆盖自己的差异。
+[register.py](../legged_gym/envs/wheelleg/register.py) 列出任务对应的环境类和配置类。传感器任务用 `config/sensors.py`，跳跃控制参数用 `config/jump.py`；子任务只覆盖自己的差异。
 
 ## 一个控制周期怎样执行
 
@@ -58,17 +58,17 @@ obs, privileged_obs, rewards, dones, infos, obs_history
 - 支撑前馈：径向力通过雅可比变成髋力矩，不是给机身施加向上的外力，也不是完整的分布质量重力补偿。
 - 闭环：`model/constraints.py` 从两侧锚点计算成对弹簧阻尼力，仍存在有限闭合误差。
 
-普通站立观测为 198 维，阶梯为 252 维；面向实机的传感器任务为 132 维，其字段和缩放只在 `sensor_observations.py` 定义。传感器任务的策略不读取绝对位置或绝对 yaw；奖励和验收指标可以使用仿真真值。
+普通站立观测为 198 维，阶梯为 252 维；面向实机的传感器任务为 132 维，其字段和缩放只在 `observations/sensors.py` 定义。传感器任务的策略不读取绝对位置或绝对 yaw；奖励和验收指标可以使用仿真真值。
 
 ## 想改功能时去哪里
 
 | 修改目标 | 入口 |
 | --- | --- |
 | 模型尺寸、碰撞、惯量 | `assets/wheelleg/`；同步检查 URDF、网格和闭环元数据 |
-| 训练参数、动作模式、奖励权重 | `wheelleg_config.py` / `sensor_config.py` |
-| 新增奖励计算 | 任务 `_reward_<名称>()`，公共计算放 `rewards.py` |
+| 训练参数、动作模式、奖励权重 | `config/base.py` / `config/sensors.py` |
+| 新增奖励计算 | 任务 `_reward_<名称>()`，公共计算放 `rewards/flat.py` |
 | 地形生成与高度查询 | `terrain.py`；运行配置在 `cfg.terrain` |
-| 方向键和腿长按键 | `keyboard.py`；跳跃/停车逻辑在 `control/jump.py` |
+| 方向键和腿长按键 | `control/keyboard.py`；跳跃/停车逻辑在 `control/jump.py` |
 | 新增同一机器人的任务 | 配置继承 + 必要的环境覆盖 + `register.py` 注册 |
 | 新增其他机器人 | 新建与 `wheelleg/` 同级的目录，提供自己的配置和模型校验 hook |
 

@@ -12,7 +12,7 @@ from legged_gym.envs import register_tasks
 
 register_tasks()
 from legged_gym.utils import get_args, task_registry
-from legged_gym.envs.wheelleg.keyboard import KeyboardDrive
+from legged_gym.envs.wheelleg.control.keyboard import KeyboardDrive
 from legged_gym.envs.wheelleg.constants import MIN_LEG_LENGTH, MAX_LEG_LENGTH
 from legged_gym.envs.wheelleg.diagnostics.motion_evaluation import MotionEvaluation
 

@@ -66,7 +66,7 @@ def main():
     import isaacgym  # noqa: F401; binary extension must precede Torch.
     import torch
     from isaacgym import gymtorch
-    from legged_gym.envs.wheelleg.wheelleg_robot import WheelLegRobot
+    from legged_gym.envs.wheelleg.robot import WheelLegRobot
     from legged_gym.envs.wheelleg.constants import DEFAULT_POLICY_CONFIG
     from legged_gym.learning.policy import make_policy
 

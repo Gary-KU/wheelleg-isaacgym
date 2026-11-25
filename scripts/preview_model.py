@@ -9,8 +9,8 @@ import json
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import isaacgym
 import torch
-from legged_gym.envs.wheelleg.wheelleg import WheelLegged
-from legged_gym.envs.wheelleg.wheelleg_config import WheelLeggedStandCfg
+from legged_gym.envs.wheelleg.tasks.base import WheelLegged
+from legged_gym.envs.wheelleg.config.base import WheelLeggedStandCfg
 from legged_gym.envs.wheelleg.model.geometry import asset_fingerprint
 
 

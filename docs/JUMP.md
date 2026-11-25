@@ -38,7 +38,7 @@ conda activate isaacgym
 
 | 文件 | 职责 |
 | --- | --- |
-| [jump_config.py](../legged_gym/envs/wheelleg/jump_config.py) | 腿长轨迹、蹬伸力、接触预设、静止位置反馈参数 |
+| [config/jump.py](../legged_gym/envs/wheelleg/config/jump.py) | 腿长轨迹、蹬伸力、接触预设、静止位置反馈参数 |
 | [control/jump.py](../legged_gym/envs/wheelleg/control/jump.py) | 空格触发、动作状态机、停车位置保持与腾空轮子反作用力矩 |
 | [scripts/stand.py](../scripts/stand.py) | 加载旧权重、键盘事件、运行与测量报告 |
 | [control/wheel_lift.py](../legged_gym/envs/wheelleg/control/wheel_lift.py) | 复用接触测量、独立左右腿目标和胎面代理环境 |

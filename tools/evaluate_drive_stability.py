@@ -117,9 +117,9 @@ def main():
 
     import isaacgym  # noqa: F401; SDK binary extension must precede Torch.
     import torch
-    from legged_gym.envs.wheelleg.commands import CommandGovernor
+    from legged_gym.envs.wheelleg.control.commands import CommandGovernor
     from legged_gym.envs.wheelleg.model.constraints import quat_rotate_inverse
-    from legged_gym.envs.wheelleg.wheelleg_robot import WheelLegRobot
+    from legged_gym.envs.wheelleg.robot import WheelLegRobot
     from legged_gym.envs.wheelleg.constants import DEFAULT_POLICY_CONFIG
     from legged_gym.learning.policy import make_policy
 

@@ -11,7 +11,7 @@ import isaacgym  # binary extension before torch
 import torch
 
 from legged_gym.envs.wheelleg.model.constraints import quat_rotate_inverse
-from legged_gym.envs.wheelleg.wheelleg_robot import ASSET_ROOT, WheelLegRobot
+from legged_gym.envs.wheelleg.robot import ASSET_ROOT, WheelLegRobot
 from legged_gym.envs.wheelleg.constants import MIN_LEG_LENGTH, MAX_LEG_LENGTH
 from legged_gym.envs.wheelleg.control.leg_control import hip_targets, hip_support_torques
 

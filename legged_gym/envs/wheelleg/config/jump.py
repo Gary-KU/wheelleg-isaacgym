@@ -1,6 +1,6 @@
 """Standing and rolling physical jumps with the existing wheel policy and explicit leg targets."""
 
-from .wheelleg_config import WheelLeggedStandCfg
+from legged_gym.envs.wheelleg.config.base import WheelLeggedStandCfg
 
 
 class WheelLeggedJumpCfg(WheelLeggedStandCfg):

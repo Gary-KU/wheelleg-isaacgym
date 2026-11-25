@@ -8,7 +8,7 @@ import math
 
 import torch
 
-from ..keyboard import KeyboardDrive
+from legged_gym.envs.wheelleg.control.keyboard import KeyboardDrive
 from ..constants import ACTION_SCALES, MAX_LEG_LENGTH, MIN_LEG_LENGTH
 
 

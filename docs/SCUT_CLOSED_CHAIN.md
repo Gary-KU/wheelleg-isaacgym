@@ -21,7 +21,7 @@ USD 层中保存了 articulation 的位置/速度迭代次数 32/1；资产 Pyth
 
 - [loop_constraints.json](../assets/wheelleg/loop_constraints.json)：本机器人的两处闭合连接、局部锚点和铰链轴。
 - [constraints.py](../legged_gym/envs/wheelleg/model/constraints.py)：局部点变换、点速度、成对弹簧阻尼力及轴对齐力矩。
-- [legged_robot.py](../legged_gym/envs/wheelleg/wheelleg_robot.py)：每个 0.5 ms 物理步重新计算闭环外力；重力 -9.81 m/s²，默认求解迭代 32/4。
+- [legged_robot.py](../legged_gym/envs/wheelleg/robot.py)：每个 0.5 ms 物理步重新计算闭环外力；重力 -9.81 m/s²，默认求解迭代 32/4。
 - 新配置 `cfg.closure`：近似模型确认、刚度和阻尼。力限幅仍在原共用配置中。
 
 因此，这是**参考其树外闭合的组织方式，继续使用 Gym 中已有的柔性近似**。这次没有把 Gym 的弹簧阻尼连接升级为原生刚性关节，没有导入 SCUT 资产，也没有用奖励或直接改位置来伪装闭合。若以后改用 Isaac Sim / Isaac Lab，可按本机器人重新建立树外关节并单独验收闭合精度。

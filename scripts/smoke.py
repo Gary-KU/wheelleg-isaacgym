@@ -26,7 +26,7 @@ def main():
         parser.error("Require positive steps and nonnegative action amplitude")
     import isaacgym  # noqa: F401
     import torch
-    from legged_gym.envs.wheelleg.wheelleg_robot import WheelLegRobot
+    from legged_gym.envs.wheelleg.robot import WheelLegRobot
 
     kwargs = environment_kwargs(args)
     kwargs.update(fix_base=args.fix_base, physics_dt=args.physics_dt)

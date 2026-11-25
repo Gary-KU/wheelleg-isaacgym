@@ -2,8 +2,8 @@
 
 
 def register(registry):
-    from .wheelleg import WheelLegged
-    from .wheelleg_config import (
+    from legged_gym.envs.wheelleg.tasks.base import WheelLegged
+    from legged_gym.envs.wheelleg.config.base import (
         WheelLeggedCfg,
         WheelLeggedCfgPPO,
         WheelLeggedStandCfg,
@@ -20,8 +20,8 @@ def register(registry):
         if name not in registry.task_classes:
             registry.register(name, WheelLegged, env_cfg(), train_cfg())
 
-    from .sensor_task import SensorWheelLegged
-    from .sensor_config import WheelLeggedSensorCfg, WheelLeggedSensorCfgPPO
+    from legged_gym.envs.wheelleg.tasks.sensors import SensorWheelLegged
+    from legged_gym.envs.wheelleg.config.sensors import WheelLeggedSensorCfg, WheelLeggedSensorCfgPPO
 
     if "wheelleg_sensor" not in registry.task_classes:
         registry.register(
@@ -31,8 +31,8 @@ def register(registry):
             WheelLeggedSensorCfgPPO(),
         )
 
-    from .tracking_task import TrackingWheelLegged
-    from .sensor_config import WheelLeggedTrackingCfg, WheelLeggedTrackingCfgPPO
+    from legged_gym.envs.wheelleg.tasks.tracking import TrackingWheelLegged
+    from legged_gym.envs.wheelleg.config.sensors import WheelLeggedTrackingCfg, WheelLeggedTrackingCfgPPO
 
     if "wheelleg_sensor_tracking" not in registry.task_classes:
         registry.register(

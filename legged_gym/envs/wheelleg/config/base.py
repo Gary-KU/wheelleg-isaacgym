@@ -143,7 +143,7 @@ class WheelLeggedCfgPPO(BaseConfig):
         run_name = ""
 
 
-# 任务覆盖：站立 → 阶梯；实机传感器任务见 sensor_config.py。
+# 任务覆盖：站立 → 阶梯；实机传感器任务见 config/sensors.py。
 class WheelLeggedStandCfg(WheelLeggedCfg):
     class commands(WheelLeggedCfg.commands):
         random_commands = False

@@ -37,8 +37,8 @@ conda activate isaacgym
 Python 源码统一放在 `legged_gym/`：`envs/wheelleg/` 负责当前机器人，`learning/` 负责共用训练，`utils/` 负责注册与配置。建议按以下顺序阅读：
 
 1. [代码导读](docs/CODE_GUIDE.md)：先看完整调用顺序，再读实现。
-2. [wheelleg_config.py](legged_gym/envs/wheelleg/wheelleg_config.py) 与 [model/geometry.py](legged_gym/envs/wheelleg/model/geometry.py)：配置和当前模型尺寸。
-3. [wheelleg_robot.py](legged_gym/envs/wheelleg/wheelleg_robot.py) 的 `step()`：按控制、物理、观测/奖励、重置四段理解运行。
+2. [config/base.py](legged_gym/envs/wheelleg/config/base.py) 与 [model/geometry.py](legged_gym/envs/wheelleg/model/geometry.py)：配置和当前模型尺寸。
+3. [robot.py](legged_gym/envs/wheelleg/robot.py) 的 `step()`：按控制、物理、观测/奖励、重置四段理解运行。
 4. 按需进入 `control/`、传感器任务和 `learning/`，不必从历史工具开始。
 
 完整阅读路线与动作/观测单位见[代码导读](docs/CODE_GUIDE.md)，目录职责见[项目结构](docs/PROJECT_LAYOUT.md)，添加任务、奖励或机器人见[扩展指南](docs/EXTENDING.md)。现有启动命令保留；Python 导入改用统一的 `legged_gym` 路径。

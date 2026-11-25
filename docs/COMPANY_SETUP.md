@@ -40,8 +40,8 @@ git push
 | --- | --- | --- |
 | 1 | `manage.sh stand`、`manage.sh stairs`、`manage.sh train-stairs` | 常用命令如何组合参数 |
 | 2 | `legged_gym/envs/wheelleg/constants.py`、`cli.py`、`runtime_config.py` | 默认配置、命令行参数与权重配置的覆盖关系 |
-| 3 | `play.py`、`keyboard.py` | 按键怎样变成速度和腿长目标 |
-| 4 | `legged_gym/envs/wheelleg/wheelleg_robot.py` | 创建仿真、步进、观测、奖励、终止和复位 |
+| 3 | `play.py`、`control/keyboard.py` | 按键怎样变成速度和腿长目标 |
+| 4 | `legged_gym/envs/wheelleg/robot.py` | 创建仿真、步进、观测、奖励、终止和复位 |
 | 5 | `constraints.py`、`leg_control.py`、`wheel_control.py` | 近似闭环外力、支撑前馈、PD、轮子平衡与航向反馈 |
 | 6 | `train.py`、`legged_gym/learning/ppo_trainer.py`、`third_party/rsl_rl/` | PPO 采样和更新 |
 

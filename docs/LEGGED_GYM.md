@@ -14,7 +14,7 @@ manage.sh play / stairs / evaluate → scripts/play.py
   → 同一任务注册器 → 加载检查点 → 策略推理 → env.step()
 ```
 
-先读 [wheelleg_config.py](../legged_gym/envs/wheelleg/wheelleg_config.py) 的参数，再读 [wheelleg.py](../legged_gym/envs/wheelleg/wheelleg.py) 的配置映射与奖励选择，最后读 [wheelleg_robot.py](../legged_gym/envs/wheelleg/wheelleg_robot.py) 的物理步进。[register.py](../legged_gym/envs/wheelleg/register.py) 是唯一任务注册清单。
+先读 [config/base.py](../legged_gym/envs/wheelleg/config/base.py) 的参数，再读 [tasks/base.py](../legged_gym/envs/wheelleg/tasks/base.py) 的配置映射与奖励选择，最后读 [robot.py](../legged_gym/envs/wheelleg/robot.py) 的物理步进。[register.py](../legged_gym/envs/wheelleg/register.py) 是唯一任务注册清单。
 
 ## 注册任务
 
@@ -51,7 +51,7 @@ conda activate isaacgym
 
 ## 配置、奖励和权重
 
-基础参数与 PPO 默认值在 `wheelleg_config.py`，传感器任务及速度课程在 `sensor_config.py`。非零的 `rewards.scales` 项注册 `_reward_<名称>()`，设为零可关闭；未知名称会报错。平地公式在 `rewards.py`，阶梯公式在 `stair_rewards.py`。奖励按每个 20 ms 控制步累计，没有额外乘 dt。
+基础参数与 PPO 默认值在 `config/base.py`，传感器任务及速度课程在 `config/sensors.py`。非零的 `rewards.scales` 项注册 `_reward_<名称>()`，设为零可关闭；未知名称会报错。平地公式在 `rewards/flat.py`，阶梯公式在 `rewards/stairs.py`。奖励按每个 20 ms 控制步累计，没有额外乘 dt。
 
 198 维为 33 × 6 帧，252 维为 42 × 6 帧，传感器任务为 22 × 6 帧。前馈策略的 `obs_history_length=1`，不会再次堆叠。任务返回六项，由 runner 适配；基础机器人保留五项返回接口。
 

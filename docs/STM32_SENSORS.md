@@ -72,7 +72,7 @@ conda activate isaacgym
 
 奖励、终止条件和训练评价仍可使用仿真真值，例如评价是否跟随实际前进速度。奖励中原本依赖旧观测列号的四项已改为读取明确的物理状态，速度评价也读取重置前的机体速度，避免新布局读错列。当前actor和critic使用同一132维输入；没有给critic额外添加特权观测。
 
-`sensor_config.py` 提供逐传感器白噪声、每回合固定偏置和固定延迟。默认延迟1个控制周期，即20 ms。噪声数值是训练用示例，并非测量到的BMI088噪声或真实通信延迟，后续应根据实机日志标定。局部重置只重置该机器人的传感器队列；修改指令不重复采样传感器或推进历史帧。
+`config/sensors.py` 提供逐传感器白噪声、每回合固定偏置和固定延迟。默认延迟1个控制周期，即20 ms。噪声数值是训练用示例，并非测量到的BMI088噪声或真实通信延迟，后续应根据实机日志标定。局部重置只重置该机器人的传感器队列；修改指令不重复采样传感器或推进历史帧。
 
 ## 当前还不能直接部署的部分
 
@@ -85,9 +85,9 @@ conda activate isaacgym
 
 | 文件 | 职责 |
 | --- | --- |
-| [sensor_observations.py](../legged_gym/envs/wheelleg/sensor_observations.py) | 明确字段顺序、单位、归一化、固件状态转换、编码器正解/雅可比、延迟与噪声 |
-| [sensor_config.py](../legged_gym/envs/wheelleg/sensor_config.py) | 新任务、传感器扰动和独立实验目录 |
-| [sensor_task.py](../legged_gym/envs/wheelleg/sensor_task.py) | 在原物理后端上生成新观测，处理重置与指令更新 |
+| [observations/sensors.py](../legged_gym/envs/wheelleg/observations/sensors.py) | 明确字段顺序、单位、归一化、固件状态转换、编码器正解/雅可比、延迟与噪声 |
+| [config/sensors.py](../legged_gym/envs/wheelleg/config/sensors.py) | 新任务、传感器扰动和独立实验目录 |
+| [tasks/sensors.py](../legged_gym/envs/wheelleg/tasks/sensors.py) | 在原物理后端上生成新观测，处理重置与指令更新 |
 
 回归和短训练记录见[传感器任务验收](../validation/stm32_sensor_work.json)。这里只验证观测接口、CPU/GPU更新、保存/恢复及有限播放，没有声称已经训练出可站稳的新策略。
 
@@ -134,7 +134,7 @@ conda activate isaacgym
 
 播放报告增加 `motion`：前向速度均值、速度误差RMS、横向速度RMS、停车速度RMS、各连续回合相对起点的位移和航向变化；排除重置瞬移，速度统计跳过重置后的前2秒。跨多回合的最大位移不能证明连续站立，应同时看失败次数。课程检查点保存各环境级别，播放时冻结晋级，固定前进指令也从零按训练时的加速度斜坡进入。
 
-代码：`tracking_task.py` 管理奖励与课程，`sensor_config.py` 管理阈值和速度级别，`diagnostics/motion_evaluation.py` 只做真值评价。没有修改URDF，也没有实机部署。
+代码：`tasks/tracking.py` 管理奖励与课程，`config/sensors.py` 管理阈值和速度级别，`diagnostics/motion_evaluation.py` 只做真值评价。没有修改URDF，也没有实机部署。
 
 ## 第二版：把晋级考核从探索训练中分离
 

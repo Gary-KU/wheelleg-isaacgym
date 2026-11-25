@@ -8,7 +8,7 @@ This is a new layout, not padding for a legacy 198-input checkpoint.
 import math
 
 import torch
-from .model.geometry import UPPER, LOWER, HIP_SPAN, HIP_DOWN
+from legged_gym.envs.wheelleg.model.geometry import UPPER, LOWER, HIP_SPAN, HIP_DOWN
 
 
 SENSOR_SCHEMA = "mylegwheel_planar_v1"

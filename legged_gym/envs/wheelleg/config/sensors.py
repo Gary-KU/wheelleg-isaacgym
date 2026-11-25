@@ -1,7 +1,7 @@
 """实机可获取状态的任务配置：观测/噪声 → 站立训练 → 速度课程。"""
 
-from .wheelleg_config import WheelLeggedCfg, WheelLeggedCfgPPO
-from .sensor_observations import (
+from legged_gym.envs.wheelleg.config.base import WheelLeggedCfg, WheelLeggedCfgPPO
+from legged_gym.envs.wheelleg.observations.sensors import (
     FRAME_FIELDS,
     HISTORY_FRAMES,
     OBSERVATION_SIZE,
@@ -47,7 +47,7 @@ class WheelLeggedSensorCfg(WheelLeggedCfg):
         # 20 ms at the default policy rate; an assumed training latency.
         delay_steps = 1
         # These are example training perturbations, NOT measured BMI088 statistics.
-        # Order and units: sensor_observations.SENSOR_FIELDS; all values are SI.
+        # Order and units: observations/sensors.py: SENSOR_FIELDS; all values are SI.
         noise_std = (
             0.002,
             0.01,

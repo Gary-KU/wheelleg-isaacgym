@@ -8,7 +8,7 @@
 ./manage.sh evaluate --task wheelleg_stairs --checkpoint <新权重> --report validation/stairs.json
 ```
 
-地形生成在 `envs/wheelleg/terrain.py`；任务配置在 `wheelleg_config.py::WheelLeggedStairsCfg`；奖励在 `stair_rewards.py`；实际接触、失败和成功判断在 `WheelLegRobot._stair_diagnostics()`。
+地形生成在 `envs/wheelleg/terrain.py`；任务配置在 `config/base.py::WheelLeggedStairsCfg`；奖励在 `rewards/stairs.py`；实际接触、失败和成功判断在 `WheelLegRobot._stair_diagnostics()`。
 
 专项完整课程测量可查看 `./manage.sh run tools/evaluate_stairs.py --help`。报告中的成功、物理失败和超时分别统计；普通程序退出不代表通过课程。
 

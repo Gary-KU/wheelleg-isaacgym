@@ -49,7 +49,7 @@ def main():
     import numpy as np
     import torch
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-    from legged_gym.envs.wheelleg.wheelleg_robot import WheelLegRobot
+    from legged_gym.envs.wheelleg.robot import WheelLegRobot
 
     class DiagnosticEnv(WheelLegRobot):
         def _load_robot(self, stiffness, damping):

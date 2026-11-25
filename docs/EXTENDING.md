@@ -4,7 +4,7 @@
 
 ## 同一机器人加一个任务
 
-例如建立固定低速任务。先在 [wheelleg_config.py](../legged_gym/envs/wheelleg/wheelleg_config.py) 中继承配置：
+例如建立固定低速任务。先在 [config/base.py](../legged_gym/envs/wheelleg/config/base.py) 中继承配置：
 
 ```python
 class WheelLeggedSlowCfg(WheelLeggedStandCfg):
@@ -22,8 +22,8 @@ class WheelLeggedSlowCfgPPO(WheelLeggedStandCfgPPO):
 仅修改配置时，直接复用 `WheelLegged`，无需新增任务文件或空子类。在 [register.py](../legged_gym/envs/wheelleg/register.py) 的 `register(registry)` 中导入新配置并追加注册：
 
 ```python
-from .wheelleg import WheelLegged
-from .wheelleg_config import WheelLeggedSlowCfg, WheelLeggedSlowCfgPPO
+from legged_gym.envs.wheelleg.tasks.base import WheelLegged
+from legged_gym.envs.wheelleg.config.base import WheelLeggedSlowCfg, WheelLeggedSlowCfgPPO
 
 if "wheelleg_slow" not in registry.task_classes:
     registry.register(
@@ -44,10 +44,10 @@ if "wheelleg_slow" not in registry.task_classes:
 
 ## 加一个奖励
 
-只有新增奖励或行为时才需要任务子类。例如在新文件 `legged_gym/envs/wheelleg/wheelleg_slow.py` 中增加横滚角速度惩罚：
+只有新增奖励或行为时才需要任务子类。例如在新文件 `legged_gym/envs/wheelleg/tasks/slow.py` 中增加横滚角速度惩罚：
 
 ```python
-from .wheelleg import WheelLegged
+from legged_gym.envs.wheelleg.tasks.base import WheelLegged
 
 
 class WheelLeggedSlow(WheelLegged):
@@ -65,7 +65,7 @@ class WheelLeggedSlowCfg(WheelLeggedStandCfg):
             roll_rate = 0.02
 ```
 
-方法返回形状 `[num_envs]`、与环境同设备的有限张量；此处方法已经返回负数，正系数控制惩罚强度。设为零移除该项。公式需要多个任务共用时放入 [rewards.py](../legged_gym/envs/wheelleg/rewards.py)，阶梯公式放入 [stair_rewards.py](../legged_gym/envs/wheelleg/stair_rewards.py)，任务方法负责调用。每个控制步累计奖励，不额外乘 `dt`；已有阶梯项内部包含原系数。
+方法返回形状 `[num_envs]`、与环境同设备的有限张量；此处方法已经返回负数，正系数控制惩罚强度。设为零移除该项。公式需要多个任务共用时放入 [rewards/flat.py](../legged_gym/envs/wheelleg/rewards/flat.py)，阶梯公式放入 [rewards/stairs.py](../legged_gym/envs/wheelleg/rewards/stairs.py)，任务方法负责调用。每个控制步累计奖励，不额外乘 `dt`；已有阶梯项内部包含原系数。
 
 在 `register.py` 中导入 `WheelLeggedSlow`，把前面 `wheelleg_slow` 注册项的任务类从 `WheelLegged` 改为 `WheelLeggedSlow`，不要用同名重复注册。新增方法与 `rewards.scales.roll_rate` 名称对应后，训练仍走 `TaskRunner → PPOTrainer`。检查零系数、返回形状/设备、实际符号和原任务数值，再做有限训练与工况复测。
 
@@ -89,7 +89,7 @@ class WheelLeggedSlowCfg(WheelLeggedStandCfg):
 
 - `create_training_metrics()` 返回 collector；其 `reset()`、`update(obs, rewards, dones, infos)`、`compute(num_steps)` 收集并返回日志指标字典。
 - collector 的 `checkpoint_metadata()` / `restore_checkpoint(state)` 保存和恢复课程等状态，`configuration_metadata()` 补充运行配置；轮腿实例见 [training_metrics.py](../legged_gym/envs/wheelleg/diagnostics/training_metrics.py)。
-- `configure_execution(cfg, args, checkpoint_state)` 处理该机器人的播放模式、指令与地形覆盖；轮腿的实现见 [wheelleg.py](../legged_gym/envs/wheelleg/wheelleg.py)。
+- `configure_execution(cfg, args, checkpoint_state)` 处理该机器人的播放模式、指令与地形覆盖；轮腿的实现见 [tasks/base.py](../legged_gym/envs/wheelleg/tasks/base.py)。
 
 新机器人的 `register(registry)` 使用同样的 `registry.register(name, task_class, env_cfg, train_cfg)`。最后在 [envs/__init__.py](../legged_gym/envs/__init__.py) 的 `register_tasks()` 中追加它的注册调用。导入和任务加载保持显式，Gym 必须在 Torch 前导入。
 

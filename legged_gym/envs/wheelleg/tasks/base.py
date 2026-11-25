@@ -5,11 +5,11 @@ from pathlib import Path
 
 from legged_gym import LEGGED_GYM_ROOT_DIR
 from legged_gym.envs.wheelleg.model.geometry import require_model_checkpoint
-from legged_gym.envs.wheelleg.wheelleg_robot import ASSET_ROOT, WheelLegRobot
+from legged_gym.envs.wheelleg.robot import ASSET_ROOT, WheelLegRobot
 from legged_gym.utils.helpers import class_to_dict
 import torch
-from legged_gym.envs.wheelleg.rewards import flat_reward_terms
-from legged_gym.envs.wheelleg.stair_rewards import stair_task_reward_terms
+from legged_gym.envs.wheelleg.rewards.flat import flat_reward_terms
+from legged_gym.envs.wheelleg.rewards.stairs import stair_task_reward_terms
 
 
 # 嵌套任务配置到物理环境构造参数的唯一映射。
@@ -181,7 +181,7 @@ class WheelLegged(WheelLegRobot):
         self._observations(advance_history=False)
 
     # Explicit methods keep reward registration searchable in editors. All
-    # equations are evaluated once in rewards.py / stair_rewards.py above.
+    # equations are evaluated once in rewards/flat.py / rewards/stairs.py above.
 
     def _reward_termination(self):
         return self._task_reward_terms["termination"]

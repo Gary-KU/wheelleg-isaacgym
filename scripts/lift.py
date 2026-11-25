@@ -123,7 +123,7 @@ def main():
             "manage.sh",
             "legged_gym/envs/wheelleg/control/wheel_lift.py",
             "legged_gym/envs/wheelleg/control/leg_control.py",
-            "legged_gym/envs/wheelleg/wheelleg_robot.py",
+            "legged_gym/envs/wheelleg/robot.py",
         )
     }
     checkpoint_sha256 = hashlib.sha256(args.checkpoint.read_bytes()).hexdigest()

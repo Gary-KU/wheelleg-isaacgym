@@ -4,9 +4,9 @@ import time
 
 import torch
 
-from .sensor_task import SensorWheelLegged
-from .commands import slew_commands
-from .diagnostics.training_metrics import WheelLegTrainingMetrics
+from legged_gym.envs.wheelleg.tasks.sensors import SensorWheelLegged
+from legged_gym.envs.wheelleg.control.commands import slew_commands
+from legged_gym.envs.wheelleg.diagnostics.training_metrics import WheelLegTrainingMetrics
 
 
 class TrackingWheelLegged(SensorWheelLegged):

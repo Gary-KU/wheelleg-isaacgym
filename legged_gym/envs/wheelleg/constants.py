@@ -50,7 +50,7 @@ MAX_LEG_LENGTH = MAX_LENGTH
 DEFAULT_LEG_LENGTH_RANGE = (MIN_LEG_LENGTH, MAX_LEG_LENGTH)
 
 
-# 抬轮/评估工具加载权重时的网络结构后备值；训练参数统一在 wheelleg_config.py。
+# 抬轮/评估工具加载权重时的网络结构后备值；训练参数统一在 config/base.py。
 DEFAULT_POLICY_CONFIG = {
     "actor_hidden_dims": [512, 256, 128, 64],
     "critic_hidden_dims": [256, 128, 64],

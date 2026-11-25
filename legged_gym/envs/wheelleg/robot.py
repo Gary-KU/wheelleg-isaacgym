@@ -17,7 +17,7 @@ import torch
 from legged_gym.envs.wheelleg.model.constraints import ClosureForces, quat_rotate_inverse
 from legged_gym.envs.wheelleg.model.geometry import ASSET_ROOT, WHEEL_RADIUS, asset_fingerprint
 from legged_gym.envs.wheelleg.model.kinematics import fivebar, inverse_symmetric
-from legged_gym.envs.wheelleg.commands import sample_command_targets, slew_commands, validate_command_limits
+from legged_gym.envs.wheelleg.control.commands import sample_command_targets, slew_commands, validate_command_limits
 from legged_gym.envs.wheelleg.constants import (
     DEFAULT_LEG_KD,
     ACTION_JOINTS, ACTION_SCALES, CLOSURE_MAX_FORCE, DEFAULT_CLOSURE_DAMPING,
@@ -28,8 +28,8 @@ from legged_gym.envs.wheelleg.constants import (
     OBSERVATION_LEG_LENGTH_SIZE, TERMINATION_LOOP_ERROR, TERMINATION_TILT, ACTION_TORQUE_LIMITS, WHEEL_TORQUE_LIMIT, HIP_CONTINUOUS_TORQUE, HIP_PEAK_DURATION,
     OBSERVATION_TERRAIN_SIZE,
 )
-from legged_gym.envs.wheelleg.rewards import weighted_flat_reward_terms
-from legged_gym.envs.wheelleg.stair_rewards import stair_task_reward_terms
+from legged_gym.envs.wheelleg.rewards.flat import weighted_flat_reward_terms
+from legged_gym.envs.wheelleg.rewards.stairs import stair_task_reward_terms
 from legged_gym.envs.wheelleg.control.leg_control import hip_targets, hip_pd_torques, hip_support_torques
 
 
@@ -38,7 +38,7 @@ class WheelLegRobot:
     """轮腿环境：负责物理步进、观测、奖励、终止和局部重置。
 
     几何在 model/kinematics.py，闭环外力在 model/constraints.py。
-    机器人任务配置在 wheelleg_config.py，物理常量在 constants.py。
+    机器人任务配置在 config/base.py，物理常量在 constants.py。
     step() 执行一个控制周期；内部再按 physics_dt 推进多个物理步。
     """
 

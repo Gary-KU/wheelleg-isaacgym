@@ -78,8 +78,8 @@ def main():
 
     import isaacgym  # binary extension before torch
     import torch
-    from legged_gym.envs.wheelleg.jump_config import WheelLeggedJumpCfg
-    from legged_gym.envs.wheelleg.wheelleg import environment_kwargs
+    from legged_gym.envs.wheelleg.config.jump import WheelLeggedJumpCfg
+    from legged_gym.envs.wheelleg.tasks.base import environment_kwargs
     from legged_gym.envs.wheelleg.control.jump import JumpController, JumpKeyboard
     from legged_gym.envs.wheelleg.control.wheel_lift import WheelLiftEnv
     from legged_gym.learning.policy import make_policy
