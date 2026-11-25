@@ -1,325 +1,290 @@
 <?xml version='1.0' encoding='utf-8'?>
-<robot name="WheelLegRobot">
-  <!-- Source: IsaacLab/Robot_USD/Robot_Model.usd; geometry and inertial data preserved. -->
+<!-- INERTIAL VALUES ARE PREVIEW ESTIMATES. Mass values come from the reference model, and COM/inertia are CAD geometry estimates. Replace with measured robot-link data before dynamics calibration. -->
+<robot name="wheelleg_cad">
   <link name="base_link">
     <inertial>
-      <origin xyz="-2.99509997603e-06 0 -2.74099988928e-06" rpy="0 0 0" />
+      <origin xyz="-1.52789385897e-06 7.4839662173e-17 -0.0148918845935" rpy="0 0 0" />
       <mass value="4" />
-      <inertia ixx="0.0119350003444" ixy="0" ixz="5.65379994573e-07" iyy="0.0151779996231" iyz="0" izz="0.02069400061" />
+      <inertia ixx="0.00986579156766" ixy="0.000325987337883" ixz="2.30739669193e-06" iyy="0.00629288925668" iyz="3.78776318769e-06" izz="0.0137825345986" />
     </inertial>
-    <visual>
-      <origin xyz="0 0 0" rpy="0 0 0" />
+    <visual name="base_link_visual">
       <geometry>
         <mesh filename="../meshes/base_link_visual.obj" scale="1 1 1" />
       </geometry>
-      <material name="base_link_material">
-        <color rgba="0.20000000298 0.800000011921 0.800000011921 1" />
-      </material>
     </visual>
-    <collision>
-      <origin xyz="0 0 0" rpy="0 0 0" />
+    <collision name="base_link_shape1">
       <geometry>
-        <mesh filename="../meshes/base_link_visual.obj" scale="1 1 1" />
+        <mesh filename="../meshes/base_link_collision_1.obj" scale="1 1 1" />
+      </geometry>
+    </collision>
+    <collision name="base_link_shape2">
+      <geometry>
+        <mesh filename="../meshes/base_link_collision_2.obj" scale="1 1 1" />
+      </geometry>
+    </collision>
+    <collision name="base_link_shape3">
+      <geometry>
+        <mesh filename="../meshes/base_link_collision_3.obj" scale="1 1 1" />
+      </geometry>
+    </collision>
+    <collision name="base_link_shape4">
+      <geometry>
+        <mesh filename="../meshes/base_link_collision_4.obj" scale="1 1 1" />
+      </geometry>
+    </collision>
+    <collision name="base_link_shape5">
+      <geometry>
+        <mesh filename="../meshes/base_link_collision_5.obj" scale="1 1 1" />
       </geometry>
     </collision>
   </link>
   <link name="L_F_Link1">
     <inertial>
-      <origin xyz="0.0045309998095 0.0398840010166 5.98060004298e-11" rpy="0 0 0" />
+      <origin xyz="0.00325273363923 0.00995373759589 2.59240080112e-08" rpy="0 0 0" />
       <mass value="0.0599999986589" />
-      <inertia ixx="6.9295993473e-05" ixy="6.17580014791e-08" ixz="0" iyy="5.19160031956e-06" iyz="0" izz="6.46659973427e-05" />
+      <inertia ixx="3.10483686525e-05" ixy="3.51896340387e-06" ixz="1.45336868363e-11" iyy="1.06273921366e-05" iyz="-2.11057332363e-11" izz="2.78043401607e-05" />
     </inertial>
-    <visual>
-      <origin xyz="0 0 0" rpy="0 0 0" />
+    <visual name="L_F_Link1_visual">
       <geometry>
         <mesh filename="../meshes/L_F_Link1_visual.obj" scale="1 1 1" />
       </geometry>
-      <material name="L_F_Link1_material">
-        <color rgba="0.866670012474 0.866670012474 0.890200018883 1" />
-      </material>
     </visual>
-    <collision>
-      <origin xyz="0 0 0" rpy="0 0 0" />
+    <collision name="L_F_Link1_shape1">
       <geometry>
-        <mesh filename="../meshes/L_F_Link1_visual.obj" scale="1 1 1" />
+        <mesh filename="../meshes/L_F_Link1_collision_1.obj" scale="1 1 1" />
       </geometry>
     </collision>
   </link>
   <link name="L_F_Link2">
     <inertial>
-      <origin xyz="-0.00300489994697 0.00416429992765 0.0899619981647" rpy="0 0 0" />
+      <origin xyz="-0.00916869719611 -0.00871745759143 0.0757640129507" rpy="0 0 0" />
       <mass value="0.0850000008941" />
-      <inertia ixx="7.08540020299e-05" ixy="3.46990076582e-10" ixz="7.50049997668e-09" iyy="6.94310016749e-05" iyz="-2.87779996165e-06" izz="1.55310008174e-06" />
+      <inertia ixx="0.000133403736346" ixy="-1.77524529132e-06" ixz="1.51191535052e-05" iyy="0.000135078660654" iyz="1.42414017073e-05" izz="1.42399197244e-05" />
     </inertial>
-    <visual>
-      <origin xyz="0 0 0" rpy="0 0 0" />
+    <visual name="L_F_Link2_visual">
       <geometry>
         <mesh filename="../meshes/L_F_Link2_visual.obj" scale="1 1 1" />
       </geometry>
-      <material name="L_F_Link2_material">
-        <color rgba="0.822393834591 0.533444643021 0.807890951633 1" />
-      </material>
     </visual>
-    <collision>
-      <origin xyz="0 0 0" rpy="0 0 0" />
+    <collision name="L_F_Link2_shape1">
       <geometry>
-        <mesh filename="../meshes/L_F_Link2_visual.obj" scale="1 1 1" />
+        <mesh filename="../meshes/L_F_Link2_collision_1.obj" scale="1 1 1" />
       </geometry>
     </collision>
   </link>
   <link name="L_lun">
     <inertial>
-      <origin xyz="6.38379986165e-16 -1.94289995456e-16 -0.0194610003382" rpy="0 0 0" />
+      <origin xyz="-9.03324996123e-07 4.44533837065e-07 -0.000446813155835" rpy="0 0 0" />
       <mass value="0.629999995232" />
-      <inertia ixx="0.000518599990755" ixy="0" ixz="0" iyy="0.000518599990755" iyz="0" izz="0.000896350014955" />
+      <inertia ixx="0.000243167420345" ixy="-8.63161999532e-11" ixz="6.97716425903e-10" iyy="0.000243167327017" iyz="-3.85437118099e-10" izz="0.00040921106801" />
     </inertial>
-    <visual>
-      <origin xyz="0 0 0" rpy="0 0 0" />
+    <visual name="L_lun_visual">
       <geometry>
         <mesh filename="../meshes/L_lun_visual.obj" scale="1 1 1" />
       </geometry>
-      <material name="L_lun_material">
-        <color rgba="0.822393834591 0.533444643021 0.807890951633 1" />
-      </material>
     </visual>
-    <collision>
-      <origin xyz="0 0 0" rpy="0 0 0" />
+    <collision name="L_lun_tread">
       <geometry>
-        <mesh filename="../meshes/L_lun_visual.obj" scale="1 1 1" />
+        <mesh filename="../meshes/L_lun_collision.obj" scale="1 1 1" />
       </geometry>
     </collision>
   </link>
   <link name="L_H_Link1">
     <inertial>
-      <origin xyz="-0.0309250000864 -0.0309250000864 0.0034117999021" rpy="0 0 0" />
+      <origin xyz="-0.00703834972934 -0.0070383493646 0.00330824287486" rpy="0 0 0" />
       <mass value="0.0599999986589" />
-      <inertia ixx="3.37350014394e-05" ixy="-2.93659988201e-05" ixz="3.89660054757e-08" iyy="3.37349950553e-05" iyz="3.89660095969e-08" izz="6.71630067045e-05" />
+      <inertia ixx="1.91773703981e-05" ixy="-8.5884829319e-06" ixz="-2.39397799624e-06" iyy="1.91773698785e-05" iyz="-2.39397771341e-06" izz="3.10483864272e-05" />
     </inertial>
-    <visual>
-      <origin xyz="0 0 0" rpy="0 0 0" />
+    <visual name="L_H_Link1_visual">
       <geometry>
         <mesh filename="../meshes/L_H_Link1_visual.obj" scale="1 1 1" />
       </geometry>
-      <material name="L_H_Link1_material">
-        <color rgba="0.866670012474 0.866670012474 0.890200018883 1" />
-      </material>
     </visual>
-    <collision>
-      <origin xyz="0 0 0" rpy="0 0 0" />
+    <collision name="L_H_Link1_shape1">
       <geometry>
-        <mesh filename="../meshes/L_H_Link1_visual.obj" scale="1 1 1" />
+        <mesh filename="../meshes/L_H_Link1_collision_1.obj" scale="1 1 1" />
       </geometry>
     </collision>
   </link>
   <link name="L_H_Link2">
     <inertial>
-      <origin xyz="0.0642269998789 -0.058547001332 -0.00300000002608" rpy="0 0 0" />
+      <origin xyz="0.0372067808382 -0.0467762010639 0.00260433305424" rpy="0 0 0" />
       <mass value="0.0850000008941" />
-      <inertia ixx="3.05229975161e-05" ixy="3.16660014278e-05" ixz="0" iyy="3.58580007892e-05" iyz="0" izz="6.6255001002e-05" />
+      <inertia ixx="8.23090662483e-05" ixy="6.17362728917e-05" ixz="2.77838572658e-07" iyy="5.36980344787e-05" iyz="-3.49390349522e-07" izz="0.000135364755171" />
     </inertial>
-    <visual>
-      <origin xyz="0 0 0" rpy="0 0 0" />
+    <visual name="L_H_Link2_visual">
       <geometry>
         <mesh filename="../meshes/L_H_Link2_visual.obj" scale="1 1 1" />
       </geometry>
-      <material name="L_H_Link2_material">
-        <color rgba="0.822393834591 0.533444643021 0.807890951633 1" />
-      </material>
     </visual>
-    <collision>
-      <origin xyz="0 0 0" rpy="0 0 0" />
+    <collision name="L_H_Link2_shape1">
       <geometry>
-        <mesh filename="../meshes/L_H_Link2_visual.obj" scale="1 1 1" />
+        <mesh filename="../meshes/L_H_Link2_collision_1.obj" scale="1 1 1" />
       </geometry>
     </collision>
   </link>
   <link name="R_F_Link1">
     <inertial>
-      <origin xyz="-0.0309250000864 -0.0309250000864 0.0034117999021" rpy="0 0 0" />
+      <origin xyz="-0.0064011665235 -0.00640112968746 0.00338266460663" rpy="0 0 0" />
       <mass value="0.0599999986589" />
-      <inertia ixx="3.37349950554e-05" ixy="-2.93659988201e-05" ixz="3.89660120487e-08" iyy="3.37350014394e-05" iyz="3.89660077996e-08" izz="6.71630067045e-05" />
+      <inertia ixx="1.84642065266e-05" ixy="-7.67474866778e-06" ixz="-2.31857139382e-06" iyy="1.84641560288e-05" iyz="-2.31853496931e-06" izz="2.94919238403e-05" />
     </inertial>
-    <visual>
-      <origin xyz="0 0 0" rpy="0 0 0" />
+    <visual name="R_F_Link1_visual">
       <geometry>
         <mesh filename="../meshes/R_F_Link1_visual.obj" scale="1 1 1" />
       </geometry>
-      <material name="R_F_Link1_material">
-        <color rgba="0.822393834591 0.533444643021 0.807890951633 1" />
-      </material>
     </visual>
-    <collision>
-      <origin xyz="0 0 0" rpy="0 0 0" />
+    <collision name="R_F_Link1_shape1">
       <geometry>
-        <mesh filename="../meshes/R_F_Link1_visual.obj" scale="1 1 1" />
+        <mesh filename="../meshes/R_F_Link1_collision_1.obj" scale="1 1 1" />
       </geometry>
     </collision>
   </link>
   <link name="R_F_Link2">
     <inertial>
-      <origin xyz="0.0642269998789 -0.058547001332 -0.00300000002608" rpy="0 0 0" />
+      <origin xyz="0.0372067773055 -0.0467761796153 0.00260476872427" rpy="0 0 0" />
       <mass value="0.0850000008941" />
-      <inertia ixx="3.05229975161e-05" ixy="3.16660014278e-05" ixz="0" iyy="3.58580007892e-05" iyz="0" izz="6.6255001002e-05" />
+      <inertia ixx="8.23090224286e-05" ixy="6.1736285628e-05" ixz="2.77235430069e-07" iyy="5.3698071798e-05" iyz="-3.48652676042e-07" izz="0.000135364761671" />
     </inertial>
-    <visual>
-      <origin xyz="0 0 0" rpy="0 0 0" />
+    <visual name="R_F_Link2_visual">
       <geometry>
         <mesh filename="../meshes/R_F_Link2_visual.obj" scale="1 1 1" />
       </geometry>
-      <material name="R_F_Link2_material">
-        <color rgba="0.822393834591 0.533444643021 0.807890951633 1" />
-      </material>
     </visual>
-    <collision>
-      <origin xyz="0 0 0" rpy="0 0 0" />
+    <collision name="R_F_Link2_shape1">
       <geometry>
-        <mesh filename="../meshes/R_F_Link2_visual.obj" scale="1 1 1" />
+        <mesh filename="../meshes/R_F_Link2_collision_1.obj" scale="1 1 1" />
       </geometry>
     </collision>
   </link>
   <link name="R_lun">
     <inertial>
-      <origin xyz="6.38379986165e-16 -1.94289995456e-16 -0.0194610003382" rpy="0 0 0" />
+      <origin xyz="-8.97314954397e-07 4.43381783989e-07 -0.00044681316909" rpy="0 0 0" />
       <mass value="0.629999995232" />
-      <inertia ixx="0.000518599990755" ixy="0" ixz="0" iyy="0.000518599990755" iyz="0" izz="0.000896350014955" />
+      <inertia ixx="0.000243167420357" ixy="-8.63143587544e-11" ixz="-1.53677476414e-09" iyy="0.000243167327015" iyz="4.05427553455e-11" izz="0.000409211068" />
     </inertial>
-    <visual>
-      <origin xyz="0 0 0" rpy="0 0 0" />
+    <visual name="R_lun_visual">
       <geometry>
         <mesh filename="../meshes/R_lun_visual.obj" scale="1 1 1" />
       </geometry>
-      <material name="R_lun_material">
-        <color rgba="0.822393834591 0.533444643021 0.807890951633 1" />
-      </material>
     </visual>
-    <collision>
-      <origin xyz="0 0 0" rpy="0 0 0" />
+    <collision name="R_lun_tread">
       <geometry>
-        <mesh filename="../meshes/R_lun_visual.obj" scale="1 1 1" />
+        <mesh filename="../meshes/R_lun_collision.obj" scale="1 1 1" />
       </geometry>
     </collision>
   </link>
   <link name="R_H_Link1">
     <inertial>
-      <origin xyz="0.0045309998095 -0.0398840010166 -5.98060004298e-11" rpy="0 0 0" />
+      <origin xyz="0.00325273363933 -0.00995373763083 4.64775384058e-08" rpy="0 0 0" />
       <mass value="0.0599999986589" />
-      <inertia ixx="6.9295993473e-05" ixy="-6.17580014791e-08" ixz="0" iyy="5.19160031956e-06" iyz="0" izz="6.46659973427e-05" />
+      <inertia ixx="3.10483686107e-05" ixy="-3.51896340228e-06" ixz="1.10153603391e-11" iyy="1.06273921432e-05" iyz="1.03578560425e-10" izz="2.78043401122e-05" />
     </inertial>
-    <visual>
-      <origin xyz="0 0 0" rpy="0 0 0" />
+    <visual name="R_H_Link1_visual">
       <geometry>
         <mesh filename="../meshes/R_H_Link1_visual.obj" scale="1 1 1" />
       </geometry>
-      <material name="R_H_Link1_material">
-        <color rgba="0.866670012474 0.866670012474 0.890200018883 1" />
-      </material>
     </visual>
-    <collision>
-      <origin xyz="0 0 0" rpy="0 0 0" />
+    <collision name="R_H_Link1_shape1">
       <geometry>
-        <mesh filename="../meshes/R_H_Link1_visual.obj" scale="1 1 1" />
+        <mesh filename="../meshes/R_H_Link1_collision_1.obj" scale="1 1 1" />
       </geometry>
     </collision>
   </link>
   <link name="R_H_Link2">
     <inertial>
-      <origin xyz="-0.0665569975972 -0.0606679990888 -0.00300489994697" rpy="0 0 0" />
+      <origin xyz="-0.0481835253127 -0.0607128349083 -0.00922559702015" rpy="0 0 0" />
       <mass value="0.0850000008941" />
-      <inertia ixx="3.26140001972e-05" ixy="-3.39390024834e-05" ixz="-5.54900146631e-09" iyy="3.83700077678e-05" iyz="-5.05830050696e-09" izz="7.08540020299e-05" />
+      <inertia ixx="8.52848431348e-05" ixy="-5.74104963123e-05" ixz="-9.35793261567e-06" iyy="5.82013438023e-05" iyz="-1.1849152439e-05" izz="0.000127348452276" />
     </inertial>
-    <visual>
-      <origin xyz="0 0 0" rpy="0 0 0" />
+    <visual name="R_H_Link2_visual">
       <geometry>
         <mesh filename="../meshes/R_H_Link2_visual.obj" scale="1 1 1" />
       </geometry>
-      <material name="R_H_Link2_material">
-        <color rgba="0.822393834591 0.533444643021 0.807890951633 1" />
-      </material>
     </visual>
-    <collision>
-      <origin xyz="0 0 0" rpy="0 0 0" />
+    <collision name="R_H_Link2_shape1">
       <geometry>
-        <mesh filename="../meshes/R_H_Link2_visual.obj" scale="1 1 1" />
+        <mesh filename="../meshes/R_H_Link2_collision_1.obj" scale="1 1 1" />
       </geometry>
     </collision>
   </link>
   <joint name="L_F_Joint1" type="revolute">
-    <origin xyz="0.0439999997616 0.102499999106 0" rpy="-0.785399920451 -5.34110311534e-09 -1.57079997414" />
+    <origin xyz="0.0296487766608 0.0695861569723 9.7451216978e-06" rpy="-0.785399920451 -5.34110311534e-09 -1.57079997414" />
     <parent link="base_link" />
     <child link="L_F_Link1" />
-    <axis xyz="1 0 0" />
+    <axis xyz="0.999999999993 2.58283466131e-06 2.57529026393e-06" />
     <limit effort="9" velocity="30" lower="-0.282999980999" upper="1.2429999456" />
     <dynamics damping="0" friction="0" />
   </joint>
   <joint name="L_F_Joint2" type="revolute">
-    <origin xyz="0 0.104999996722 0" rpy="-3.14158541361 -0 0" />
+    <origin xyz="-0.00700012914191 0.0499999819199 6.98254799328e-08" rpy="-3.14158541361 0 0" />
     <parent link="L_F_Link1" />
     <child link="L_F_Link2" />
-    <axis xyz="1 0 0" />
+    <axis xyz="0.999999999993 -2.5828533063e-06 -2.57527156419e-06" />
     <limit effort="9" velocity="30" lower="-1.23377382348" upper="0.569850027408" />
     <dynamics damping="0" friction="0" />
   </joint>
   <joint name="L_lun_Joint" type="continuous">
-    <origin xyz="-0.00600000005215 0.00739639997482 0.159830003977" rpy="-1.57079269233 0.785400030872 -1.57079269233" />
+    <origin xyz="-0.0327859190469 -0.0118999736874 0.104323565063" rpy="-1.57079269233 0.785400030872 -1.57079269233" />
     <parent link="L_F_Link2" />
     <child link="L_lun" />
-    <axis xyz="0 0 1" />
+    <axis xyz="6.21729503913e-06 1.05913741034e-06 0.99999999998" />
     <limit effort="9" velocity="45" />
     <dynamics damping="0" friction="0" />
   </joint>
   <joint name="L_H_Joint1" type="revolute">
-    <origin xyz="-0.0439999997616 0.0949999988079 0" rpy="1.57079632679 -0 8.74227797415e-08" />
+    <origin xyz="-0.0303706292214 0.0755861569723 -9.76578927452e-06" rpy="1.57079632679 0 8.74227797931e-08" />
     <parent link="base_link" />
     <child link="L_H_Link1" />
-    <axis xyz="0 0 1" />
+    <axis xyz="-8.74227797415e-08 -4.89663865011e-12 1" />
     <limit effort="9" velocity="30" lower="-1.2429999456" upper="0.282999980999" />
     <dynamics damping="0" friction="0" />
   </joint>
   <joint name="L_H_Joint2" type="revolute">
-    <origin xyz="-0.0742459967732 -0.0742459967732 0" rpy="0 -0 0" />
+    <origin xyz="-0.0353553392342 -0.0353553390593 0.00199999690896" rpy="0 0 0" />
     <parent link="L_H_Link1" />
     <child link="L_H_Link2" />
-    <axis xyz="0 0 1" />
+    <axis xyz="-8.74227797415e-08 -4.89663865011e-12 1" />
     <limit effort="9" velocity="30" lower="-0.569850027408" upper="1.23377382348" />
     <dynamics damping="0" friction="0" />
   </joint>
   <joint name="R_F_Joint1" type="revolute">
-    <origin xyz="0.0439999997616 -0.0949999988079 0" rpy="1.57079995142 -2.58923674483e-13 -3.14158541361" />
+    <origin xyz="0.0303706817358 -0.0755861569723 -9.72445412361e-06" rpy="1.57079995142 -2.58681964738e-13 -3.14158541361" />
     <parent link="base_link" />
     <child link="R_F_Link1" />
-    <axis xyz="0 0 1" />
+    <axis xyz="-7.23997979308e-06 3.62462510311e-06 0.999999999967" />
     <limit effort="9" velocity="30" lower="-1.2429999456" upper="0.282999980999" />
     <dynamics damping="0" friction="0" />
   </joint>
   <joint name="R_F_Joint2" type="revolute">
-    <origin xyz="-0.0742459967732 -0.0742459967732 0" rpy="0 -0 0" />
+    <origin xyz="-0.0353553462984 -0.0353553354354 0.000999872177875" rpy="0 0 0" />
     <parent link="R_F_Link1" />
     <child link="R_F_Link2" />
-    <axis xyz="0 0 1" />
+    <axis xyz="-7.23997979308e-06 3.62462510311e-06 0.999999999967" />
     <limit effort="9" velocity="30" lower="-0.569850027408" upper="1.23377382348" />
     <dynamics damping="0" friction="0" />
   </joint>
   <joint name="R_lun_Joint" type="continuous">
-    <origin xyz="0.118249997497 -0.107790000737 -0.0135000003502" rpy="0 -0 0" />
-    <parent link="R_F_Link2" />
+    <origin xyz="-0.0653536565342 -0.082182071924 -0.0327862581108" rpy="9.78224084075e-06 1.34357316981e-05 -7.26264647656e-06" />
+    <parent link="R_H_Link2" />
     <child link="R_lun" />
-    <axis xyz="0 0 1" />
+    <axis xyz="-7.23997979308e-06 3.62462510311e-06 0.999999999967" />
     <limit effort="9" velocity="45" />
     <dynamics damping="0" friction="0" />
   </joint>
   <joint name="R_H_Joint1" type="revolute">
-    <origin xyz="-0.0439999997616 -0.102499999106 0" rpy="2.35619999557 -5.32785904284e-09 1.57079267945" />
+    <origin xyz="-0.0296488291752 -0.0695861569723 9.74512170031e-06" rpy="2.35619999557 -5.32785904284e-09 1.57079267945" />
     <parent link="base_link" />
     <child link="R_H_Link1" />
-    <axis xyz="1 0 0" />
+    <axis xyz="0.999999999993 -2.58284385304e-06 -2.57528072506e-06" />
     <limit effort="9" velocity="30" lower="-0.282999980999" upper="1.2429999456" />
     <dynamics damping="0" friction="0" />
   </joint>
   <joint name="R_H_Joint2" type="revolute">
-    <origin xyz="0 -0.104999996722 0" rpy="-1.57079993073 0.785399920746 -1.57079272286" />
+    <origin xyz="-0.00700012914144 -0.0499999819192 2.93296013632e-07" rpy="-1.57079993073 0.785399920746 -1.57079272286" />
     <parent link="R_H_Link1" />
     <child link="R_H_Link2" />
-    <axis xyz="0 0 1" />
+    <axis xyz="6.19570718394e-06 -6.15766073472e-06 0.999999999962" />
     <limit effort="9" velocity="30" lower="-1.23377382348" upper="0.569850027408" />
     <dynamics damping="0" friction="0" />
   </joint>

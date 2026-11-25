@@ -16,9 +16,11 @@ import numpy as np
 import torch
 
 from legged_gym.envs.wheelleg.model.constraints import ClosureForces, quat_rotate_inverse
+from legged_gym.envs.wheelleg.model.geometry import WHEEL_RADIUS, asset_fingerprint
 from legged_gym.envs.wheelleg.model.kinematics import fivebar, inverse_symmetric
 from legged_gym.envs.wheelleg.commands import sample_command_targets, slew_commands, validate_command_limits
 from legged_gym.envs.wheelleg.constants import (
+    DEFAULT_LEG_KD,
     ACTION_JOINTS, ACTION_SCALES, CLOSURE_MAX_FORCE, DEFAULT_CLOSURE_DAMPING,
     DEFAULT_CLOSURE_STIFFNESS, DEFAULT_COMMAND, DEFAULT_CONTROL_DT,
     DEFAULT_EPISODE_SECONDS, DEFAULT_FORWARD_SPEED_RANGE, DEFAULT_LEG_LENGTH_RANGE,
@@ -61,7 +63,7 @@ class WheelLegRobot:
                  linear_acceleration=0.0, yaw_acceleration=0.0,
                  zero_command_fraction=0.2,
                  initial_leg_length=None,
-                 leg_control="torque", leg_kp=80.0, leg_kd=4.0,
+                 leg_control="torque", leg_kp=80.0, leg_kd=DEFAULT_LEG_KD,
                  leg_feedforward_force=0.0,
                  heading_kp=0.0, heading_kd=0.0, wheel_control="policy", wheel_pitch_damping=0.,
                  wheel_balance_scale=1.,
@@ -93,8 +95,8 @@ class WheelLegRobot:
         if not math.isfinite(zero_command_fraction) or not 0 <= zero_command_fraction <= 1:
             raise ValueError("zero_command_fraction must be in [0,1]")
         if initial_leg_length is not None and (
-                not math.isfinite(initial_leg_length) or not 0.05 <= initial_leg_length <= MAX_LEG_LENGTH):
-            raise ValueError("initial_leg_length must be None or in [0.05,{}] m".format(MAX_LEG_LENGTH))
+                not math.isfinite(initial_leg_length) or not MIN_LEG_LENGTH <= initial_leg_length <= MAX_LEG_LENGTH):
+            raise ValueError("initial_leg_length must be None or in [{},{}] m".format(MIN_LEG_LENGTH, MAX_LEG_LENGTH))
         if leg_control not in ("torque", "hip_pd", "hip_target"):
             raise ValueError("leg_control must be torque, hip_pd or hip_target")
         if (terrain not in ("plane", "stairs")
@@ -185,6 +187,7 @@ class WheelLegRobot:
         self.viewer = None
         with (ASSET_ROOT / "loop_constraints.json").open() as f:
             self.metadata = json.load(f)
+        self.asset_fingerprint = asset_fingerprint()
         try:
             self._create_sim()
             self._load_robot(closure_stiffness, closure_damping)
@@ -236,7 +239,7 @@ class WheelLegRobot:
         options.override_com = False
         options.override_inertia = False
         options.flip_visual_attachments = False
-        options.disable_gravity = self.initial_leg_length is not None
+        options.disable_gravity = False
         options.armature = 0.0
         options.linear_damping = 0.0
         options.angular_damping = 0.0
@@ -268,8 +271,7 @@ class WheelLegRobot:
         props["stiffness"].fill(0.0)
         props["damping"].fill(0.0)
         props["armature"].fill(0.0)
-        for n in ACTION_JOINTS:
-            props["armature"][self.dof_names.index(n)] = 0.05
+        # Keep the imported CAD inertia. No legacy 0.05 kg m² artificial rotor inertia.
         root_pose = self.metadata.get("default_root_pose", {})
         initial_pose = None
         if self.initial_leg_length is not None:
@@ -331,42 +333,32 @@ class WheelLegRobot:
         self._refresh()
         if initial_pose is not None:
             initial_ids = torch.arange(self.num_envs, dtype=torch.int32, device=self.device)
-            # Tensor FK is not guaranteed to update after setting joint states.
-            # Commit full prepared state tensors. GPU updates FK above ground
-            # to avoid contact skin impulses during this force-free step.
-            # Restore each body's gravity flag before caching or running RL;
-            # changing SimParams.gravity at runtime is not reliable in this SDK.
-            try:
-                heights = [pose.p.z if self.device.startswith("cuda")
-                           else initial_pose["root_position"][2]]
-                for height in heights:
-                    self.dof_state[:, :, 0] = self.dof_state.new_tensor(
-                        [initial_pose["joint_positions"].get(name, 0.0) for name in self.dof_names])
-                    self.dof_state[:, :, 1] = 0.0
-                    self.root_states[:, 2] = height
-                    self.root_states[:, 7:] = 0.0
-                    self.gym.set_actor_root_state_tensor_indexed(
-                        self.sim, self._root_tensor, gymtorch.unwrap_tensor(initial_ids), self.num_envs)
-                    self.gym.set_dof_state_tensor_indexed(
-                        self.sim, self._dof_tensor, gymtorch.unwrap_tensor(initial_ids), self.num_envs)
-                    self.gym.simulate(self.sim)
-                    self.gym.fetch_results(self.sim, True)
-                    self._refresh()
-            finally:
-                for env, actor in zip(self.envs, self.actors):
-                    properties = self.gym.get_actor_rigid_body_properties(env, actor)
-                    for body in properties:
-                        body.flags &= ~gymapi.RIGID_BODY_DISABLE_GRAVITY
-                    self.gym.set_actor_rigid_body_properties(env, actor, properties, False)
-            if self.device.startswith("cuda"):
-                # Lower the SDK-validated whole-body pose by pure translation.
-                # This is the same matching-cache operation as reset: no joint
-                # angles or relative body transforms are invented or changed.
-                shift = initial_pose["root_position"][2]-self.root_states[:, 2]
-                self.root_states[:, 2] += shift
-                self.rb_states[:, :, 2] += shift.unsqueeze(-1)
-                self.gym.set_actor_root_state_tensor_indexed(
-                    self.sim, self._root_tensor, gymtorch.unwrap_tensor(initial_ids), self.num_envs)
+            # Resolve SDK forward kinematics once, then initialize at rest.
+            # Leave gravity and imported inertias untouched: reassigning body
+            # properties after import can change CAD inertia/COM frames.
+            self.dof_state[:, :, 0] = self.dof_state.new_tensor(
+                [initial_pose["joint_positions"].get(name, 0.0) for name in self.dof_names])
+            self.dof_state[:, :, 1] = 0.0
+            self.root_states[:, 7:] = 0.0
+            self.gym.set_actor_root_state_tensor_indexed(
+                self.sim, self._root_tensor, gymtorch.unwrap_tensor(initial_ids), self.num_envs)
+            self.gym.set_dof_state_tensor_indexed(
+                self.sim, self._dof_tensor, gymtorch.unwrap_tensor(initial_ids), self.num_envs)
+            self.gym.simulate(self.sim)
+            self.gym.fetch_results(self.sim, True)
+            self._refresh()
+            # Translate the SDK-validated whole-body pose to the requested
+            # ground clearance and cache a coherent, stationary reset state.
+            shift = initial_pose["root_position"][2]-self.root_states[:, 2]
+            self.root_states[:, 2] += shift
+            self.rb_states[:, :, 2] += shift.unsqueeze(-1)
+            self.root_states[:, 7:] = 0.
+            self.dof_state[:, :, 1] = 0.
+            self.rb_states[:, :, 7:] = 0.
+            self.gym.set_actor_root_state_tensor_indexed(
+                self.sim, self._root_tensor, gymtorch.unwrap_tensor(initial_ids), self.num_envs)
+            self.gym.set_dof_state_tensor_indexed(
+                self.sim, self._dof_tensor, gymtorch.unwrap_tensor(initial_ids), self.num_envs)
         self.default_root_states = self.root_states.clone()
         self.default_rb_states = self.rb_states.clone()
         if initial_pose is None:
@@ -538,7 +530,7 @@ class WheelLegRobot:
         wheel_states = self.rb_states[:, self.wheel_indices]
         wheel_ground = self.terrain_model.heights_at(wheel_states[:, :, :2],
                                                       self.environment_indices, self.terrain_levels)
-        wheel_height_valid = ((wheel_states[:, :, 2]-wheel_ground-.0625).abs() < .025).all(-1)
+        wheel_height_valid = ((wheel_states[:, :, 2]-wheel_ground-WHEEL_RADIUS).abs() < .025).all(-1)
         wheel_contact = (contact_norm[:, self.wheel_indices] > 1.0).all(-1)
         nonwheel = torch.ones(self.num_bodies, dtype=torch.bool, device=self.device)
         nonwheel[self.wheel_indices] = False

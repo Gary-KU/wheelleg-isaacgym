@@ -8,6 +8,7 @@ This is a new layout, not padding for a legacy 198-input checkpoint.
 import math
 
 import torch
+from .model.geometry import UPPER, LOWER, HIP_SPAN, HIP_DOWN
 
 
 SENSOR_SCHEMA = "mylegwheel_planar_v1"
@@ -126,28 +127,29 @@ def encoder_leg_state(joint_position, joint_velocity):
     phi1 = 3 * math.pi / 4 + joint_position[:, [0, 3]]
     phi4 = math.pi / 4 + joint_position[:, [1, 2]]
     rate1, rate4 = joint_velocity[:, [0, 3]], joint_velocity[:, [1, 2]]
-    bx, by = 0.105 * torch.cos(phi1), 0.105 * torch.sin(phi1)
-    dx, dy = 0.088 + 0.105 * torch.cos(phi4), 0.105 * torch.sin(phi4)
+    bx, by = UPPER * torch.cos(phi1), UPPER * torch.sin(phi1)
+    dx, dy = HIP_SPAN + UPPER * torch.cos(phi4), HIP_DOWN + UPPER * torch.sin(phi4)
     ux, uy = dx - bx, dy - by
     d2 = ux.square() + uy.square()
-    h = (0.16**2 - 0.25 * d2).clamp_min(1e-12).sqrt()
+    h = (LOWER**2 - 0.25 * d2).clamp_min(1e-12).sqrt()
     d = d2.clamp_min(1e-12).sqrt()
     cx, cy = 0.5 * (bx + dx) - h * uy / d, 0.5 * (by + dy) + h * ux / d
-    x = cx - 0.044
-    length2 = x.square() + cy.square()
+    x = cx - (HIP_SPAN/2)
+    cy_centered = cy-HIP_DOWN/2
+    length2 = x.square() + cy_centered.square()
     length = length2.sqrt()
     r1x, r1y, r4x, r4y = cx - bx, cy - by, cx - dx, cy - dy
     det = r1x * r4y - r1y * r4x
-    valid = (d2 > 1e-10) & (d2 < 4 * 0.16**2) & (det.abs() > 1e-8) & (length2 > 1e-10)
+    valid = (d2 > 1e-10) & (d2 < 4 * LOWER**2) & (det.abs() > 1e-8) & (length2 > 1e-10)
     den = torch.where(valid, det, torch.ones_like(det))
-    q1 = 0.105 * (-r1x * torch.sin(phi1) + r1y * torch.cos(phi1))
-    q4 = 0.105 * (-r4x * torch.sin(phi4) + r4y * torch.cos(phi4))
+    q1 = UPPER * (-r1x * torch.sin(phi1) + r1y * torch.cos(phi1))
+    q4 = UPPER * (-r4x * torch.sin(phi4) + r4y * torch.cos(phi4))
     vx = (r4y * q1 * rate1 - r1y * q4 * rate4) / den
     vy = (-r4x * q1 * rate1 + r1x * q4 * rate4) / den
     sign = joint_position.new_tensor([1.0, -1.0])
-    angle = (torch.atan2(cy, x) - math.pi / 2) * sign
-    length_rate = (x * vx + cy * vy) / length.clamp_min(1e-8)
-    angle_rate = (x * vy - cy * vx) / length2.clamp_min(1e-10) * sign
+    angle = (torch.atan2(cy_centered, x) - math.pi / 2) * sign
+    length_rate = (x * vx + cy_centered * vy) / length.clamp_min(1e-8)
+    angle_rate = (x * vy - cy_centered * vx) / length2.clamp_min(1e-10) * sign
     values = torch.stack((angle, length, angle_rate, length_rate), -1)
     return torch.where(valid[..., None], values, torch.full_like(values, float("nan")))
 

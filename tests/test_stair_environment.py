@@ -23,9 +23,9 @@ class StairEnvironmentTests(unittest.TestCase):
             num_envs=2, sim_device="cpu", headless=True, physics_threads=0,
             terrain="stairs", observe_terrain=True, observe_leg_lengths=True,
             leg_control="hip_target", hip_target_scale=.2,
-            initial_leg_length=.14, leg_kp=80., leg_kd=4.,
+            initial_leg_length=.10, leg_kp=80., leg_kd=.2,
             leg_feedforward_force=22.4649, stair_curriculum=True,
-            command=(0., 0., 0., .14), allow_approximate_loop=True,
+            command=(0., 0., 0., .10), allow_approximate_loop=True,
         )
 
     @classmethod
@@ -96,7 +96,7 @@ class StairEnvironmentTests(unittest.TestCase):
         contacts = torch.linalg.vector_norm(env.contact_forces[index, env.wheel_indices], dim=-1)
         self.assertTrue(bool((contacts > 1.).all()))
         wheels = env.rb_states[index, env.wheel_indices, 2]
-        torch.testing.assert_close(wheels-height, torch.full((2,), .0625), atol=.003, rtol=0)
+        torch.testing.assert_close(wheels-height, torch.full((2,), .0325), atol=.003, rtol=0)
         # Both robots use identical geometry: the raised step must physically
         # lift the second one, rather than only changing a queried height.
         root_heights = last['pre_reset_root_states'][:, 2]
@@ -104,7 +104,7 @@ class StairEnvironmentTests(unittest.TestCase):
 
     def test_hip_target_action_is_bounded_angle_offset_not_extra_hip_torque(self):
         env = self.env
-        env.set_commands([0., 0., 0., .20])
+        env.set_commands([0., 0., 0., .13])
         self.actions[:, :4] = torch.tensor([[-100., 100., 100., -100.],
                                             [100., -100., -100., 100.]])
         self.actions[:, 4:] = .4

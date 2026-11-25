@@ -1,0 +1,58 @@
+{
+  "asset_fingerprint": "2bf907fd03dfecd42f7310a5408e1b50cac3632745e038c3813b004dc7028f26",
+  "fixed_base_inspection": true,
+  "completed_steps": 300,
+  "sim_device": "cuda:0",
+  "num_envs": 16,
+  "physical_failures": 0,
+  "closure_peak_m": 0.00018058167188428342,
+  "initial_pose": {
+    "joint_positions": {
+      "L_F_Joint1": 0.26416405973615964,
+      "L_H_Joint1": -0.264452035652726,
+      "R_F_Joint1": -0.264452035652726,
+      "R_H_Joint1": 0.26416405973615964,
+      "L_F_Joint2": -0.36601404539392757,
+      "L_H_Joint2": 0.3660992823410272,
+      "R_F_Joint2": 0.3660992823410272,
+      "R_H_Joint2": -0.36601404539392757,
+      "L_lun_Joint": 0.0,
+      "R_lun_Joint": 0.0
+    },
+    "root_position": [
+      0.0,
+      0.0,
+      0.13349981373242958
+    ],
+    "root_quaternion_xyzw": [
+      0,
+      0,
+      0,
+      1
+    ],
+    "collision_clearance_m": 0.001,
+    "minimum_collision_height_m_by_body": {
+      "base_link": 0.09886072373242959,
+      "L_F_Link1": 0.09861787197847091,
+      "L_F_Link2": 0.017530654344365237,
+      "L_lun": 0.0010000000000000009,
+      "L_H_Link1": 0.09861095068862405,
+      "L_H_Link2": 0.017530755372300033,
+      "R_F_Link1": 0.09861098921966512,
+      "R_F_Link2": 0.017530820082039794,
+      "R_lun": 0.0010000706907346835,
+      "R_H_Link1": 0.09861787235768173,
+      "R_H_Link2": 0.017530724505879225
+    },
+    "closure_axis_error_rad_by_constraint": {
+      "L_lun_Joint2": 3.332000937312528e-08,
+      "R_lun_Joint2": 1.4901161193847656e-08
+    },
+    "closure_error_m_by_constraint": {
+      "L_lun_Joint2": 5.180713476699715e-09,
+      "R_lun_Joint2": 5.180960565596329e-09
+    }
+  },
+  "gravity_z": -9.8100004196167,
+  "note": "Model inspection only; fixed base is an explicit fixture, not a standing result. Free base has PD/support but no balancing policy."
+}

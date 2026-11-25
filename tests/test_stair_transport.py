@@ -20,8 +20,8 @@ class StairTransportTests(unittest.TestCase):
             num_envs=2, sim_device="cpu", headless=True, physics_threads=0,
             terrain="stairs", stair_level=1, observe_terrain=True,
             observe_leg_lengths=True, leg_control="hip_target", hip_target_scale=.2,
-            initial_leg_length=.14, leg_feedforward_force=22.4649,
-            command=(.25, 0., 0., .14), allow_approximate_loop=True,
+            initial_leg_length=.10, leg_feedforward_force=22.4649,
+            command=(.25, 0., 0., .10), allow_approximate_loop=True,
         )
 
     @classmethod

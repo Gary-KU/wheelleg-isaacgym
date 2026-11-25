@@ -87,17 +87,17 @@ class CommandGovernorTests(unittest.TestCase):
             with redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
                 validate_common(parser, bad)
 
-    def test_manual_height_extension_keeps_old_training_range_and_supports_cpu_thread_choice(self):
+    def test_manual_height_uses_new_cad_range_and_supports_cpu_thread_choice(self):
         parser = common_parser("commands", 1)
-        args = parser.parse_args(["--allow-approximate-loop", "--command", "0", "0", "0", ".20",
-                                 "--initial-leg-length", ".20", "--physics-threads", "0"])
+        args = parser.parse_args(["--allow-approximate-loop", "--command", "0", "0", "0", ".13",
+                                 "--initial-leg-length", ".13", "--physics-threads", "0"])
         validate_common(parser, args)
         kwargs = environment_kwargs(args)
-        self.assertEqual(kwargs["command"][3], .20)
-        self.assertEqual(kwargs["initial_leg_length"], .20)
+        self.assertEqual(kwargs["command"][3], .13)
+        self.assertEqual(kwargs["initial_leg_length"], .13)
         self.assertEqual(kwargs["physics_threads"], 0)
-        self.assertEqual(kwargs["leg_length_range"], (.06, .15))
-        for options in (["--command", "0", "0", "0", ".201"], ["--physics-threads", "-1"]):
+        self.assertEqual(kwargs["leg_length_range"], (.08, .13))
+        for options in (["--command", "0", "0", "0", ".131"], ["--physics-threads", "-1"]):
             bad = parser.parse_args(["--allow-approximate-loop"]+options)
             with redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
                 validate_common(parser, bad)

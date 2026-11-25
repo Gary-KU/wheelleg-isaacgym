@@ -108,7 +108,7 @@ def assess_stair_climbing(summary, num_envs, requested_steps, completed_steps, f
 def main():
     parser = common_parser(__doc__, 4)
     parser.set_defaults(sim_device="cpu", headless=True, terrain="stairs", stair_curriculum=False, stair_min_level=0,
-                        command=[.25, 0., 0., .14])
+                        command=[.25, 0., 0., .10])
     parser.add_argument("--checkpoint", required=True, type=Path)
     parser.add_argument("--seconds", type=float, default=26., help="Simulated seconds per environment, in multiples of 0.02")
     parser.add_argument("--report", type=Path)
@@ -130,6 +130,8 @@ def main():
     from legged_gym.learning.policy import make_policy
 
     checkpoint = torch.load(str(args.checkpoint), map_location="cpu")
+    from legged_gym.envs.wheelleg.model.geometry import require_model_checkpoint, WHEEL_RADIUS
+    require_model_checkpoint(checkpoint)
     explicit = explicit_argument_destinations(parser, argv)
     # This entry point always evaluates a fixed requested stair level and
     # forward task, never the source training curriculum or inference zero-vx.
@@ -204,7 +206,7 @@ def main():
                 origins = env.terrain_origins[env.environment_indices, levels]
                 wheel_ground = env.terrain_model.heights_at(wheels[:, :, :2], env.environment_indices, levels)
                 wheel_x = wheels[:, :, 0]-origins[:, None, 0]
-                wheel_clearance = wheels[:, :, 2]-wheel_ground-.0625
+                wheel_clearance = wheels[:, :, 2]-wheel_ground-WHEEL_RADIUS
                 contacts = torch.linalg.vector_norm(info["pre_reset_contact_forces"], dim=-1)
                 wheel_contact = contacts[:, wheel_indices] > 1.
                 nonwheel_contact = (contacts[:, nonwheel_indices] > 1.).any(-1)

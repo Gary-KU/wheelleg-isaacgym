@@ -101,7 +101,7 @@ class JumpTests(unittest.TestCase):
                 self.env.lin_vel[0, 0] = speed
                 self.env.root_states[0, 7] = speed
                 self.env.dof_state[0, self.env.action_indices[4:], 1] = (
-                    torch.tensor([-speed, speed]) / 0.0625
+                    torch.tensor([-speed, speed]) / 0.0325
                 )
                 self.controller.before_step([speed, 0, 0, 0.1])
                 for _ in range(110):
@@ -185,8 +185,8 @@ class JumpTests(unittest.TestCase):
             round(self.controller.jump.push_seconds / self.env.dt),
         )
         self.assertEqual(forces[-1], 0.0)
-        self.assertGreaterEqual(float(self.env.lift_lengths.min()), 0.06)
-        self.assertLessEqual(float(self.env.lift_lengths.max()), 0.20)
+        self.assertGreaterEqual(float(self.env.lift_lengths.min()), 0.08)
+        self.assertLessEqual(float(self.env.lift_lengths.max()), 0.13)
 
     def test_one_wheel_or_contacting_wheels_do_not_count_as_airborne(self):
         self.ready()
@@ -222,9 +222,9 @@ class JumpTests(unittest.TestCase):
         self.tick()
         touchdown = self.controller.time
         self.env.pitch[0] = 0.15  # Fails the slow recovery check.
-        self.controller.before_step([0, 0, 0, 0.14])
-        self.assertAlmostEqual(float(self.env.commands[0, 3]), 0.14, places=6)
-        torch.testing.assert_close(self.env.lift_lengths, torch.full((1, 2), 0.14))
+        self.controller.before_step([0, 0, 0, 0.12])
+        self.assertAlmostEqual(float(self.env.commands[0, 3]), 0.12, places=6)
+        torch.testing.assert_close(self.env.lift_lengths, torch.full((1, 2), 0.12))
         for _ in range(6):
             self.tick()
         self.assertEqual(self.controller.states[0]["mode"], "idle")
@@ -238,7 +238,7 @@ class JumpTests(unittest.TestCase):
     def test_airborne_height_selection_is_applied_on_touchdown_not_late_recovery(self):
         self.controller.request_jump()
         self.controller.states[0]["mode"] = "flight"
-        self.controller.before_step([0, 0, 0, 0.14])
+        self.controller.before_step([0, 0, 0, 0.12])
         self.assertAlmostEqual(float(self.env.commands[0, 3]), 0.1, places=6)
         self.controller.after_step(
             self.env.info(clearance=(0.03, 0.03), contact=(0, 0)), torch.tensor([False])
@@ -246,7 +246,7 @@ class JumpTests(unittest.TestCase):
         self.controller.after_step(self.env.info(), torch.tensor([False]))
         self.controller.before_step()
         self.assertEqual(self.controller.states[0]["mode"], "land")
-        self.assertAlmostEqual(float(self.env.commands[0, 3]), 0.14, places=6)
+        self.assertAlmostEqual(float(self.env.commands[0, 3]), 0.12, places=6)
         self.assertGreater(float(self.env.lift_forces.min()), 0.0)
 
     def test_one_wheel_contact_does_not_complete_landing(self):
@@ -267,7 +267,7 @@ class JumpTests(unittest.TestCase):
         self.assertEqual(self.controller.states[0]["mode"], "idle")
 
     def test_selected_extended_height_does_not_shrink_when_no_jump_is_requested(self):
-        keyboard = JumpKeyboard(leg_length=0.1, leg_range=(0.08, 0.14))
+        keyboard = JumpKeyboard(leg_length=0.1, leg_range=(0.08, 0.12))
         keyboard.process_events([SimpleNamespace(action="leg_extend", value=1)])
         for _ in range(110):
             keyboard.advance_leg_length(self.env.dt)
@@ -276,8 +276,8 @@ class JumpTests(unittest.TestCase):
         for _ in range(300):
             keyboard.advance_leg_length(self.env.dt)
             self.controller.before_step(keyboard.command())
-            self.assertAlmostEqual(float(self.env.commands[0, 3]), 0.14, places=6)
-            torch.testing.assert_close(self.env.lift_lengths, torch.full((1, 2), 0.14))
+            self.assertAlmostEqual(float(self.env.commands[0, 3]), 0.12, places=6)
+            torch.testing.assert_close(self.env.lift_lengths, torch.full((1, 2), 0.12))
         self.assertEqual(self.controller.events, [])
 
     def test_physical_reset_retains_failure_evidence_and_allows_manual_retry(self):
@@ -330,18 +330,18 @@ class JumpTests(unittest.TestCase):
         self.controller.before_step()
         torch.testing.assert_close(self.controller.anchor_xy, anchor, rtol=0, atol=0)
 
-    def test_twenty_cm_standing_target_reaches_controller_and_excess_is_rejected(self):
-        self.controller.before_step([0, 0, 0, 0.20])
-        torch.testing.assert_close(self.env.lift_lengths, torch.full((1, 2), 0.20))
-        self.assertAlmostEqual(float(self.env.commands[0, 3]), 0.20, places=6)
-        for length in (0.201, 0.079, float("nan")):
+    def test_thirteen_cm_standing_target_reaches_controller_and_excess_is_rejected(self):
+        self.controller.before_step([0, 0, 0, 0.13])
+        torch.testing.assert_close(self.env.lift_lengths, torch.full((1, 2), 0.13))
+        self.assertAlmostEqual(float(self.env.commands[0, 3]), 0.13, places=6)
+        for length in (0.131, 0.079, float("nan")):
             with self.assertRaises(ValueError):
                 self.controller.before_step([0, 0, 0, length])
 
     def test_jump_targets_follow_requested_height_without_exceeding_joint_workspace(
         self,
     ):
-        for nominal in (0.08, 0.10, 0.14, 0.18, 0.20):
+        for nominal in (0.08, 0.10, 0.12, 0.13):
             with self.subTest(length=nominal):
                 self.setUp()
                 self.env.commands[:, 3] = nominal
@@ -350,10 +350,10 @@ class JumpTests(unittest.TestCase):
                 self.ready()
                 self.assertTrue(self.controller.request_jump())
                 state = self.controller.states[0]
-                self.assertGreaterEqual(state["crouch_length"], 0.06)
-                self.assertLess(state["crouch_length"], nominal)
+                self.assertGreaterEqual(state["crouch_length"], 0.08)
+                self.assertLessEqual(state["crouch_length"], nominal)
                 self.assertGreaterEqual(state["extension_length"] + 1e-8, nominal)
-                self.assertLessEqual(state["extension_length"], 0.20)
+                self.assertLessEqual(state["extension_length"], 0.13)
 
 
 if __name__ == "__main__":

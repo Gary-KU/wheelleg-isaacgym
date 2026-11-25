@@ -1,4 +1,4 @@
-"""Contact-gated, in-place wheel-lift practice; the old wheel policy balances.
+"""Contact-gated, in-place wheel-lift practice; a compatible wheel policy balances.
 
 No root pose/velocity is written and no external support is supplied. A short
 single-support pulse is an experiment, not quasi-static one-legged standing.
@@ -6,46 +6,31 @@ single-support pulse is an experiment, not quasi-static one-legged standing.
 
 import math
 from pathlib import Path
-import tempfile
-import xml.etree.ElementTree as ET
 
 import isaacgym  # binary extension before torch
 import torch
 
 from legged_gym.envs.wheelleg.model.constraints import quat_rotate_inverse
 from legged_gym.envs.wheelleg.wheelleg_robot import ASSET_ROOT, WheelLegRobot
+from legged_gym.envs.wheelleg.constants import MIN_LEG_LENGTH, MAX_LEG_LENGTH
 from legged_gym.envs.wheelleg.control.leg_control import hip_targets, hip_support_torques
 
 
 def validate_spherical_tread(path):
-    """Reject a proxy when the source tread geometry changes."""
-    rings = {}
-    for line in Path(path).read_text().splitlines():
-        if not line.startswith("v "):
-            continue
-        x, y, z = map(float, line.split()[1:4])
-        if -0.042001 <= z <= -0.001999:
-            key = round(z, 6)
-            if key not in rings or math.hypot(x, y) > math.hypot(*rings[key][:2]):
-                rings[key] = (x, y, z)
-    if len(rings) != 7 or any(
-        abs(math.sqrt(x * x + y * y + (z + 0.022) ** 2) - 0.0625) > 1e-7
-        for x, y, z in rings.values()
-    ):
-        raise ValueError("Source tire no longer matches the spherical tread proxy")
+    """The old spherical proxy is invalid for the replacement CAD tire."""
+    raise ValueError("Spherical tread proxy belongs to the old model; use the new CAD collision mesh")
 
 
 class WheelLiftEnv(WheelLegRobot):
     def __init__(self, wheel_collision="mesh", **kwargs):
-        if wheel_collision not in ("mesh", "sphere_tread"):
-            raise ValueError("wheel_collision must be mesh or sphere_tread")
+        if wheel_collision != "mesh":
+            raise ValueError("New CAD model requires wheel_collision=mesh")
         self.wheel_collision = wheel_collision
-        self._tread_asset_dir = None
         self.lift_lengths = self.lift_forces = self.lift_kp = self.lift_kd = None
         super().__init__(**kwargs)
         self._tire_vertices = []
         for name in ("L_lun", "R_lun"):
-            path = ASSET_ROOT / "meshes" / (name + "_visual.obj")
+            path = ASSET_ROOT / "meshes" / (name + "_collision.obj")
             vertices = {
                 tuple(map(float, line.split()[1:4]))
                 for line in path.read_text().splitlines()
@@ -67,55 +52,7 @@ class WheelLiftEnv(WheelLegRobot):
     def _create_robot_asset(self, options):
         if self.wheel_collision == "mesh":
             return super()._create_robot_asset(options)
-        # The original tread vertices are a spherical band: radius62.5mm,
-        # local centerZ=-22mm, cut at +/-20mm along the wheel axis. A native
-        # sphere has the same rolling surface on flat ground below18deg roll.
-        # Keep original visual meshes, masses, COMs, inertias and joint frames.
-        self._tread_asset_dir = tempfile.TemporaryDirectory(prefix="wheelleg-tread-")
-        tree = ET.parse(ASSET_ROOT / self.metadata["urdf"])
-        for mesh in tree.getroot().iter("mesh"):
-            mesh.set(
-                "filename",
-                str(
-                    (
-                        ASSET_ROOT
-                        / Path(self.metadata["urdf"]).parent
-                        / mesh.get("filename")
-                    ).resolve()
-                ),
-            )
-        for name in ("L_lun", "R_lun"):
-            validate_spherical_tread(ASSET_ROOT / "meshes" / (name + "_visual.obj"))
-            collision = tree.find("link[@name='{}']/collision".format(name))
-            mesh = collision.find("geometry/mesh")
-            origin = collision.find("origin")
-            if (
-                mesh is None
-                or any(float(x) != 1 for x in mesh.get("scale", "1 1 1").split())
-                or any(
-                    float(x) != 0
-                    for key in ("xyz", "rpy")
-                    for x in origin.get(key, "0 0 0").split()
-                )
-            ):
-                raise ValueError(
-                    "Source tire collision frame or scale changed; revalidate tread proxy"
-                )
-            collision.find("origin").set("xyz", "0 0 -0.022")
-            collision.find("origin").set("rpy", "0 0 0")
-            geometry = collision.find("geometry")
-            geometry.clear()
-            ET.SubElement(geometry, "sphere", radius="0.0625")
-        tree.write(Path(self._tread_asset_dir.name) / "tread.urdf")
-        return self.gym.load_asset(
-            self.sim, self._tread_asset_dir.name, "tread.urdf", options
-        )
-
-    def close(self):
-        super().close()
-        if self._tread_asset_dir is not None:
-            self._tread_asset_dir.cleanup()
-            self._tread_asset_dir = None
+        raise ValueError("Use the CAD wheel collision mesh")
 
     def _hip_targets(self):
         return (
@@ -172,8 +109,6 @@ class WheelLiftEnv(WheelLegRobot):
             ],
             dim=-1,
         )
-        if self.wheel_collision == "sphere_tread":
-            clearance = states[..., 2] - 0.022 * local_up[..., 2] - 0.0625
         return {
             "clearance_m": clearance,
             "tread_axis_tilt_rad": torch.asin(local_up[..., 2].abs().clamp(max=1.0)),
@@ -264,7 +199,7 @@ class AlternatingWheelLift:
         env,
         *,
         length=0.10,
-        shortening=0.035,
+        shortening=0.015,
         retract=0.02,
         hold=0.06,
         lower=0.12,
@@ -291,10 +226,10 @@ class AlternatingWheelLift:
         if not all(math.isfinite(x) and x > 0 for x in values):
             raise ValueError("Lift dimensions and times must be positive and finite")
         if (
-            length + lean > 0.20
-            or min(length - lean, length + lean - shortening) < 0.06 - 1e-9
+            length + lean > MAX_LEG_LENGTH
+            or min(length - lean, length + lean - shortening) < MIN_LEG_LENGTH - 1e-9
         ):
-            raise ValueError("Lift targets must stay in the 6..20cm software range")
+            raise ValueError("Lift targets must stay in the 8..13cm CAD validation range")
         if not isinstance(cycles, int) or isinstance(cycles, bool) or cycles < 1:
             raise ValueError("cycles must be a positive integer")
         self.env, self.length, self.shortening = env, length, shortening

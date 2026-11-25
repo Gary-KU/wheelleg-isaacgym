@@ -32,6 +32,8 @@ def main():
         import isaacgym  # noqa: F401; binary extension must load before Torch.
         import torch
         state = torch.load(str(args.checkpoint), map_location="cpu")
+        from legged_gym.envs.wheelleg.model.geometry import require_model_checkpoint
+        require_model_checkpoint(state)
     try:
         args = resolve_runtime_args(args, explicit_argument_destinations(parser, argv), state, "train")
     except ValueError as error:

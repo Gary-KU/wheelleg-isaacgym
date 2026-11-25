@@ -5,6 +5,7 @@
 """
 
 import math
+from .model.geometry import MIN_LENGTH, MAX_LENGTH
 
 
 # 动作顺序不可随意改动：旧权重的六个输出按这个顺序解释。
@@ -36,10 +37,9 @@ OBSERVATION_HISTORY_FRAMES = 5
 DEFAULT_COMMAND = (0.0, 0.0, 0.0, 0.08)
 DEFAULT_FORWARD_SPEED_RANGE = (-2.0, 2.0)
 DEFAULT_YAW_SPEED_RANGE = (-2 * math.pi, 2 * math.pi)
-MIN_LEG_LENGTH = 0.06
-MAX_LEG_LENGTH = 0.20  # 软件目标上限，20cm对称腿姿仍有约0.16rad真实关节余量。
-# 保留原训练默认范围；扩大手动可调范围不改变旧训练课程。
-DEFAULT_LEG_LENGTH_RANGE = (MIN_LEG_LENGTH, 0.15)
+MIN_LEG_LENGTH = MIN_LENGTH
+MAX_LEG_LENGTH = MAX_LENGTH
+DEFAULT_LEG_LENGTH_RANGE = (MIN_LEG_LENGTH, MAX_LEG_LENGTH)
 
 
 # PPO 默认值保留原任务设置。训练入口会 deepcopy，再应用命令行或权重配置。
@@ -92,3 +92,6 @@ FLAT_REWARD_SCALES = {
     "stability": 1.0,
     "yaw_error": -0.5,
 }
+
+# CAD link inertia is used directly; the old 4.0 damping relied on large armature.
+DEFAULT_LEG_KD = 0.2  # Nm s/rad; validate again after real inertia identification.

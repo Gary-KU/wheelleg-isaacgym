@@ -7,25 +7,34 @@
 import math
 
 import torch
+from .geometry import UPPER, LOWER, HIP_SPAN, HIP_DOWN
 
 
 def fivebar(phi1, phi4, pitch):
     """Same assembly branch as the Lab task; report unreachable geometry."""
-    xb, yb = 0.105*torch.cos(phi1), 0.105*torch.sin(phi1)
-    xd, yd = 0.088+0.105*torch.cos(phi4), 0.105*torch.sin(phi4)
-    dx, dy = xd-xb, yd-yb
-    aa, bb = 0.32*dx, 0.32*dy
-    cc = dx*dx+dy*dy
-    disc = aa*aa+bb*bb-cc*cc
-    phi2 = 2*torch.atan2(bb+torch.sqrt(disc.clamp_min(0)), aa+cc)
-    xc, yc = xb+0.16*torch.cos(phi2), yb+0.16*torch.sin(phi2)
-    length = torch.sqrt((xc-0.044)**2+yc*yc)
-    theta = torch.atan2(yc, xc-0.044)-math.pi/2+pitch
-    return length, theta, (disc >= -1e-8) & (cc > 1e-10)
+    xb, yb = UPPER * torch.cos(phi1), UPPER * torch.sin(phi1)
+    xd, yd = HIP_SPAN + UPPER * torch.cos(phi4), HIP_DOWN + UPPER * torch.sin(phi4)
+    dx, dy = xd - xb, yd - yb
+    distance2 = dx.square() + dy.square()
+    distance = distance2.clamp_min(1e-12).sqrt()
+    height2 = LOWER**2 - 0.25 * distance2
+    height = height2.clamp_min(0).sqrt()
+    xc = 0.5 * (xb + xd) - height * dy / distance
+    yc = 0.5 * (yb + yd) + height * dx / distance
+    x, y = xc - HIP_SPAN / 2, yc - HIP_DOWN / 2
+    length = torch.sqrt(x.square() + y.square())
+    theta = torch.atan2(y, x) - math.pi / 2 + pitch
+    return length, theta, (height2 >= -1e-8) & (distance2 > 1e-10)
 
 
 def inverse_symmetric(length):
-    a = torch.sqrt(0.044**2+length*length)
-    alpha0 = torch.asin((length/a).clamp(-1, 1))
-    alpha1 = torch.acos(((a*a+0.105**2-0.16**2)/(2*a*0.105)).clamp(-1, 1))
-    return alpha1+alpha0, math.pi-alpha1-alpha0
+    x = torch.full_like(length, HIP_SPAN / 2)
+    y1, y4 = length + HIP_DOWN / 2, length - HIP_DOWN / 2
+    d1, d4 = torch.sqrt(x * x + y1 * y1), torch.sqrt(x * x + y4 * y4)
+    phi1 = torch.atan2(y1, x) + torch.acos(
+        ((d1 * d1 + UPPER**2 - LOWER**2) / (2 * d1 * UPPER)).clamp(-1, 1)
+    )
+    phi4 = torch.atan2(y4, -x) - torch.acos(
+        ((d4 * d4 + UPPER**2 - LOWER**2) / (2 * d4 * UPPER)).clamp(-1, 1)
+    )
+    return phi1, phi4

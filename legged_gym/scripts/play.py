@@ -13,6 +13,7 @@ from legged_gym.envs import register_tasks
 register_tasks()
 from legged_gym.utils import get_args, task_registry
 from legged_gym.envs.wheelleg.keyboard import KeyboardDrive
+from legged_gym.envs.wheelleg.constants import MIN_LEG_LENGTH, MAX_LEG_LENGTH
 from legged_gym.envs.wheelleg.diagnostics.motion_evaluation import MotionEvaluation
 
 
@@ -34,7 +35,7 @@ def main():
                 speed=0.6,
                 turn_speed=2.0,
                 leg_length=env.commands[0, 3].item(),
-                leg_range=(0.06, 0.20),
+                leg_range=(MIN_LEG_LENGTH, MAX_LEG_LENGTH),
             )
             keyboard.bind(env.gym, env.viewer, isaacgym.gymapi)
             print(

@@ -20,8 +20,8 @@ class WheelLeggedJumpCfg(WheelLeggedStandCfg):
     class jump:
         # Targets are metres; support/thrust are radial forces per leg in N.
         reference_length = 0.10
-        crouch_length = 0.065
-        extension_length = 0.19
+        crouch_length = 0.08
+        extension_length = 0.13
         crouch_seconds = 0.40
         crouch_hold_seconds = 0.20
         push_seconds = 0.10

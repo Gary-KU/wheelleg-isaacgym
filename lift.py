@@ -29,7 +29,7 @@ def main():
     )
     parser.add_argument("--checkpoint", required=True, type=Path)
     parser.add_argument(
-        "--wheel-collision", choices=("mesh", "sphere_tread"), default="mesh"
+        "--wheel-collision", choices=("mesh",), default="mesh"
     )
     parser.add_argument(
         "--wheel-observations", choices=("original", "sagittal"), default="original"
@@ -40,7 +40,7 @@ def main():
     parser.set_defaults(keyboard=None)
     parser.add_argument("--seconds", type=float)
     parser.add_argument("--length", type=float, default=0.10)
-    parser.add_argument("--shortening", type=float, default=0.035)
+    parser.add_argument("--shortening", type=float, default=0.015)
     parser.add_argument("--retract", type=float, default=0.02)
     parser.add_argument("--hold", type=float, default=0.06)
     parser.add_argument("--lower", type=float, default=0.12)
@@ -80,6 +80,8 @@ def main():
 
     torch.set_num_threads(1)
     checkpoint = torch.load(str(args.checkpoint), map_location="cpu")
+    from legged_gym.envs.wheelleg.model.geometry import require_model_checkpoint
+    require_model_checkpoint(checkpoint)
     if checkpoint_observation_size(checkpoint) != 198:
         parser.error("Wheel lift requires the 198-observation standing checkpoint")
     if args.profile is not None:
@@ -282,12 +284,8 @@ def main():
                         flush=True,
                     )
         summary = controller.summary(failures)
-        collision_scope_passed = (
-            args.wheel_collision != "sphere_tread"
-            or tread_tilt_peak <= math.asin(0.02 / 0.0625)
-        )
         summary["engineering_screen_passed"] &= (
-            finite and completed == steps and timeouts == 0 and collision_scope_passed
+            finite and completed == steps and timeouts == 0
         )
         if not summary["engineering_screen_passed"]:
             summary["status"] = (

@@ -9,7 +9,7 @@ import math
 import torch
 
 from ..keyboard import KeyboardDrive
-from ..constants import ACTION_SCALES, MAX_LEG_LENGTH
+from ..constants import ACTION_SCALES, MAX_LEG_LENGTH, MIN_LEG_LENGTH
 
 
 class JumpKeyboard(KeyboardDrive):
@@ -52,8 +52,8 @@ class JumpController:
         self.env, self.cfg = env, cfg
         self.jump, self.parking = cfg.jump, cfg.parking
         j = self.jump
-        if not 0.06 <= j.crouch_length < j.extension_length <= 0.20:
-            raise ValueError("Jump leg targets must stay inside 6..20 cm")
+        if not MIN_LEG_LENGTH <= j.crouch_length < j.extension_length <= MAX_LEG_LENGTH:
+            raise ValueError("Jump leg targets exceed active CAD leg limits")
         for name in (
             "crouch_seconds",
             "crouch_hold_seconds",
@@ -122,8 +122,8 @@ class JumpController:
                 # Capture the already applied ramp, not the eventual key target:
                 # a jump during acceleration must not keep accelerating while crouched.
                 launch_command=self.command_velocity[i].clone(),
-                crouch_length=max(0.06, self.jump.crouch_length + offset),
-                extension_length=min(0.20, self.jump.extension_length + offset),
+                crouch_length=max(MIN_LEG_LENGTH, self.jump.crouch_length + offset),
+                extension_length=min(MAX_LEG_LENGTH, self.jump.extension_length + offset),
             )
             state["attempt"] = dict(
                 env=i,
@@ -238,7 +238,7 @@ class JumpController:
             ):
                 raise ValueError("Expected finite [N,4] or [4] user commands")
             if bool(((value[:, 3] < 0.08) | (value[:, 3] > MAX_LEG_LENGTH)).any()):
-                raise ValueError("Jump demo standing targets must be within 8..20 cm")
+                raise ValueError("Jump demo standing targets must be within 8..13 cm")
             self.requested.copy_(value)
         m = e.lift_measurements()
         lengths = torch.stack((e.length_l, e.length_r), -1)

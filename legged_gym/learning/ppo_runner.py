@@ -62,6 +62,9 @@ class PPORunner:
 
     def load(self, checkpoint, load_optimizer=True):
         state = torch.load(str(checkpoint), map_location=self.device)
+        if getattr(self.env, "asset_fingerprint", None) is not None:
+            from legged_gym.envs.wheelleg.model.geometry import require_model_checkpoint
+            require_model_checkpoint(state)
         self.policy.load_state_dict(state["model_state_dict"], strict=True)
         if load_optimizer and "optimizer_state_dict" in state:
             self.algorithm.optimizer.load_state_dict(state["optimizer_state_dict"])
@@ -97,6 +100,7 @@ class PPORunner:
             "training_config": self.config,
             "environment_config": self.environment_config,
             "infos": infos,
+            "asset_fingerprint": getattr(self.env, "asset_fingerprint", None),
         }
         task_metadata = getattr(
             getattr(self, "metrics_collector", None), "checkpoint_metadata", None

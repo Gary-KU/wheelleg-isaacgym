@@ -1,36 +1,32 @@
 # WheelLeg · Isaac Gym Preview 4
 
-五连杆轮腿机器人的 Isaac Gym 项目，包含独立运行所需的 URDF、网格、闭环近似、PPO 和精选权重。运行需要 NVIDIA Isaac Gym Preview 4 与 Python 3.8；安装和换电脑使用见[环境指南](docs/COMPANY_SETUP.md)。
+五连杆轮腿机器人的 Isaac Gym 项目，包含独立运行所需的 URDF、网格、闭环近似、PPO 和历史权重。运行需要 NVIDIA Isaac Gym Preview 4 与 Python 3.8；安装和换电脑使用见[环境指南](docs/COMPANY_SETUP.md)。
 
-## 先运行
+## 当前模型：2026-11-25 CAD URDF
 
-在本项目 `IsaacGym/` 目录、已安装 Isaac Gym 的环境中执行：
+运行资产已全部替换为 `wheelleg-cad-urdf.zip`：上连杆 50 mm、下连杆 105 mm、轮半径 32.5 mm。腿长命令范围为 8–13 cm，运动学、传感器编码器状态计算、初始姿态和控制目标同步使用这些尺寸。质量、质心与惯量仍需实机标定，详见[当前资产说明](assets/wheelleg/README.md)。
+
+**旧精选权重只作历史记录，不能用于新模型。当前尚无新模型的站稳策略。** 新检查点保存模型指纹，播放和续训会拒绝不匹配的旧权重。历史文档中的站立、跳跃、阶梯效果均属于替换前模型。
+
+在本目录执行模型检查和观察：
 
 ```bash
 conda activate isaacgym
-./run.sh legged_gym/scripts/list_tasks.py
-./stand.sh
+./run.sh tools/check_model.py --report validation/cad_model_check.json
+./preview_model.sh --length 0.10
 ```
 
-默认加载仓库精选站立权重，使用 CPU、单机器人。点击仿真窗口后，方向键前后/转向，Q/E 调腿长，空格单跳，X 停止，R 重置。
+预览默认固定机身观察机构，不加载策略。`--free-base` 取消固定；这时没有已训练的平衡策略。可用 `--headless --sim-device cuda:0 --num-envs 16 --steps 300` 做有限 GPU 模型检查。
 
-| 入口 | 用途 |
-| --- | --- |
-| `./stand.sh` | 安静站立、键盘驾驶与行驶跳跃；空格单跳，X 停止，见[站立与跳跃](docs/JUMP.md) |
-| `./stairs.sh` | 已复测的 1 cm 四上四下阶梯演示 |
-| `./lift.sh` | 原地交替抬轮；N 请求下一侧，空格切换连续动作；`--auto` 自动演示 |
-| `./train_stairs.sh` | 从精选的 2 cm 课程起点继续 GPU 训练，写入新实验目录 |
-
-新训练使用注册任务入口，例如从头训练平地任务：
+之后如需重新训练，可使用原注册任务框架，例如仅使用实机可获取状态的站立/速度课程：
 
 ```bash
-./run.sh legged_gym/scripts/train.py --task wheelleg_flat --num_envs 128 --headless
+./run.sh legged_gym/scripts/train.py --task wheelleg_sensor_tracking --num_envs 128 --headless
 ```
 
-`wheelleg_flat`、`wheelleg_stand`、`wheelleg_stairs` 分别对应平地指令、零速站立、阶梯课程。训练默认 `cuda:0`；加 `--max_iterations 3` 可做有限接口检查。续训、指定权重和参数说明见[任务入口](docs/LEGGED_GYM.md)。根目录 `train.py`、`play.py`、`evaluate.py` 和现有 shell 脚本继续可用。
+训练默认 `cuda:0`；`--max_iterations 3` 用于有限接口检查。训练完成后，使用 `legged_gym/scripts/play.py --task wheelleg_sensor_tracking --checkpoint <新权重路径>` 播放。`./stand.sh --checkpoint <新模型198维站立权重>` 保留键盘驾驶和跳跃控制入口；不能把132维传感器策略传给198维演示控制器。
 
-面向 STM32 部署的观测训练使用新任务 `wheelleg_sensor`：只输入实机可获得的平面IMU/编码器状态、指令和上一拍动作，共132维。需重新训练；模型尺寸和电机输出仍需对齐，见[STM32传感器训练](docs/STM32_SENSORS.md)。
-减少停车漂移并逐级训练直行到1.0 m/s，使用 `wheelleg_sensor_tracking`；跨任务初始化用 `--warm-start`，实际速度与横移通过播放报告的 `motion` 字段验收。
+`wheelleg_flat`、`wheelleg_stand`、`wheelleg_stairs`、`wheelleg_sensor` 及 `wheelleg_sensor_tracking` 均使用同一份新 CAD 资产。任务接口见[任务入口](docs/LEGGED_GYM.md)，传感器定义见[STM32传感器训练](docs/STM32_SENSORS.md)。
 
 ## 代码从哪里读
 
@@ -43,14 +39,14 @@ Python 源码统一放在 `legged_gym/`：`envs/wheelleg/` 负责当前机器人
 
 完整阅读路线与动作/观测单位见[代码导读](docs/CODE_GUIDE.md)，目录职责见[项目结构](docs/PROJECT_LAYOUT.md)，添加任务、奖励或机器人见[扩展指南](docs/EXTENDING.md)。现有启动命令保留；Python 导入改用统一的 `legged_gym` 路径。
 
-## 已验证范围
+## 替换前模型的历史结果
 
 - `stand.sh` 统一安静站立、驾驶与行驶跳跃；有限平地复测已降低静止轮速，长期慢漂仍需验证，见[运行与复测](docs/USAGE.md)。
 - 精选阶梯策略通过了 1 cm 课程的有限复测；2 cm 及更高阶梯尚未通过验收，见[阶梯训练与报告](docs/STAIRS.md)。
-- 抬轮采用现有轮子策略与显式腿部控制，依赖专用胎面代理和输入适配，尚未向前迈步，见[抬轮说明](docs/WHEEL_LIFT.md)。
+- 旧抬轮实验采用轮子策略与显式腿部控制，尚未向前迈步；旧球面胎面代理已从当前模型禁用，见[抬轮说明](docs/WHEEL_LIFT.md)。
 - 五连杆采用弹簧阻尼外力近似闭合，具有有限刚度与闭合误差，见[资产说明](assets/wheelleg/README.md)和[SCUT 闭链核对](docs/SCUT_CLOSED_CHAIN.md)。
 
-这次结构整理沿用已有权重，测试与复测结果见[整理验收记录](validation/readability_cleanup_work.json)；具体实验参数和测量留在[训练优化](docs/TRAINING_OPTIMIZATION.md)、[实验记录](docs/EXPERIMENTS.md)与[整理前 README](docs/archive/README_20261027_before_readability_cleanup.md)。
+以下结构整理记录属于替换前模型，当时沿用已有权重，测试与复测结果见[整理验收记录](validation/readability_cleanup_work.json)；具体实验参数和测量留在[训练优化](docs/TRAINING_OPTIMIZATION.md)、[实验记录](docs/EXPERIMENTS.md)与[整理前 README](docs/archive/README_20261027_before_readability_cleanup.md)。
 
 ## 检查与资料
 

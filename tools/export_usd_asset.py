@@ -298,7 +298,7 @@ def export(source, destination):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source", type=Path, default=REPO_ROOT / "IsaacLab/Robot_USD/Robot_Model.usd")
-    parser.add_argument("--output", type=Path, default=REPO_ROOT / "IsaacGym/assets/wheelleg")
+    parser.add_argument("--output", type=Path, default=REPO_ROOT / "IsaacGym/logs/usd_export")
     args = parser.parse_args()
     export(args.source.resolve(), args.output.resolve())
 

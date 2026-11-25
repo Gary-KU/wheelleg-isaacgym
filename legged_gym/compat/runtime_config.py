@@ -4,10 +4,12 @@
 避免网络维度、物理步长和指令加速度在续训/播放时悄悄变化。
 """
 
+
 from copy import deepcopy
 import sys
 
 from legged_gym.envs.wheelleg.constants import (
+    DEFAULT_LEG_KD,
     DEFAULT_CONTROL_DT, OBSERVATION_BASE_FRAME_SIZE,
     OBSERVATION_HISTORY_FRAMES, OBSERVATION_LEG_LENGTH_SIZE,
     OBSERVATION_TERRAIN_SIZE,
@@ -61,7 +63,7 @@ SUPPORT_ENVIRONMENT = dict(STABILITY_ENVIRONMENT, **{
 HYBRID_ENVIRONMENT = dict(SUPPORT_ENVIRONMENT, **{
     "leg_control": "hip_pd",
     "leg_kp": 80.0,
-    "leg_kd": 4.0,
+    "leg_kd": DEFAULT_LEG_KD,
     "initial_leg_length": 0.08,
 })
 STAIRS_ENVIRONMENT = dict(HYBRID_ENVIRONMENT, **{
@@ -72,9 +74,9 @@ STAIRS_ENVIRONMENT = dict(HYBRID_ENVIRONMENT, **{
     "wheel_control": "policy",
     "wheel_pitch_damping": 0.0, "wheel_balance_scale": 1.0,
     "leg_feedforward_force": 22.4649, "heading_kp": 6., "heading_kd": .3,
-    "initial_leg_length": .14, "command": [.25, 0., 0., .14],
+    "initial_leg_length": .10, "command": [.25, 0., 0., .10],
     "forward_speed_range": [.25, .25], "yaw_speed_range": [0., 0.],
-    "leg_length_range": [.14, .14], "random_commands": False,
+    "leg_length_range": [.10, .10], "random_commands": False,
     "linear_acceleration": .5, "yaw_acceleration": 2.,
 })
 

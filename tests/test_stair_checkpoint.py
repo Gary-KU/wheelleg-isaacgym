@@ -94,7 +94,7 @@ class StairCheckpointTests(unittest.TestCase):
         self.assertEqual(env["hip_target_scale"], .2)
         self.assertEqual(env["wheel_control"], "policy")
         self.assertEqual((env["wheel_pitch_damping"], env["wheel_balance_scale"]), (0.0, 1.0))
-        self.assertEqual(env["command"], [.25, 0., 0., .14])
+        self.assertEqual(env["command"], [.25, 0., 0., .10])
         self.assertEqual((env["stair_level"], env["stair_max_level"], env["stair_curriculum"]), (0, 4, True))
         self.assertEqual(env["physics_dt"], .0005)
         self.assertEqual(config["initialization_provenance"], prepared["stair_bootstrap"])

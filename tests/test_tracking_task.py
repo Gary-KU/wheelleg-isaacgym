@@ -7,6 +7,7 @@ import unittest
 
 import isaacgym
 import torch
+from legged_gym.envs.wheelleg.model.geometry import asset_fingerprint
 
 from legged_gym.envs import register_tasks
 from legged_gym.envs.wheelleg.diagnostics.motion_evaluation import MotionEvaluation
@@ -307,6 +308,7 @@ class TrackingTaskTests(unittest.TestCase):
             torch.save(
                 {
                     "model_state_dict": policy.state_dict(),
+                    "asset_fingerprint": asset_fingerprint(),
                     "iter": 600,
                     "legged_gym_env_config": {"commands": {"random_commands": False}},
                 },

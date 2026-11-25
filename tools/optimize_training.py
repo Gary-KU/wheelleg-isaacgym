@@ -60,6 +60,8 @@ def main():
     # Gym is only imported inside independent child processes; parent uses CPU Torch.
     import torch
     state = torch.load(str(source), map_location="cpu")
+    from legged_gym.envs.wheelleg.model.geometry import require_model_checkpoint
+    require_model_checkpoint(state)
     env = state.get("environment_config", {})
     observations = state["model_state_dict"]["actor.0.weight"].shape[1]
     if observations not in (186, 198):

@@ -19,18 +19,18 @@ class InitialPoseGeometryTests(unittest.TestCase):
         metadata = json.loads((ASSET_ROOT/"loop_constraints.json").read_text())
         pose = make_initial_pose(ASSET_ROOT/metadata["urdf"], metadata, 0.08)
         self.assertEqual(len(pose["joint_positions"]), 10)
-        self.assertAlmostEqual(pose["joint_positions"]["L_F_Joint1"], 0.6139891090, places=8)
-        self.assertAlmostEqual(pose["joint_positions"]["R_F_Joint2"], 0.9546142124, places=8)
-        self.assertGreater(pose["root_position"][2], 0.14)
-        self.assertLess(pose["root_position"][2], 0.15)
+        self.assertAlmostEqual(pose["joint_positions"]["L_F_Joint1"], 0.570157476553216, places=8)
+        self.assertAlmostEqual(pose["joint_positions"]["R_F_Joint2"], 0.748002211987, places=8)
+        self.assertGreater(pose["root_position"][2], 0.113)
+        self.assertLess(pose["root_position"][2], 0.114)
         self.assertAlmostEqual(min(pose["minimum_collision_height_m_by_body"].values()), 0.001, places=8)
         self.assertLess(max(pose["closure_error_m_by_constraint"].values()), 0.0001)
 
     def test_requested_length_is_checked_and_not_silently_clamped(self):
-        for length in (0.049, 0.201, float("nan")):
+        for length in (0.079, 0.131, float("nan")):
             with self.subTest(length=length), self.assertRaises(ValueError):
                 symmetric_joint_positions(length)
-        for length in (0.05, 0.15, 0.20):
+        for length in (0.08, 0.10, 0.13):
             self.assertEqual(len(symmetric_joint_positions(length)), 10)
 
 
@@ -81,13 +81,13 @@ class InitialPosePhysicsTests(unittest.TestCase):
 
 
 class LegacyInitialPoseTests(unittest.TestCase):
-    def test_none_preserves_old_initial_joints_and_root_height(self):
+    def test_none_uses_cad_zero_joint_pose_and_root_height(self):
         env = WheelLegRobot(num_envs=1, sim_device="cpu", headless=True,
                              initial_leg_length=None, allow_approximate_loop=True)
         try:
             self.assertEqual(float(env.dof_state[:, :, 0].abs().max()), 0)
-            self.assertAlmostEqual(float(env.root_states[0, 2]), 0.25, delta=1e-5)
-            self.assertGreater(float(env.length_l[0]), 0.18)
+            self.assertAlmostEqual(float(env.root_states[0, 2]), 0.15102840965, delta=1e-5)
+            self.assertAlmostEqual(float(env.length_l[0]), 0.1175284, delta=1e-5)
             self.assertFalse(hasattr(env, "initial_pose_diagnostics"))
         finally:
             env.close()

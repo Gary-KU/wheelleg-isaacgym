@@ -71,6 +71,8 @@ def main():
     from legged_gym.learning.policy import make_policy
 
     checkpoint = torch.load(str(args.checkpoint), map_location="cpu")
+    from legged_gym.envs.wheelleg.model.geometry import require_model_checkpoint
+    require_model_checkpoint(checkpoint)
     explicit = explicit_argument_destinations(parser, argv)
     # The support task defaults to 8cm even when the checkpoint was trained at
     # another height. Physics/observation settings still follow its checkpoint.

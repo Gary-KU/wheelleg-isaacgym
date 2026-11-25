@@ -100,7 +100,7 @@ def summarize_drive(rows):
 def main():
     parser = common_parser(__doc__, 1)
     parser.set_defaults(sim_device="cpu", physics_threads=0, headless=True,
-                        command=[0., 0., 0., .08], initial_leg_length=.05,
+                        command=[0., 0., 0., .08], initial_leg_length=.08,
                         yaw_acceleration=4., terrain="plane", stair_curriculum=False)
     parser.add_argument("--checkpoint", required=True, type=Path)
     parser.add_argument("--report", required=True, type=Path)
@@ -125,6 +125,8 @@ def main():
 
     torch.set_num_threads(1)
     checkpoint = torch.load(str(args.checkpoint), map_location="cpu")
+    from legged_gym.envs.wheelleg.model.geometry import require_model_checkpoint
+    require_model_checkpoint(checkpoint)
     explicit = explicit_argument_destinations(parser)
     # Match stand.sh's explicitly selected task and initial crouch. Other
     # controller/physics settings follow the checkpoint unless overridden.

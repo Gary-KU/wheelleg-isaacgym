@@ -1,9 +1,11 @@
 """Argument parsing stays independent of Isaac Gym and PyTorch import order."""
 
+
 import argparse
 import math
 
 from legged_gym.envs.wheelleg.constants import (
+    DEFAULT_LEG_KD,
     DEFAULT_CLOSURE_DAMPING, DEFAULT_CLOSURE_STIFFNESS, DEFAULT_COMMAND,
     DEFAULT_CONTROL_DT, DEFAULT_FORWARD_SPEED_RANGE, DEFAULT_LEG_LENGTH_RANGE,
     DEFAULT_PHYSICS_DT, DEFAULT_YAW_SPEED_RANGE, MAX_LEG_LENGTH, MIN_LEG_LENGTH,
@@ -21,7 +23,7 @@ def common_parser(description, num_envs):
     parser.add_argument("--leg-control", choices=("torque", "hip_pd", "hip_target"), default="torque",
                         help="Hip action meaning: total torque, or residual torque added to leg-position PD")
     parser.add_argument("--leg-kp", type=float, default=80.0, help="Hip PD proportional gain in Nm/rad")
-    parser.add_argument("--leg-kd", type=float, default=4.0, help="Hip PD damping gain in Nm s/rad")
+    parser.add_argument("--leg-kd", type=float, default=DEFAULT_LEG_KD, help="Hip PD damping gain in Nm s/rad")
     parser.add_argument("--hip-target-scale", type=float, default=0.2,
                         help="In hip_target mode, each clipped hip action offsets the target by this many radians")
     parser.add_argument("--terrain", choices=("plane", "stairs"), default="plane")
@@ -136,8 +138,8 @@ def validate_common(parser, args):
     if args.wheel_balance_scale != 1. and args.wheel_control != "heading":
         parser.error("--wheel-balance-scale requires --wheel-control heading")
     if args.initial_leg_length is not None and (
-            not math.isfinite(args.initial_leg_length) or not 0.05 <= args.initial_leg_length <= MAX_LEG_LENGTH):
-        parser.error("--initial-leg-length must be finite and in [0.05,{}] m".format(MAX_LEG_LENGTH))
+            not math.isfinite(args.initial_leg_length) or not MIN_LEG_LENGTH <= args.initial_leg_length <= MAX_LEG_LENGTH):
+        parser.error("--initial-leg-length must be finite and in [{},{}] m".format(MIN_LEG_LENGTH, MAX_LEG_LENGTH))
     if (not math.isfinite(args.closure_stiffness) or not math.isfinite(args.closure_damping)
             or args.closure_stiffness <= 0 or args.closure_damping < 0):
         parser.error("closure stiffness must be positive and damping nonnegative")

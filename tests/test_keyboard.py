@@ -82,7 +82,7 @@ class KeyboardDriveTests(unittest.TestCase):
         self.assertEqual(self.drive.command(0.12), [0.0, 0.0, 0.0, 0.12])
 
     def test_height_changes_with_simulation_time_and_holds_on_release(self):
-        drive = KeyboardDrive(leg_length=.08, leg_speed=.02, leg_range=(.06, .12))
+        drive = KeyboardDrive(leg_length=.08, leg_speed=.02, leg_range=(.08, .12))
         drive.process_events([event("leg_extend")])
         for _ in range(50):
             drive.advance_leg_length(.02)
@@ -97,7 +97,7 @@ class KeyboardDriveTests(unittest.TestCase):
         self.assertAlmostEqual(drive.command()[3], .09)
 
     def test_height_limits_opposite_keys_and_variable_step_size(self):
-        drive = KeyboardDrive(leg_length=.08, leg_range=(.06, .12))
+        drive = KeyboardDrive(leg_length=.08, leg_range=(.08, .12))
         drive.process_events([event("leg_extend"), event("leg_shorten")])
         drive.advance_leg_length(.2)
         self.assertEqual(drive.command()[3], .08)
@@ -106,7 +106,7 @@ class KeyboardDriveTests(unittest.TestCase):
         self.assertEqual(drive.command()[3], .12)
         drive.process_events([event("leg_extend", 0), event("leg_shorten")])
         drive.advance_leg_length(10)
-        self.assertEqual(drive.command()[3], .06)
+        self.assertEqual(drive.command()[3], .08)
 
     def test_space_stops_height_change_until_release_and_repress(self):
         drive = KeyboardDrive(leg_length=.08)

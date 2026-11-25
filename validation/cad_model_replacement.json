@@ -1,0 +1,35 @@
+{
+  "date": "2026-11-25",
+  "scope": "Replace all active Isaac Gym tasks with user CAD URDF; no long policy training",
+  "base_commit": "fe7a7778de41b1a586a0b297b9c6a7b8b7072dcc",
+  "asset_fingerprint": "2bf907fd03dfecd42f7310a5408e1b50cac3632745e038c3813b004dc7028f26",
+  "source_archive": "/home/gary/Downloads/wheelleg-cad-urdf.zip",
+  "old_asset_backup": "logs/model_backup_20261125/old_wheelleg/",
+  "static_audit": "cad_model_check.json",
+  "cpu_preview": "cad_model_cpu.json",
+  "gpu_preview": "cad_model_gpu.json",
+  "regression": {
+    "tests": 308,
+    "status": "passed",
+    "device_env": "WHEELLEG_TEST_DEVICE=cuda:0",
+    "staged_snapshot_tests": 308,
+    "staged_snapshot_status": "passed"
+  },
+  "changes": [
+    "Imported full CAD URDF, 11 visual meshes and 15 collision meshes",
+    "Shared CAD dimensions across FK, IK, sensor state derivation, support Jacobian and initial poses",
+    "Preserved right wheel CAD parent R_H_Link2 and closure to R_F_Link2",
+    "Removed legacy sphere proxy and 0.05 kg m^2 armature",
+    "Kept imported inertia frames untouched during initialization; gravity stays enabled",
+    "Set CAD PD damping to 0.2 Nm s/rad; no balance-policy claim",
+    "Checkpoint load/save checks active asset fingerprint; legacy weights retained as history",
+    "Historical USD export defaults to logs/usd_export to protect active CAD assets"
+  ],
+  "limitations": [
+    "Masses come from reference, COM and inertia are preview estimates; real measurements still required",
+    "No new trained balancing policy; fixed base inspection does not prove standing",
+    "Closed chain still uses the authorized compliant spring/damper approximation",
+    "Leg command validation range 0.08..0.13 m; wheel radius 0.0325 m",
+    "STM32 geometry must be checked again before deployment"
+  ]
+}

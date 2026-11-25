@@ -24,7 +24,7 @@ from legged_gym.envs.wheelleg.wheelleg_robot import ASSET_ROOT
 
 class IndependentLegTests(unittest.TestCase):
     def test_independent_targets_reach_each_requested_length_with_correct_mirrors(self):
-        lengths = torch.tensor([[0.08, 0.12], [0.15, 0.07]], dtype=torch.float64)
+        lengths = torch.tensor([[0.08, 0.12], [0.13, 0.09]], dtype=torch.float64)
         q = hip_targets(lengths)
         left = fivebar(3 * math.pi / 4 + q[:, 0], math.pi / 4 + q[:, 1], 0.0)[0]
         right = fivebar(3 * math.pi / 4 + q[:, 3], math.pi / 4 + q[:, 2], 0.0)[0]
@@ -37,7 +37,7 @@ class IndependentLegTests(unittest.TestCase):
 
     def test_independent_loads_match_virtual_work_and_zero_swing_load(self):
         q = hip_targets(
-            torch.tensor([[0.08, 0.12], [0.15, 0.07]], dtype=torch.float64)
+            torch.tensor([[0.08, 0.12], [0.13, 0.09]], dtype=torch.float64)
         ).requires_grad_(True)
         left = fivebar(3 * math.pi / 4 + q[:, 0], math.pi / 4 + q[:, 1], 0.0)[0]
         right = fivebar(3 * math.pi / 4 + q[:, 3], math.pi / 4 + q[:, 2], 0.0)[0]
@@ -64,50 +64,28 @@ class IndependentLegTests(unittest.TestCase):
 
 
 class TreadAndPolicyAdapterTests(unittest.TestCase):
-    def test_source_tread_matches_proxy_and_operating_roll_stays_inside_band(self):
-        for name in ("L_lun", "R_lun"):
-            validate_spherical_tread(ASSET_ROOT / "meshes" / (name + "_visual.obj"))
-        self.assertLess(0.0625 * math.sin(0.22), 0.02)
+    def test_old_spherical_tread_is_rejected_for_new_cad_model(self):
+        with self.assertRaisesRegex(ValueError, "old model"):
+            validate_spherical_tread(ASSET_ROOT / "meshes/L_lun_visual.obj")
+        with self.assertRaisesRegex(ValueError, "collision=mesh"):
+            WheelLiftEnv(wheel_collision="sphere_tread")
 
-    def test_proxy_retains_all_joint_frames_mass_inertia_and_visual_geometry(self):
+    def test_cad_collision_loader_retains_all_urdf_frames_and_inertias(self):
         class AssetReader:
             def load_asset(self, sim, root, name, options):
                 self.tree = ET.parse(Path(root) / name)
                 return "asset"
-
         env = object.__new__(WheelLiftEnv)
-        env.wheel_collision = "sphere_tread"
-        env._tread_asset_dir = None
+        env.wheel_collision = "mesh"
         env.metadata = json.loads((ASSET_ROOT / "loop_constraints.json").read_text())
         env.sim = None
         env.gym = AssetReader()
-        try:
-            self.assertEqual(env._create_robot_asset(object()), "asset")
-            original = ET.parse(ASSET_ROOT / env.metadata["urdf"]).getroot()
-            proxy = env.gym.tree.getroot()
-            for a, b in zip(original.findall("joint"), proxy.findall("joint")):
-                self.assertEqual(ET.tostring(a), ET.tostring(b))
-            for a, b in zip(original.findall("link"), proxy.findall("link")):
-                self.assertEqual(
-                    ET.tostring(a.find("inertial")), ET.tostring(b.find("inertial"))
-                )
-                self.assertEqual(
-                    a.find("visual/origin").attrib, b.find("visual/origin").attrib
-                )
-                original_mesh = a.find("visual/geometry/mesh").get("filename")
-                expected = (ASSET_ROOT / "urdf" / original_mesh).resolve()
-                self.assertEqual(
-                    Path(b.find("visual/geometry/mesh").get("filename")), expected
-                )
-                if a.get("name") in ("L_lun", "R_lun"):
-                    self.assertEqual(
-                        b.find("collision/geometry/sphere").get("radius"), "0.0625"
-                    )
-                else:
-                    self.assertIsNone(b.find("collision/geometry/sphere"))
-        finally:
-            if env._tread_asset_dir is not None:
-                env._tread_asset_dir.cleanup()
+        self.assertEqual(env._create_robot_asset(object()), "asset")
+        original = ET.parse(ASSET_ROOT / env.metadata["urdf"]).getroot()
+        self.assertEqual(ET.tostring(original), ET.tostring(env.gym.tree.getroot()))
+        for link in original.findall("link"):
+            self.assertIsNone(link.find("collision/geometry/sphere"))
+            self.assertIsNotNone(link.find("collision/geometry/mesh"))
 
     def test_sagittal_adapter_preserves_measurements_and_correct_mirror_pairs(self):
         original = torch.zeros(2, 198)

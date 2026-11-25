@@ -69,6 +69,8 @@ def main():
     import isaacgym  # noqa: F401; binary extension must precede Torch.
     import torch
     checkpoint = torch.load(str(args.checkpoint), map_location="cpu")
+    from legged_gym.envs.wheelleg.model.geometry import require_model_checkpoint
+    require_model_checkpoint(checkpoint)
     try:
         args = resolve_runtime_args(args, explicit_argument_destinations(parser, argv), checkpoint, "evaluate")
     except ValueError as error:

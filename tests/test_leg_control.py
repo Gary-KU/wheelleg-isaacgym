@@ -8,20 +8,21 @@ import torch
 
 from legged_gym.envs.wheelleg.control.leg_control import hip_targets, hip_pd_torques, hip_support_torques
 from legged_gym.envs.wheelleg.model.kinematics import fivebar
+from legged_gym.envs.wheelleg.model.geometry import UPPER, HIP_SPAN, HIP_DOWN
 
 
 class LegControlTests(unittest.TestCase):
     def test_targets_follow_the_real_four_hip_mirror_order(self):
         targets = hip_targets(torch.tensor([.08]))
-        torch.testing.assert_close(targets, torch.tensor([[.613989, -.613989, -.613989, .613989]]), atol=1e-5, rtol=0)
+        torch.testing.assert_close(targets, torch.tensor([[.57015748, -.57047706, -.57047706, .57015748]]), atol=1e-5, rtol=0)
 
     def test_zero_error_and_velocity_produce_zero_support_not_hidden_feedforward(self):
         targets = hip_targets(torch.tensor([.08, .1]))
         torch.testing.assert_close(hip_pd_torques(targets, torch.zeros_like(targets), targets), torch.zeros_like(targets))
 
     def test_folded_pose_pushes_all_four_hips_towards_extension(self):
-        current = hip_targets(torch.tensor([.05]))
-        target = hip_targets(torch.tensor([.08]))
+        current = hip_targets(torch.tensor([.08]))
+        target = hip_targets(torch.tensor([.13]))
         torque = hip_pd_torques(current, torch.zeros_like(current), target)
         self.assertTrue(bool((torque*(target-current) > 0).all()))
         self.assertGreater(float(torque.abs().max()), 9)  # Clip only after adding residual.
@@ -29,7 +30,7 @@ class LegControlTests(unittest.TestCase):
     def test_damping_opposes_joint_velocity_and_does_not_mix_environments(self):
         target = hip_targets(torch.tensor([.08, .08]))
         velocity = torch.tensor([[1., -1., 2., -2.], [0., 0., 0., 0.]])
-        torch.testing.assert_close(hip_pd_torques(target, velocity, target), -4*velocity)
+        torch.testing.assert_close(hip_pd_torques(target, velocity, target), -.2*velocity)
 
 
 class RadialSupportTests(unittest.TestCase):
@@ -61,25 +62,32 @@ class RadialSupportTests(unittest.TestCase):
     def test_nominal_mirror_signs_extend_against_the_supported_load(self):
         positions = hip_targets(torch.tensor([.08], dtype=torch.float64))
         torque = hip_support_torques(positions, 22.465)
-        magnitude = 22.465*.07299831929324221
-        expected = torch.tensor([[-magnitude, magnitude, magnitude, -magnitude]], dtype=torch.float64)
-        torch.testing.assert_close(torque, expected, atol=1e-10, rtol=1e-9)
+        # CAD hip heights differ slightly; compare both legs to independent
+        # virtual work instead of assuming exactly opposite mirror magnitudes.
+        epsilon = 1e-6
+        expected = torch.zeros_like(positions)
+        for joint in range(4):
+            step = torch.zeros_like(positions); step[:, joint] = epsilon
+            expected[:, joint] = 22.465*(self.lengths(positions+step).sum(-1)-self.lengths(positions-step).sum(-1))/(2*epsilon)
+        torch.testing.assert_close(torque, expected, atol=1e-8, rtol=1e-7)
         extension_direction = hip_targets(torch.tensor([.081], dtype=torch.float64))-positions
         self.assertTrue(bool((torque*extension_direction > 0).all()))
 
     def test_zero_force_and_invalid_geometry_are_finite_without_hidden_torque(self):
         positions = hip_targets(torch.tensor([.08], dtype=torch.float64))
         torch.testing.assert_close(hip_support_torques(positions, 0.), torch.zeros_like(positions))
-        alpha = math.acos(.044/.105)
-        # Both upper-link tips coincide: a closed chain Jacobian is undefined.
-        coincident = torch.tensor([[alpha-3*math.pi/4, math.pi-alpha-math.pi/4,
-                                    math.pi-alpha-math.pi/4, alpha-3*math.pi/4]], dtype=torch.float64)
+        span = math.hypot(HIP_SPAN, HIP_DOWN)
+        direction = math.atan2(HIP_DOWN, HIP_SPAN)
+        alpha = math.acos(span/(2*UPPER))
+        p1, p4 = direction+alpha, direction+math.pi-alpha
+        coincident = torch.tensor([[p1-3*math.pi/4, p4-math.pi/4,
+                                    p4-math.pi/4, p1-3*math.pi/4]], dtype=torch.float64)
         torch.testing.assert_close(hip_support_torques(coincident, 22.465), torch.zeros_like(coincident))
         invalid = torch.tensor([[float('nan'), 0., float('inf'), 0.]], dtype=torch.float64)
         torch.testing.assert_close(hip_support_torques(invalid, 22.465), torch.zeros_like(invalid))
 
     def test_near_singular_derivatives_are_bounded_and_validation_is_explicit(self):
-        alpha = math.acos(.044/.105)
+        alpha = math.acos(HIP_SPAN/(2*UPPER))
         positions = torch.tensor([[alpha-3*math.pi/4, math.pi-alpha-math.pi/4,
                                    math.pi-alpha-math.pi/4, alpha-3*math.pi/4]], dtype=torch.float64)
         for offset in (1e-8, 1e-6, 1e-4):

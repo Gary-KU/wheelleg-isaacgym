@@ -20,7 +20,7 @@ class HeadingControlTests(unittest.TestCase):
         cls.env = WheelLegRobot(
             num_envs=4, sim_device="cpu", headless=True, seed=19,
             allow_approximate_loop=True, initial_leg_length=.08,
-            leg_control="hip_pd", leg_feedforward_force=22.465,
+            leg_control="hip_pd", leg_kd=.2, leg_feedforward_force=22.465,
         )
 
     @classmethod

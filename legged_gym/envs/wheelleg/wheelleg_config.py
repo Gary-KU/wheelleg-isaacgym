@@ -4,8 +4,9 @@ The small exploration noise here is intentional. Legacy command-line training
 keeps its historical TRAIN_CONFIG profile for old experiment reproduction.
 """
 
+
 from legged_gym.envs.base.base_config import BaseConfig
-from legged_gym.envs.wheelleg.constants import FLAT_REWARD_SCALES
+from legged_gym.envs.wheelleg.constants import FLAT_REWARD_SCALES, DEFAULT_LEG_KD
 
 
 class WheelLeggedCfg(BaseConfig):
@@ -29,7 +30,7 @@ class WheelLeggedCfg(BaseConfig):
         decimation = 40
         leg_control = "hip_pd"
         leg_kp = 80.0
-        leg_kd = 4.0
+        leg_kd = DEFAULT_LEG_KD
         leg_feedforward_force = 22.4649
         hip_target_scale = 0.2
         wheel_control = "heading"
@@ -138,9 +139,7 @@ class WheelLeggedCfgPPO(BaseConfig):
         save_interval = 100
         max_iterations = 20000
         experiment_name = "wheelleg_flat"
-        pretrained_checkpoint = (
-            "logs/standing_support_20261022_093823/input/standing_hold.pt"
-        )
+        pretrained_checkpoint = None
         run_name = ""
 
 
@@ -161,7 +160,7 @@ class WheelLeggedStandCfgPPO(WheelLeggedCfgPPO):
 class WheelLeggedStairsCfg(WheelLeggedCfg):
     class env(WheelLeggedCfg.env):
         num_observations = 252
-        initial_leg_length = 0.14
+        initial_leg_length = 0.10
 
     class control(WheelLeggedCfg.control):
         leg_control = "hip_target"
@@ -170,11 +169,11 @@ class WheelLeggedStairsCfg(WheelLeggedCfg):
         heading_kd = 0.3
 
     class commands(WheelLeggedCfg.commands):
-        command = (0.25, 0.0, 0.0, 0.14)
+        command = (0.25, 0.0, 0.0, 0.10)
         random_commands = False
         forward_speed_range = (0.25, 0.25)
         yaw_speed_range = (0.0, 0.0)
-        leg_length_range = (0.14, 0.14)
+        leg_length_range = (0.10, 0.10)
         command_resample_seconds = 0.0
         linear_acceleration = 0.5
 
@@ -205,6 +204,4 @@ class WheelLeggedStairsCfg(WheelLeggedCfg):
 class WheelLeggedStairsCfgPPO(WheelLeggedCfgPPO):
     class runner(WheelLeggedCfgPPO.runner):
         experiment_name = "wheelleg_stairs"
-        pretrained_checkpoint = (
-            "logs/stair_training_20261022_103417/evaluation/verified_level0.pt"
-        )
+        pretrained_checkpoint = None

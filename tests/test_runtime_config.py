@@ -92,7 +92,7 @@ class RuntimeConfigurationTests(unittest.TestCase):
         _, args, explicit = arguments(["--profile", "hybrid"])
         actual = resolve_runtime_args(args, explicit)
         self.assertEqual(actual.leg_control, "hip_pd")
-        self.assertEqual((actual.leg_kp, actual.leg_kd), (80, 4))
+        self.assertEqual((actual.leg_kp, actual.leg_kd), (80, .2))
         self.assertEqual(actual.initial_leg_length, .08)
         self.assertFalse(actual.random_commands)
         self.assertEqual(actual.command, [0, 0, 0, .08])

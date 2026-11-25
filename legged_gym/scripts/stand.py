@@ -33,17 +33,18 @@ def main():
         "--length",
         type=float,
         default=0.10,
-        help="Initial effective leg length in metres (0.08..0.20)",
+        help="Initial effective CAD leg length in metres (0.08..0.13)",
     )
     parser.add_argument("--physics-solver", choices=("pgs", "tgs"))
     parser.add_argument("--wheel-friction", type=float)
     parser.add_argument(
         "--checkpoint",
         type=Path,
-        default=ROOT / "logs/standing_support_20261022_093823/input/standing_hold.pt",
+        required=True,
+        help="Checkpoint trained with the active CAD model",
     )
     parser.add_argument(
-        "--wheel-collision", choices=("sphere_tread", "mesh"), default="sphere_tread"
+        "--wheel-collision", choices=("mesh",), default="mesh"
     )
     parser.add_argument(
         "--no-parking",
@@ -69,7 +70,7 @@ def main():
     if not args.checkpoint.is_file():
         parser.error("Checkpoint does not exist")
     if not 0.08 <= args.length <= MAX_LEG_LENGTH:
-        parser.error("Standing leg length must be within 8..20 cm")
+        parser.error("Standing leg length must be within 8..13 cm")
     if args.wheel_friction is not None and (
         not math.isfinite(args.wheel_friction) or args.wheel_friction < 0
     ):
@@ -96,6 +97,8 @@ def main():
     if args.no_parking:
         cfg.parking.position_kp = cfg.parking.velocity_kd = 0.0
     state = torch.load(str(args.checkpoint), map_location="cpu")
+    from legged_gym.envs.wheelleg.model.geometry import require_model_checkpoint
+    require_model_checkpoint(state)
     if state["model_state_dict"]["actor.0.weight"].shape[1] != 198:
         parser.error("This controller requires the 198-input standing wheel policy")
     env = WheelLiftEnv(
@@ -127,7 +130,7 @@ def main():
             )
             keyboard.bind(env.gym, env.viewer, isaacgym.gymapi)
             print(
-                "点击仿真窗口：空格=起跳，无需等稳；方向键=驾驶；X=停；Q/E=调腿长（8–20 cm）；R=重置。",
+                "点击仿真窗口：空格=起跳，无需等稳；方向键=驾驶；X=停；Q/E=调腿长（8–13 cm）；R=重置。",
                 flush=True,
             )
             print(

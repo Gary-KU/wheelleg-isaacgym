@@ -7,6 +7,7 @@ import unittest
 
 import isaacgym
 import torch
+from legged_gym.envs.wheelleg.model.geometry import asset_fingerprint
 from legged_gym.envs import register_tasks
 
 register_tasks()
@@ -57,23 +58,14 @@ class FrameworkConfigTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Missing _reward_typo"):
             env._prepare_reward_function()
 
-    def test_prepare_restores_legacy_dimensions_and_applies_execution_overrides(self):
-        args = get_args(
-            "play", ["--task", "wheelleg_stand", "--num_envs", "2", "--headless"]
-        )
-        cfg, train = task_registry.prepare_cfgs(args.task, args)
-        self.assertEqual(cfg.env.num_envs, 2)
-        self.assertEqual(cfg.env.num_observations, 198)
-        self.assertEqual(cfg.control.heading_kp, 6.0)
-        self.assertFalse(cfg.commands.random_commands)
-        self.assertEqual(train.policy.actor_hidden_dims, [512, 256, 128, 64])
-        args = get_args(
-            "play", ["--task", "wheelleg_stairs", "--headless", "--stair_level", "1"]
-        )
-        cfg, _ = task_registry.prepare_cfgs(args.task, args)
-        self.assertEqual(cfg.env.num_observations, 252)
-        self.assertEqual(cfg.terrain.stair_level, 1)
-        self.assertFalse(cfg.terrain.stair_curriculum)
+    def test_new_cad_tasks_require_an_explicit_compatible_playback_checkpoint(self):
+        for task, observations in (("wheelleg_stand", 198), ("wheelleg_stairs", 252)):
+            cfg, train = task_registry.get_cfgs(task)
+            self.assertEqual(cfg.env.num_observations, observations)
+            self.assertIsNone(train.runner.pretrained_checkpoint)
+            args = get_args("play", ["--task", task, "--headless"])
+            with self.assertRaisesRegex(ValueError, "Provide --checkpoint"):
+                task_registry.prepare_cfgs(task, args)
 
     def test_wrong_checkpoint_observation_layout_is_rejected(self):
         args = get_args(
@@ -97,6 +89,7 @@ class FrameworkConfigTests(unittest.TestCase):
         snapshot["initialization_provenance"] = {"source_iteration": 42}
         state = {
             "model_state_dict": {"actor.0.weight": torch.zeros(1, 198)},
+            "asset_fingerprint": asset_fingerprint(),
             "legged_gym_env_config": class_to_dict(env_cfg),
             "legged_gym_train_config": snapshot,
         }
@@ -147,11 +140,9 @@ class FrameworkConfigTests(unittest.TestCase):
                     "--headless",
                 ],
             )
-            restored_env, restored_train = task_registry.prepare_cfgs(args.task, args)
-        self.assertEqual(restored_env.control.leg_control, "torque")
-        self.assertEqual(
-            restored_train.initialization_provenance, converted["support_bootstrap"]
-        )
+            self.assertNotIn("asset_fingerprint", converted)
+            with self.assertRaisesRegex(ValueError, "different/unidentified robot model"):
+                task_registry.prepare_cfgs(args.task, args)
 
 
 class FrameworkPhysicsTests(unittest.TestCase):
