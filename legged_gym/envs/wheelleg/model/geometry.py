@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from legged_gym.utils.checkpoints import validate_model_fingerprint
@@ -19,6 +20,15 @@ HIP_DOWN = sum(s["hip4_down_m"] for s in SIDES.values()) / 2
 WHEEL_RADIUS = CAD["tire_radius_m"]
 WHEEL_WIDTH = CAD["tire_width_m"]
 MIN_LENGTH, MAX_LENGTH = CAD["recommended_validation_command_range_m"]
+
+# 轮子重量直接由地面承担；髋部支撑前馈按其余刚体重量平分，随 URDF 自动更新。
+_URDF = ET.parse(ASSET_ROOT / _METADATA["urdf"]).getroot()
+_LINK_MASSES = {
+    link.get("name"): float(link.find("inertial/mass").get("value"))
+    for link in _URDF.findall("link")
+}
+TOTAL_MASS_KG = sum(_LINK_MASSES.values())
+DEFAULT_SUPPORT_FORCE = (TOTAL_MASS_KG - _LINK_MASSES["L_lun"] - _LINK_MASSES["R_lun"]) * 9.81 / 2
 
 
 def asset_fingerprint():

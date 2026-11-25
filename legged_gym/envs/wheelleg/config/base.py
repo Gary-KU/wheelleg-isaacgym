@@ -4,6 +4,7 @@
 """
 
 from legged_gym.envs.base.base_config import BaseConfig
+from legged_gym.envs.wheelleg.model.geometry import DEFAULT_SUPPORT_FORCE
 from legged_gym.envs.wheelleg.constants import FLAT_REWARD_SCALES, DEFAULT_LEG_KD
 
 
@@ -29,7 +30,7 @@ class WheelLeggedCfg(BaseConfig):
         leg_control = "hip_pd"
         leg_kp = 80.0
         leg_kd = DEFAULT_LEG_KD
-        leg_feedforward_force = 22.4649  # 每腿径向支撑力 N，经雅可比变成关节力矩
+        leg_feedforward_force = DEFAULT_SUPPORT_FORCE  # 每腿径向支撑力 N，经雅可比变成关节力矩
         hip_target_scale = 0.2
         wheel_control = "heading"
         heading_kp = 6.0

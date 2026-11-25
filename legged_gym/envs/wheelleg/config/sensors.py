@@ -80,6 +80,9 @@ class WheelLeggedSensorCfg(WheelLeggedCfg):
         )
 
     class control(WheelLeggedCfg.control):
+        # 1.454 kg 新模型的短步对照：降低旧增益，减少轻连杆的限幅振荡。
+        leg_kp = 2.0
+        leg_kd = 0.04
         # Avoid the old heading PD's privileged absolute-yaw feedback. The
         # policy controls both wheels using observable pitch and yaw rate.
         wheel_control = "policy"
@@ -101,6 +104,7 @@ class WheelLeggedSensorCfgPPO(WheelLeggedCfgPPO):
 
     class runner(WheelLeggedCfgPPO.runner):
         experiment_name = "wheelleg_sensor_balance"
+        save_interval = 25  # 短间隔保存，方便随时评估并续训
         pretrained_checkpoint = None  # 198-input legacy policies are incompatible.
 
 
