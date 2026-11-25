@@ -35,8 +35,8 @@ if "wheelleg_slow" not in registry.task_classes:
 `register_tasks()` 已调用该机器人的注册函数。随后用任务名做短检查：
 
 ```bash
-./run.sh legged_gym/scripts/list_tasks.py
-./run.sh legged_gym/scripts/train.py --task wheelleg_slow \
+./manage.sh tasks
+./manage.sh train --task wheelleg_slow \
   --sim_device cpu --rl_device cpu --num_envs 8 --headless --max_iterations 2
 ```
 

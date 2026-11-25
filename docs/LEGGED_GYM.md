@@ -8,11 +8,11 @@
 conda activate isaacgym
 # 本机路径；公司电脑进入克隆的 wheelleg-isaacgym 即可
 cd /home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym
-./run.sh legged_gym/scripts/list_tasks.py
-./run.sh legged_gym/scripts/play.py --task wheelleg_stand
+./manage.sh tasks
+./manage.sh play --task wheelleg_stand
 ```
 
-播放默认加载仓库精选站立权重，使用 CPU、单机器人，点击仿真窗口后用方向键前后/转向、Q/E 调腿长、空格停下、R 重置。这是通用播放入口；统一的安静站立、驾驶与空格跳跃使用 `./stand.sh`（X 停止），详见 [站立与跳跃](JUMP.md)。原地抬轮仍用独立的 `./lift.sh`（N/空格），两套按键不同。
+播放默认加载仓库精选站立权重，使用 CPU、单机器人，点击仿真窗口后用方向键前后/转向、Q/E 调腿长、空格停下、R 重置。这是通用播放入口；统一的安静站立、驾驶与空格跳跃使用 `./manage.sh stand`（X 停止），详见 [站立与跳跃](JUMP.md)。原地抬轮仍用独立的 `./manage.sh lift`（N/空格），两套按键不同。
 
 | 阅读顺序 | 文件 | 修改什么 |
 | --- | --- | --- |
@@ -48,31 +48,31 @@ assets/wheelleg/           同一份机器人资产
 4060 上的起步命令（从头训练，持续运行到配置的迭代上限）：
 
 ```bash
-./run.sh legged_gym/scripts/train.py --task wheelleg_flat --num_envs 128 --headless
+./manage.sh train --task wheelleg_flat --num_envs 128 --headless
 ```
 
 短检查可以加 `--max_iterations 3`。GPU 默认 `cuda:0`；CPU 检查加 `--sim_device cpu --rl_device cpu`。仿真与策略必须使用同一设备，当前明确拒绝 `--sim_device` 与 `--rl_device` 分处不同设备的配置。
 
 ```bash
 # 同一实验最近保存的 run 和数值最大的 model_N.pt；后续新增 100 次更新
-./run.sh legged_gym/scripts/train.py --task wheelleg_flat --num_envs 128 --headless \
+./manage.sh train --task wheelleg_flat --num_envs 128 --headless \
   --resume --max_iterations 100
 
 # 明确指定检查点继续训练
-./run.sh legged_gym/scripts/train.py --task wheelleg_flat --num_envs 128 --headless \
+./manage.sh train --task wheelleg_flat --num_envs 128 --headless \
   --checkpoint /绝对路径/model_100.pt --max_iterations 100
 ```
 
 权重默认写入 `logs/<experiment_name>/<日期时间>_<run_name>/model_<已完成更新次数>.pt`。同目录的 `task_config.json` 保存注册任务的嵌套环境/训练配置；共用引擎生成的 `config.json` 保存兼容旧入口的平铺环境与训练配置。`progress.json` 是最近一轮的完整指标，包含 `Motion/`、`Support/`、`Reward/`、失败和闭环误差；同一引擎还写入 `training_summary.json` 与 TensorBoard 事件。继续训练读取优化器、更新计数和课程状态；`--max_iterations` 表示这次新增次数。`--load_run` 选具体运行目录，`--checkpoint 100` 选对应数字编号；也可直接给检查点路径。
 
 ```bash
-./run.sh legged_gym/scripts/play.py --task wheelleg_flat \
+./manage.sh play --task wheelleg_flat \
   --checkpoint /绝对路径/model_100.pt
-./run.sh legged_gym/scripts/play.py --task wheelleg_stand --headless \
+./manage.sh play --task wheelleg_stand --headless \
   --num_steps 3000 --report validation/my_stand.json
 ```
 
-`--sim_device`、`--rl_device`、`--num_envs`、`--max_iterations` 等同时接受连字符拼法。完整选项用 `./run.sh legged_gym/scripts/train.py --help` 和播放入口的 `--help` 查询。
+`--sim_device`、`--rl_device`、`--num_envs`、`--max_iterations` 等同时接受连字符拼法。完整选项用 `./manage.sh train --help` 和播放入口的 `--help` 查询。
 
 ## 注册任务
 
@@ -85,8 +85,8 @@ assets/wheelleg/           同一份机器人资产
 | `wheelleg_sensor_tracking` | 132 / 6 | 传感器观测，停稳与直行课程至1.0 m/s |
 
 ```bash
-./run.sh legged_gym/scripts/play.py --task wheelleg_stairs --no_keyboard
-./run.sh legged_gym/scripts/train.py --task wheelleg_stairs --num_envs 128 --headless
+./manage.sh play --task wheelleg_stairs --no_keyboard
+./manage.sh train --task wheelleg_stairs --num_envs 128 --headless
 ```
 
 从头训练的阶梯任务默认开启课程；加载历史检查点会恢复它保存的课程配置。`--stair_level` 选择初始级别；播放关闭课程升级。任务并不会因为换框架就自动掌握 2 cm 或更高阶梯。
@@ -103,6 +103,6 @@ assets/wheelleg/           同一份机器人资产
 
 三个精选权重保留原网络大小、动作顺序、观测尺度和力矩含义。共用引擎保存旧 `environment_config` / `training_config`，注册任务适配层另附 `legged_gym_env_config` / `legged_gym_train_config`；新旧入口都可读取相应尺寸的前馈权重。加载时检查观测尺寸，198/252 不能混用。
 
-根目录 `train.py`、`play.py`、`stand.sh`、`stairs.sh`、`lift.sh` 等启动命令继续保留，内部导入统一使用 `legged_gym`。原 `wheelleg_gym` Python 包和假通用物理基类已移除；自定义 Python 脚本需按[目录表](PROJECT_LAYOUT.md)更新导入。原项目已有的横滑、俯仰波动、近似闭环误差和步态限制仍需单独优化。SCUT 原生闭链方案的核对见 [闭链参考说明](SCUT_CLOSED_CHAIN.md)。
+根目录统一使用 `manage.sh`；注册任务入口在 `scripts/`，旧参数接口在 `scripts/legacy/`，内部导入统一使用 `legged_gym`。原 `wheelleg_gym` Python 包和假通用物理基类已移除；自定义 Python 脚本需按[目录表](PROJECT_LAYOUT.md)更新导入。原项目已有的横滑、俯仰波动、近似闭环误差和步态限制仍需单独优化。SCUT 原生闭链方案的核对见 [闭链参考说明](SCUT_CLOSED_CHAIN.md)。
 
 已有的 [框架迁移验收](../validation/legged_framework_work.json) 记录了当时的测试、CPU/GPU 短训练续训及精选权重复测。这些是对应配置下的有限检查；本次共用循环与目录整理继续沿用已有权重。控制能力与实际限制见[运行说明](USAGE.md)、[阶梯说明](STAIRS.md)和[抬轮说明](WHEEL_LIFT.md)。

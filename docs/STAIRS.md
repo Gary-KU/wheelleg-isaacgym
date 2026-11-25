@@ -22,7 +22,7 @@
 ```bash
 conda activate isaacgym
 cd /home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym
-./stairs.sh
+./manage.sh stairs
 ```
 
 默认加载 `logs/stair_training_20261022_103417/evaluation/verified_level0.pt`，自动以目标 `0.25 m/s` 前进，目标有效腿长 `14 cm`，固定在第 0 档。窗口采用单机器人 CPU 物理、1280×720 画面。此文件保存已复测的第 80 轮策略和航向反馈 `6 / 0.3`，不会自动挑选最新训练权重。
@@ -30,17 +30,17 @@ cd /home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym
 想看其他权重，在末尾追加 `--checkpoint`；例如复现尚未通过的 2 cm 工况：
 
 ```bash
-./stairs.sh \
+./manage.sh stairs \
   --checkpoint logs/stair_training_20261022_103417/stage2/model_80.pt \
   --heading-kp 6 --heading-kd 0.3 --stair-level 1
 ```
 
-查看自己训练的结果时，把路径替换成该次实验实际存在的 `model_N.pt`。平地键盘与变腿长演示仍使用 `./stand.sh`，详见 [运行说明](USAGE.md#先看当前起立与站立效果)。
+查看自己训练的结果时，把路径替换成该次实验实际存在的 `model_N.pt`。平地键盘与变腿长演示仍使用 `./manage.sh stand`，详见 [运行说明](USAGE.md#先看当前起立与站立效果)。
 
 ## 继续训练
 
 ```bash
-./train_stairs.sh
+./manage.sh train-stairs
 ```
 
 脚本从 `logs/stair_training_20261022_103417/input/stage4_start.pt` 开始，使用本机 RTX 4060 的 `cuda:0`、512 个并行环境、无窗口训练，新增 400 次 PPO 更新，每 10 次保存。新结果写入 `logs/stairs/日期_时间/`。保存文件编号表示累计更新数，不能当作通过阶梯的证明。
@@ -54,7 +54,7 @@ cd /home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym
 继续自己的检查点，例如：
 
 ```bash
-./train_stairs.sh --checkpoint logs/stairs/你的实验目录/model_N.pt --max-iterations 100
+./manage.sh train-stairs --checkpoint logs/stairs/你的实验目录/model_N.pt --max-iterations 100
 ```
 
 将示例路径换成实际文件。`--max-iterations 100` 表示再更新 100 次。续训会恢复优化器、探索噪声、训练参数和课程状态；不要在续训时使用 `--init-noise-std` 或 `--learning-rate` 重设初值。可以通过 `--log-dir` 指定新的输出目录。训练速度会受到同时运行的仿真与 GPU 程序影响。
@@ -80,7 +80,7 @@ cd /home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym
 ## 用完整课程评估
 
 ```bash
-./run.sh tools/evaluate_stairs.py --allow-approximate-loop \
+./manage.sh run tools/evaluate_stairs.py --allow-approximate-loop \
   --checkpoint logs/stair_training_20261022_103417/evaluation/verified_level0.pt \
   --stair-level 0 --seconds 26 --num-envs 4 --physics-threads 0 \
   --report validation/my_stair_level0.json
@@ -106,7 +106,7 @@ cd /home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym
 
 | 想理解什么 | 文件与入口 |
 | --- | --- |
-| 日常播放、训练默认参数 | [stairs.sh](../stairs.sh)、[train_stairs.sh](../train_stairs.sh) |
+| 日常播放、训练默认参数 | [stairs.sh](../manage.sh stairs)、[train_stairs.sh](../manage.sh train-stairs) |
 | 五档阶梯网格、采样点、精确高度查询 | [terrain.py](../legged_gym/envs/wheelleg/terrain.py) 的 `StairTerrain` |
 | 地形创建、42 维单帧观测、髋角动作与重置 | [env.py](../legged_gym/envs/wheelleg/wheelleg_robot.py) 的 `__init__()`、`_observations()`、`step()` |
 | 支撑 PD 与前馈换算 | [leg_control.py](../legged_gym/envs/wheelleg/control/leg_control.py)、`env.py::step()` |

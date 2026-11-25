@@ -7,21 +7,21 @@
 ```bash
 conda activate isaacgym
 # 从头训练；4060 可先用64个并行环境
-./run.sh legged_gym/scripts/train.py --task wheelleg_sensor --num_envs 64 --headless
+./manage.sh train --task wheelleg_sensor --num_envs 64 --headless
 
 # 只做两次更新的接口检查，不代表已经学会站立
-./run.sh legged_gym/scripts/train.py --task wheelleg_sensor --num_envs 16 \
+./manage.sh train --task wheelleg_sensor --num_envs 16 \
   --max_iterations 2 --headless
 
 # 本任务自己的权重保存到 logs/wheelleg_sensor_balance/，续训同一任务
-./run.sh legged_gym/scripts/train.py --task wheelleg_sensor --num_envs 64 \
+./manage.sh train --task wheelleg_sensor --num_envs 64 \
   --resume --max_iterations 100 --headless
 ```
 
 训练后查看本任务的权重（将路径替换为自己的 `model_N.pt`）：
 
 ```bash
-./run.sh legged_gym/scripts/play.py --task wheelleg_sensor \
+./manage.sh play --task wheelleg_sensor \
   --checkpoint logs/wheelleg_sensor_balance/你的运行目录/model_N.pt --keyboard
 ```
 
@@ -35,7 +35,7 @@ conda activate isaacgym
 
 **从头启动本配置时不要加 `--resume` 或指定旧权重**，否则保存的旧指令、奖励与PPO配置会覆盖新默认值。新目录训练出的权重才使用上面的续训命令。已经运行中的Python进程不会自动采用文件修改，需要在原训练终端按Ctrl+C后重新启动。
 
-新任务每帧22维，使用5帧历史加当前帧，共132维。字段顺序、缩放、历史帧数和传感器扰动配置一起保存在权重的 `legged_gym_env_config.sensors` 中。旧的198/252维权重不能直接加载；入口会拒绝观测尺寸不匹配的权重。原有 `stand.sh`、精选权重和其他任务保留原来的观测与控制方式。
+新任务每帧22维，使用5帧历史加当前帧，共132维。字段顺序、缩放、历史帧数和传感器扰动配置一起保存在权重的 `legged_gym_env_config.sensors` 中。旧的198/252维权重不能直接加载；入口会拒绝观测尺寸不匹配的权重。原有 `manage.sh stand`、精选权重和其他任务保留原来的观测与控制方式。
 
 ## 已核对的固件来源
 
@@ -104,7 +104,7 @@ conda activate isaacgym
 从旧第600轮策略开始新课程，用 `--warm-start`，它只载入actor和探索标准差，保留新任务配置，并重新初始化critic、优化器和训练计数；普通 `--resume` 会恢复旧配置，不适合跨课程初始化。
 
 ```bash
-./run.sh legged_gym/scripts/train.py --task wheelleg_sensor_tracking \
+./manage.sh train --task wheelleg_sensor_tracking \
   --warm-start logs/wheelleg_sensor_balance/2026-11-23_15-45-20_291561_/model_600.pt \
   --num_envs 64 --headless
 ```
@@ -112,7 +112,7 @@ conda activate isaacgym
 当前第二版记录在 `logs/wheelleg_sensor_tracking_v2/`，第一版保留在 `logs/wheelleg_sensor_tracking/`。下次继续**同一课程**时才用：
 
 ```bash
-./run.sh legged_gym/scripts/train.py --task wheelleg_sensor_tracking \
+./manage.sh train --task wheelleg_sensor_tracking \
   --resume --num_envs 64 --headless
 ```
 
@@ -122,12 +122,12 @@ conda activate isaacgym
 
 ```bash
 # 零指令：检查停稳与漂移
-./run.sh legged_gym/scripts/play.py --task wheelleg_sensor_tracking \
+./manage.sh play --task wheelleg_sensor_tracking \
   --checkpoint logs/wheelleg_sensor_tracking_v2/你的运行目录/model_N.pt \
   --command 0 0 0 0.08 --headless --num_steps 3000 --report /tmp/standing_motion.json
 
 # 1.0 m/s直行：检查实际速度和偏航/横移，不仅看给定值
-./run.sh legged_gym/scripts/play.py --task wheelleg_sensor_tracking \
+./manage.sh play --task wheelleg_sensor_tracking \
   --checkpoint logs/wheelleg_sensor_tracking_v2/你的运行目录/model_N.pt \
   --command 1.0 0 0 0.08 --headless --num_steps 3000 --report /tmp/forward_motion.json
 ```
@@ -149,7 +149,7 @@ conda activate isaacgym
 第二版必须通过 `--warm-start` 开始新实验，不能用 `--resume` 加载第一版配置，否则旧奖励与优化器配置会覆盖新默认值。可选择自己的同布局权重；本机保留的80轮微调权重例子：
 
 ```bash
-./run.sh legged_gym/scripts/train.py --task wheelleg_sensor_tracking \
+./manage.sh train --task wheelleg_sensor_tracking \
   --warm-start logs/sensor_tracking_initialization_20261123/tracking_refine_80.pt \
   --num_envs 64 --headless
 ```

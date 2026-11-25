@@ -1,0 +1,44 @@
+{
+  "date": "2026-11-25",
+  "entrypoint": "manage.sh",
+  "layout": {
+    "scripts/": "registered task entrypoints",
+    "scripts/legacy/": "legacy CLI implementations",
+    "scripts/run.sh": "internal Python runtime setup"
+  },
+  "removed_root_launchers": [
+    "run.sh",
+    "stand.sh",
+    "stairs.sh",
+    "train_stairs.sh",
+    "lift.sh",
+    "preview_model.sh",
+    "train.py",
+    "play.py",
+    "evaluate.py",
+    "lift.py",
+    "smoke_test.py"
+  ],
+  "user_confirmed_cleanup": [
+    "tests/",
+    "tracked retired checkpoints and selected logs deleted by user"
+  ],
+  "validation": {
+    "shell_syntax": "passed",
+    "eleven_command_help_checks_from_other_working_directory": "passed",
+    "relocated_source_syntax": "passed",
+    "cpu_preview_steps": 3,
+    "cpu_preview_physical_failures": 0,
+    "regression_snapshot_tests": 308,
+    "regression_snapshot_status": "passed",
+    "snapshot_location": "temporary review directory; tests were not restored into the project",
+    "gpu_preview_steps": 3,
+    "gpu_preview_environments": 4,
+    "gpu_preview_physical_failures": 0
+  },
+  "notes": [
+    "setup.py retained for package installation",
+    "No policy training started",
+    "Original local wheel_lift.py keyboard changes left uncommitted"
+  ]
+}

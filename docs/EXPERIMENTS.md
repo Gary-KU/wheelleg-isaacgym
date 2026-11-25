@@ -11,10 +11,10 @@
 `evaluation/verified_level0.pt` 保留80轮策略并加强航向反馈；每阶1厘米、四上四下的
 26秒复测中，4个环境均完整通关，0物理失败、0超时。相同控制在每阶约2厘米时
 0通关、22次俯仰失败，不能据此称为已经掌握复杂楼梯。
-使用 `./stairs.sh` 查看已验证初级演示，训练细节和复测命令见 [阶梯训练](STAIRS.md)，
+使用 `./manage.sh stairs` 查看已验证初级演示，训练细节和复测命令见 [阶梯训练](STAIRS.md)，
 证据索引见 [stairs_work.json](../validation/stairs_work.json)。
 
-下文保留原平地纯RL实验记录。当前平地站立演示为 `./stand.sh` 的混合控制，
+下文保留原平地纯RL实验记录。当前平地站立演示为 `./manage.sh stand` 的混合控制，
 当前站立/跳跃结果见 [jump_work.json](../validation/jump_work.json)，较早支撑结果见 [standing_work.json](../validation/standing_work.json)。
 
 新增优化实验：`logs/stability_optimization_20261021_215150/`，已从 794 轮起点增加 200 次更新至 994，

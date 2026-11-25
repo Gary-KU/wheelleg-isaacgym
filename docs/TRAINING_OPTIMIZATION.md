@@ -27,7 +27,7 @@
 ```bash
 conda activate isaacgym
 cd IsaacGym
-./run.sh tools/optimize_training.py \
+./manage.sh run tools/optimize_training.py \
   --checkpoint logs/forward_backward_1024_recovered_20261021/model_794.pt \
   --log-dir logs/my_stability_optimization \
   --iterations 200 --num-envs 1024
@@ -147,7 +147,7 @@ logs/stability_optimization_20261021_215150/
 支撑检查示例（从 `IsaacGym/` 执行，先替换权重路径）：
 
 ```bash
-./run.sh tools/evaluate_support.py --allow-approximate-loop \
+./manage.sh run tools/evaluate_support.py --allow-approximate-loop \
   --checkpoint logs/your_support_run/model_100.pt \
   --seconds 60 --settle-seconds 2 --report validation/support_60s.json
 ```
@@ -189,7 +189,7 @@ PD每个物理步（2 kHz）更新；支撑前馈根据周期开始的实测关�
 本模型左轮轴为世界−Y、右轮轴为+Y，所以同号正关节力矩产生正偏航；反馈符号经实际接地仿真检查。
 `yaw_ref`由偏航速度命令积分，零命令时保持初始航向。选用Kp=2 Nm/rad、Kd=0.1 Nm·s/rad；单轮修正最多1 Nm，总力矩仍受9 Nm限制。
 
-当时入口为 `./stand.sh`（当前已合并站立/跳跃，见 [运行说明](USAGE.md)），当时配置随 `logs/standing_support_20261022_093823/input/standing_hold.pt` 保存。
+当时入口为 `./manage.sh stand`（当前已合并站立/跳跃，见 [运行说明](USAGE.md)），当时配置随 `logs/standing_support_20261022_093823/input/standing_hold.pt` 保存。
 这个文件保留了原轮子策略，四髋RL输出为零，**本轮没有新做RL训练**；伸腿主要由PD与支撑前馈完成。
 默认从5 cm低蹲姿态起步，目标8 cm，不是倒地翻身恢复。旧纯力矩权重的默认行为不变，所有新增反馈默认关闭。
 `--profile hybrid`从新模型启动默认无前馈/航向反馈，续训时保留权重内已有的这几个参数；`--profile support`显式恢复纯力矩课程并关闭它们。
@@ -201,13 +201,13 @@ PD每个物理步（2 kHz）更新；支撑前馈根据周期开始的实测关�
 从零使用预设：
 
 ```bash
-./run.sh train.py --allow-approximate-loop --profile stability --headless --max-iterations 200 --log-dir logs/stability_from_scratch
+./manage.sh run scripts/legacy/train.py --allow-approximate-loop --profile stability --headless --max-iterations 200 --log-dir logs/stability_from_scratch
 ```
 
 手动续训 198 维检查点：
 
 ```bash
-./run.sh train.py --allow-approximate-loop --profile stability --headless --checkpoint logs/my_stability_optimization/training/model_994.pt --max-iterations 200 --log-dir logs/stability_next
+./manage.sh run scripts/legacy/train.py --allow-approximate-loop --profile stability --headless --checkpoint logs/my_stability_optimization/training/model_994.pt --max-iterations 200 --log-dir logs/stability_next
 ```
 
 旧 186 维权重不能直接使用新增输入训练；先用观测升级工具，或使用上述自动对比流程。
@@ -216,7 +216,7 @@ PD每个物理步（2 kHz）更新；支撑前馈根据周期开始的实测关�
 复测合格后再加载新权重进行人工检查：
 
 ```bash
-./run.sh play.py --allow-approximate-loop --checkpoint logs/my_stability_optimization/training/model_994.pt --keyboard --num-steps 100000 --event-log validation/optimized_keyboard_events.jsonl
+./manage.sh run scripts/legacy/play.py --allow-approximate-loop --checkpoint logs/my_stability_optimization/training/model_994.pt --keyboard --num-steps 100000 --event-log validation/optimized_keyboard_events.jsonl
 ```
 
 播放会从检查点恢复腿长观测和指令变化限制。显式传入的设置仍优先，例如 `--linear-acceleration 0` 可以关闭该限制。

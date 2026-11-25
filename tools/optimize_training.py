@@ -83,7 +83,7 @@ def main():
                          "--command", "0", "0", "0", ".08", "--disable-time-limit",
                          "--linear-acceleration", ".8", "--yaw-acceleration", "2",
                          "--allow-approximate-loop"] + physical
-    train_command = [sys.executable, str(ROOT/"train.py"), "--profile", "stability",
+    train_command = [sys.executable, str(ROOT/"scripts/legacy/train.py"), "--profile", "stability",
                      "--checkpoint", str(upgraded), "--headless", "--sim-device", "cuda:0",
                      "--num-envs", str(args.num_envs), "--max-iterations", str(args.iterations),
                      "--save-interval", str(args.save_interval), "--log-dir", str(train_dir),
@@ -148,7 +148,7 @@ def main():
         for case in cases:
             phase = label+"/"+case["name"]
             report = log_dir/"evaluation"/label/(case["name"]+".json")
-            command = [sys.executable, str(ROOT/"evaluate.py"), "--checkpoint", str(checkpoint),
+            command = [sys.executable, str(ROOT/"scripts/legacy/evaluate.py"), "--checkpoint", str(checkpoint),
                        "--report", str(report)] + common_evaluation + case["arguments"]
             run(command, report.with_suffix(".log"), args.evaluation_timeout)
             data = json.loads(report.read_text())

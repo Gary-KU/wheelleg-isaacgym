@@ -38,14 +38,14 @@ git push
 
 | 阅读顺序 | 文件 | 关注点 |
 | --- | --- | --- |
-| 1 | `stand.sh`、`stairs.sh`、`train_stairs.sh` | 常用命令如何组合参数 |
+| 1 | `manage.sh stand`、`manage.sh stairs`、`manage.sh train-stairs` | 常用命令如何组合参数 |
 | 2 | `legged_gym/envs/wheelleg/constants.py`、`cli.py`、`runtime_config.py` | 默认配置、命令行参数与权重配置的覆盖关系 |
 | 3 | `play.py`、`keyboard.py` | 按键怎样变成速度和腿长目标 |
 | 4 | `legged_gym/envs/wheelleg/wheelleg_robot.py` | 创建仿真、步进、观测、奖励、终止和复位 |
 | 5 | `constraints.py`、`leg_control.py`、`wheel_control.py` | 近似闭环外力、支撑前馈、PD、轮子平衡与航向反馈 |
 | 6 | `train.py`、`legged_gym/learning/ppo_runner.py`、`third_party/rsl_rl/` | PPO 采样和更新 |
 
-更详细的调用流程见[代码导读](CODE_GUIDE.md)。`./run.sh play.py --help` 等帮助命令也需要先安装仿真环境，因为入口会导入 Isaac Gym。
+更详细的调用流程见[代码导读](CODE_GUIDE.md)。`./manage.sh run scripts/legacy/play.py --help` 等帮助命令也需要先安装仿真环境，因为入口会导入 Isaac Gym。
 
 ## 要运行仿真时安装什么
 
@@ -68,11 +68,11 @@ python -m pip install -r requirements.txt
 先运行已有测试，再看演示：
 
 ```bash
-./run.sh -m unittest discover -s tests -q
-./stand.sh
+./manage.sh check
+./manage.sh stand
 ```
 
-`run.sh` 会设置当前 Python 环境的动态库路径，并保证入口先导入 Isaac Gym 再导入 torch。若未激活环境，可临时指定：`PYTHON_BIN=/你的环境/bin/python ./stand.sh`。
+`scripts/run.sh` 会设置当前 Python 环境的动态库路径，并保证入口先导入 Isaac Gym 再导入 torch。若未激活环境，可临时指定：`PYTHON_BIN=/你的环境/bin/python ./manage.sh stand`。
 
 ## 随仓库提供的权重
 
@@ -83,12 +83,12 @@ python -m pip install -r requirements.txt
 | 继续阶梯训练的起点 | `logs/stair_training_20261022_103417/input/stage4_start.pt` |
 
 ```bash
-./stand.sh          # 方向键行驶/转向，Q/E 调腿长，空格跳跃，X 停止，R 复位
-./stairs.sh         # 自动运行 1 cm 阶梯演示
-./train_stairs.sh   # 主动开始新一轮 GPU 训练；只想看效果不要执行这一条
+./manage.sh stand          # 方向键行驶/转向，Q/E 调腿长，空格跳跃，X 停止，R 复位
+./manage.sh stairs         # 自动运行 1 cm 阶梯演示
+./manage.sh train-stairs   # 主动开始新一轮 GPU 训练；只想看效果不要执行这一条
 ```
 
-平地演示目标速度 ±0.6 m/s，转向 ±2 rad/s，腿长目标范围 8～20 cm。目标值不等于所有工况都能准确跟踪。站立、驾驶与跳跃统一在 `stand.sh`，当前控制与有限复测见 [站立与跳跃](JUMP.md)。1 cm 阶梯只在已有有限复测中通过；2 cm 阶梯的 stage4 新增 400 次更新已结束，最终复测仍未通过。仓库整理没有启动新训练。
+平地演示目标速度 ±0.6 m/s，转向 ±2 rad/s，腿长目标范围 8～20 cm。目标值不等于所有工况都能准确跟踪。站立、驾驶与跳跃统一在 `manage.sh stand`，当前控制与有限复测见 [站立与跳跃](JUMP.md)。1 cm 阶梯只在已有有限复测中通过；2 cm 阶梯的 stage4 新增 400 次更新已结束，最终复测仍未通过。仓库整理没有启动新训练。
 
 ## 哪些文件没有上传
 
@@ -98,4 +98,4 @@ python -m pip install -r requirements.txt
 
 ## 新的 legged_gym 入口
 
-同步后使用 `./run.sh legged_gym/scripts/play.py --task wheelleg_stand` 查看精选站立权重；训练、目录和配置继承见 [框架指南](LEGGED_GYM.md)。旧脚本继续可用。运行新入口无需另装参考仓库；`pip install -e . --no-deps` 是可选的源码可编辑安装，本仓库不提供包含 SDK 的独立安装包。
+同步后使用 `./manage.sh play --task wheelleg_stand` 查看精选站立权重；训练、目录和配置继承见 [框架指南](LEGGED_GYM.md)。旧脚本继续可用。运行新入口无需另装参考仓库；`pip install -e . --no-deps` 是可选的源码可编辑安装，本仓库不提供包含 SDK 的独立安装包。

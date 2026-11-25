@@ -1,4 +1,4 @@
-"""Optional editable install; existing ./run.sh entrypoints need no pip changes."""
+"""Optional editable install; existing ./manage.sh entrypoints need no pip changes."""
 
 from setuptools import find_packages, setup
 

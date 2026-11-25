@@ -18,14 +18,14 @@
 
 `loop_constraints.json` 是闭环锚点、主动/被动关节顺序及 CAD 尺寸的共同来源；`legged_gym/envs/wheelleg/model/geometry.py` 统一提供运动学、传感器状态计算及控制器使用的尺寸。为配合新连杆惯量，已移除旧模型的 0.05 kg·m² 人工关节惯量，并将默认髋关节阻尼从 4.0 调为 0.2 N·m·s/rad；这只是导入后的数值适配，仍需训练和平衡验收。右轮在 URDF 树上连接 `R_H_Link2`，额外闭环连接 `R_F_Link2`；不能套用旧模型的右侧父子关系。
 
-旧资产完整备份于本机 `logs/model_backup_20261125/old_wheelleg/`，旧训练日志和权重保留。新保存的检查点包含模型指纹，加载时必须匹配；旧权重不能作为新模型已经训练完成的结果。
+旧资产完整备份于本机 `logs/model_backup_20261125/old_wheelleg/`，旧精选权重已移除，可在 Git 历史中追溯。新保存的检查点包含模型指纹，加载时必须匹配；旧权重不能作为新模型已经训练完成的结果。
 
 在 IsaacGym 目录执行：
 
 ```bash
-./run.sh tools/check_model.py --report validation/cad_model_check.json
-./preview_model.sh --length 0.10
-./preview_model.sh --headless --sim-device cuda:0 --num-envs 16 --steps 300
+./manage.sh run tools/check_model.py --report validation/cad_model_check.json
+./manage.sh preview --length 0.10
+./manage.sh preview --headless --sim-device cuda:0 --num-envs 16 --steps 300
 ```
 
 预览默认固定机身，用于检查机构；`--free-base` 取消固定。预览不加载策略，不代表机器人已经能站稳。`--steps` 按 50 Hz 控制步计数。

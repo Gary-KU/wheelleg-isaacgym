@@ -1,6 +1,6 @@
 # 工具索引
 
-日常训练与播放使用 [README 中的入口](../README.md#先运行)。本目录用于资产处理、检查点转换、专用评估和有限实验；命令从 `IsaacGym/` 执行。每个脚本可用 `./run.sh tools/脚本.py --help` 查看参数，USD 导出需独立 `pxr` 环境。
+日常训练与播放使用 [README 中的入口](../README.md)。本目录用于资产处理、检查点转换、专用评估和有限实验；命令从 `IsaacGym/` 执行。每个脚本可用 `./manage.sh run tools/脚本.py --help` 查看参数，USD 导出需独立 `pxr` 环境。
 
 机器人计算和检查点转换实现现位于 `legged_gym/envs/wheelleg/`，工具脚本负责参数、运行与报告。训练循环位于 `legged_gym/learning/`，根目录命令仍可使用。模块位置见[项目结构](../docs/PROJECT_LAYOUT.md)。
 
@@ -21,7 +21,7 @@
 
 ## 兼容实验流程
 
-以下脚本仍围绕根目录 `train.py`、`evaluate.py` 的参数和实验文件格式组织流程。
+以下脚本仍围绕 `scripts/legacy/train.py`、`scripts/legacy/evaluate.py` 的参数和实验文件格式组织流程。
 
 | 脚本 | 用途 | 使用边界 |
 | --- | --- | --- |
@@ -39,14 +39,14 @@
 闭环载荷诊断：
 
 ```bash
-./run.sh tools/benchmark_closure.py --static-duration 0.5 --driven-duration 1 \
+./manage.sh run tools/benchmark_closure.py --static-duration 0.5 --driven-duration 1 \
   --report validation/closure_check_new.json
 ```
 
 已包含的精选阶梯权重复测：
 
 ```bash
-./run.sh tools/evaluate_stairs.py --allow-approximate-loop \
+./manage.sh run tools/evaluate_stairs.py --allow-approximate-loop \
   --checkpoint logs/stair_training_20261022_103417/evaluation/verified_level0.pt \
   --stair-level 0 --seconds 26 --num-envs 4 --physics-threads 0 \
   --report validation/my_stair_level0.json
@@ -55,7 +55,7 @@
 观测转换时明确源、目标文件，目标应为新路径：
 
 ```bash
-./run.sh tools/upgrade_observations.py --source /实际路径/model_N.pt \
+./manage.sh run tools/upgrade_observations.py --source /实际路径/model_N.pt \
   --target /实际路径/model_N_with_leg_inputs.pt
 ```
 

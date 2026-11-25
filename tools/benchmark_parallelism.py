@@ -55,7 +55,7 @@ def main():
         for n in args.env_counts:
             run_dir = args.output / "env_{}".format(n)
             run_dir.mkdir(exist_ok=True)
-            command = [sys.executable, str(ROOT / "train.py"), "--headless",
+            command = [sys.executable, str(ROOT / "scripts/legacy/train.py"), "--headless",
                 "--num-envs", str(n), "--max-iterations", str(args.updates),
                 "--checkpoint", str(checkpoint), "--log-dir", str(run_dir),
                 "--allow-approximate-loop"]

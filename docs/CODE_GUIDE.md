@@ -72,4 +72,4 @@ obs, privileged_obs, rewards, dones, infos, obs_history
 | 新增同一机器人的任务 | 配置继承 + 必要的环境覆盖 + `register.py` 注册 |
 | 新增其他机器人 | 新建与 `wheelleg/` 同级的目录，提供自己的配置和模型校验 hook |
 
-日常先运行 `./preview_model.sh --length 0.10` 检查模型，再决定是否训练。预览固定机身，默认约 10 秒退出；`--steps 15000` 约 5 分钟。训练和播放命令见[README](../README.md)，更详细的扩展规则见[EXTENDING.md](EXTENDING.md)。
+日常先运行 `./manage.sh preview --length 0.10` 检查模型，再决定是否训练。预览固定机身，默认约 10 秒退出；`--steps 15000` 约 5 分钟。训练和播放命令见[README](../README.md)，更详细的扩展规则见[EXTENDING.md](EXTENDING.md)。

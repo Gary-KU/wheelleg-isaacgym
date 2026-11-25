@@ -11,10 +11,10 @@
 ```bash
 conda activate isaacgym
 cd /home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym
-./lift.sh
+./manage.sh lift
 ```
 
-公司电脑进入克隆的 `wheelleg-isaacgym` 目录后运行同一个 `./lift.sh`。环境安装见 [公司电脑指南](COMPANY_SETUP.md)。
+公司电脑进入克隆的 `wheelleg-isaacgym` 目录后运行同一个 `./manage.sh lift`。环境安装见 [公司电脑指南](COMPANY_SETUP.md)。
 
 启动后先保持双轮站立，**默认等待键盘，不会自己开始抬轮**。先点击 Isaac Gym 仿真窗口让它获得焦点，在窗口中按键，不是在终端中输入：
 
@@ -24,12 +24,12 @@ cd /home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym
 | 空格 | 开启连续交替 / 请求落稳后暂停 |
 | 关闭窗口 | 结束演示并保存当前报告 |
 
-按住 N 不会重复触发；动作进行中按 N 不排队。暂停不会冻结机器人或让悬空的轮子停住，会先完成当前轮的落地与站立恢复。键盘模式默认运行 300 仿真秒，可以反复请求抬轮，不受三组次数限制；`--seconds 600` 可增加本次时长。暂停时双轮平衡继续运行。没有给这个入口接方向键驾驶和 Q/E 调腿长；这些仍在 `./stand.sh` 中使用。
+按住 N 不会重复触发；动作进行中按 N 不排队。暂停不会冻结机器人或让悬空的轮子停住，会先完成当前轮的落地与站立恢复。键盘模式默认运行 300 仿真秒，可以反复请求抬轮，不受三组次数限制；`--seconds 600` 可增加本次时长。暂停时双轮平衡继续运行。没有给这个入口接方向键驾驶和 Q/E 调腿长；这些仍在 `./manage.sh stand` 中使用。
 
 原来的自动三组演示使用：
 
 ```bash
-./lift.sh --auto
+./manage.sh lift --auto
 ```
 
 自动模式先双轮站立至少 3 秒，确认稳定后缓慢向支撑侧倾斜，再收起另一侧腿；落轮、回正、连续稳定至少 0.8 秒后才允许换边。默认左右各 3 次，约 21 秒完成动作，之后继续双轮站立，到 60 仿真秒结束。键盘模式也保留这些稳定门槛。
@@ -37,10 +37,10 @@ cd /home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym
 无窗口复测及保存每步测量：
 
 ```bash
-./lift.sh --headless --report validation/my_lift.json --record-trace
+./manage.sh lift --headless --report validation/my_lift.json --record-trace
 ```
 
-默认名义腿长 10 cm。已经小范围复测 9.8、10、10.2 cm；例如 `./lift.sh --length 0.102`。这不代表 6～20 cm 全范围都能抬轮。`./run.sh lift.py --help` 可查参数；直接运行 Python 入口时需要显式传检查点与模式，推荐从 `lift.sh` 开始。
+默认名义腿长 10 cm。已经小范围复测 9.8、10、10.2 cm；例如 `./manage.sh lift --length 0.102`。这不代表 6～20 cm 全范围都能抬轮。`./manage.sh run scripts/legacy/lift.py --help` 可查参数；直接运行 Python 入口时需要显式传检查点与模式，推荐从 `manage.sh lift` 开始。
 
 ## 做了什么
 
@@ -52,11 +52,11 @@ cd /home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym
 
 ## 胎面碰撞模型
 
-`lift.sh` 显式选择 `--wheel-collision sphere_tread`。原始轮胎外圈顶点位于半径 62.5 mm、轴向中心 -22 mm 的球面带上。抬轮模式把这两个轮子的碰撞形状换成连续球面，以避免原网格接触切换影响小速度平衡；视觉、质量、质心、惯量和关节坐标不变。
+`manage.sh lift` 显式选择 `--wheel-collision sphere_tread`。原始轮胎外圈顶点位于半径 62.5 mm、轴向中心 -22 mm 的球面带上。抬轮模式把这两个轮子的碰撞形状换成连续球面，以避免原网格接触切换影响小速度平衡；视觉、质量、质心、惯量和关节坐标不变。
 
-这个代理只在平地、接触点位于原球面带范围内时适用，几何范围约为轮轴倾斜不超过 18.66°。完整球面伸出了原胎面带边缘，因此不能把它当作所有角度和地形下完全相同的原碰撞模型。报告检查实际轮轴倾角是否超出范围；本次峰值约 7.1°。训练和原资产文件保持原碰撞配置；当前 `stand.sh` 也使用此胎面代理，见 [站立与跳跃](JUMP.md)。
+这个代理只在平地、接触点位于原球面带范围内时适用，几何范围约为轮轴倾斜不超过 18.66°。完整球面伸出了原胎面带边缘，因此不能把它当作所有角度和地形下完全相同的原碰撞模型。报告检查实际轮轴倾角是否超出范围；本次峰值约 7.1°。训练和原资产文件保持原碰撞配置；当前 `manage.sh stand` 也使用此胎面代理，见 [站立与跳跃](JUMP.md)。
 
-可用 `./lift.sh --auto --wheel-collision mesh` 复测原网格。相同控制器在本机原网格对照中仅完成一组后等待稳定超时，未通过三组验收。因此目前通过的结果依赖上述胎面代理与输入适配。
+可用 `./manage.sh lift --auto --wheel-collision mesh` 复测原网格。相同控制器在本机原网格对照中仅完成一组后等待稳定超时，未通过三组验收。因此目前通过的结果依赖上述胎面代理与输入适配。
 
 没有固定机身、减小重力或在控制中写入根位置/速度。五连杆连接仍是原工程的弹簧阻尼近似闭环，不是原生刚性闭环。
 
@@ -87,8 +87,8 @@ cd /home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym
 
 | 文件 | 职责 |
 | --- | --- |
-| [lift.sh](../lift.sh) | 推荐命令、精选检查点、两个显式适配开关 |
-| [lift.py](../lift.py) | 配置恢复、策略推理、有限时长评估与报告 |
+| [lift.sh](../manage.sh lift) | 推荐命令、精选检查点、两个显式适配开关 |
+| [lift.py](../scripts/legacy/lift.py) | 配置恢复、策略推理、有限时长评估与报告 |
 | [wheel_lift.py](../legged_gym/envs/wheelleg/control/wheel_lift.py) | `WheelLiftKeyboard` 的 Gym 按键订阅与按下沿处理；`AlternatingWheelLift` 状态机；`WheelLiftEnv` 独立腿目标、胎面代理、逐物理步接触统计；策略输入适配 |
 | [leg_control.py](../legged_gym/envs/wheelleg/control/leg_control.py) | 共用/独立腿长逆解和每腿支撑前馈 |
 | [env.py](../legged_gym/envs/wheelleg/wheelleg_robot.py) | 共用仿真步进；新入口通过小型扩展接口接入，不改变原入口默认控制 |

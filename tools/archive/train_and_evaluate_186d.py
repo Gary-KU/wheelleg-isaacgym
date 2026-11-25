@@ -62,7 +62,7 @@ def main():
     signal.signal(signal.SIGTERM, stop)
     signal.signal(signal.SIGINT, stop)
     try:
-        command = [sys.executable, str(ROOT/"train.py"), "--headless",
+        command = [sys.executable, str(ROOT/"scripts/legacy/train.py"), "--headless",
             "--num-envs", str(args.num_envs), "--max-iterations", str(args.end_iteration-start),
             "--checkpoint", str(checkpoint), "--log-dir", str(log_dir),
             "--save-interval", "5", "--allow-approximate-loop"]
@@ -84,7 +84,7 @@ def main():
             raise RuntimeError("Training exited with code {}".format(code))
         if not final_checkpoint.is_file():
             raise RuntimeError("Final checkpoint was not produced")
-        command = [sys.executable, str(ROOT/"evaluate.py"), "--checkpoint", str(final_checkpoint),
+        command = [sys.executable, str(ROOT/"scripts/legacy/evaluate.py"), "--checkpoint", str(final_checkpoint),
             "--num-envs", "3", "--num-steps", "800", "--command", "0", "0", "0", str(env["command"][3]),
             "--test-speeds", "-0.3", "0", "0.3", "--report", str(result_file), "--allow-approximate-loop"]
         with (log_dir/"evaluation.log").open("w") as log:

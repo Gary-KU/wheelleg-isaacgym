@@ -6,7 +6,7 @@
 
 ```bash
 conda activate isaacgym
-./stand.sh
+./manage.sh stand
 ```
 
 点击仿真窗口后按空格即可请求起跳，不需要等待站稳。
@@ -24,11 +24,11 @@ conda activate isaacgym
 
 双轮持续接地约 0.10 秒后结束跳跃动作；实际复测为着地后约 0.10–0.14 秒。后台仍按原条件验证落地稳定性，单独提示“落地稳定性已验证”，不锁驾驶、腿长或下一次起跳。
 
-预蹲到腾空保持起跳时已下发的平滑速度目标（不是按键的最终目标速度），落地接触后执行最新驾驶或 X 停车指令。Q/E 始终更新所选站立腿长，预蹲/蹬伸/腾空阶段暂时使用跳跃轨迹，着地后立即应用最新腿长，不再等稳定性验收。`stand.sh` 统一使用空格跳跃、X 停止；通用 `play.py` 的空格停止和 `lift.sh` 的空格连续抬轮保留各自含义。
+预蹲到腾空保持起跳时已下发的平滑速度目标（不是按键的最终目标速度），落地接触后执行最新驾驶或 X 停车指令。Q/E 始终更新所选站立腿长，预蹲/蹬伸/腾空阶段暂时使用跳跃轨迹，着地后立即应用最新腿长，不再等稳定性验收。`manage.sh stand` 统一使用空格跳跃、X 停止；通用 `play.py` 的空格停止和 `manage.sh lift` 的空格连续抬轮保留各自含义。
 
 前一版匀速/站稳协议中，默认 10 cm 站姿下轮胎离地约 4.9 cm、连续腾空约 0.18 s，机体最高点比跳前高约 6.2 cm；上一版为约 2.2 cm / 0.12 s。这里的跳高指双轮最低离地间隙，不是腿长变化。落地有短暂俯仰和轮子调整，通常几秒内恢复；并不表示跳跃全程轮子不动。
 
-按住 E 可把有效腿长从默认 10 cm 增加到 20 cm（原入口上限为 14 cm），速度为每秒 2 cm，松开后保持选择。终端随调整显示目标和实际左右腿长；R 恢复启动腿长。直接以较高站姿启动可用 `./stand.sh --length 0.18`。这里的腿长是五连杆有效长度，不等于机体离地高度。
+按住 E 可把有效腿长从默认 10 cm 增加到 20 cm（原入口上限为 14 cm），速度为每秒 2 cm，松开后保持选择。终端随调整显示目标和实际左右腿长；R 恢复启动腿长。直接以较高站姿启动可用 `./manage.sh stand --length 0.18`。这里的腿长是五连杆有效长度，不等于机体离地高度。
 
 已验证 16/18/20 cm 原地站立各 30 秒，以及按住 E 从 10 cm 连续伸到 20 cm、松开后保持。20 cm 的实际腿长约 20.02 cm。原来的落地腿长输入修复与测量见[快速完成记录](../validation/fast_landing_work.json)，扩大站姿范围的结果见[高站姿记录](../validation/tall_stance_work.json)。
 
@@ -40,7 +40,7 @@ conda activate isaacgym
 | --- | --- |
 | [jump_config.py](../legged_gym/envs/wheelleg/jump_config.py) | 腿长轨迹、蹬伸力、接触预设、静止位置反馈参数 |
 | [control/jump.py](../legged_gym/envs/wheelleg/control/jump.py) | 空格触发、动作状态机、停车位置保持与腾空轮子反作用力矩 |
-| [scripts/stand.py](../legged_gym/scripts/stand.py) | 加载旧权重、键盘事件、运行与测量报告 |
+| [scripts/stand.py](../scripts/stand.py) | 加载旧权重、键盘事件、运行与测量报告 |
 | [control/wheel_lift.py](../legged_gym/envs/wheelleg/control/wheel_lift.py) | 复用接触测量、独立左右腿目标和胎面代理环境 |
 
 使用既有 `standing_hold.pt` 的轮子策略；腿部采用显式轨迹、PD 和径向支撑/蹬伸力矩。这次没有训练新 RL 跳跃策略。所有主动关节仍受 ±9 Nm 限制，没有固定机身、额外向上托举或运行中写根状态。原五连杆弹簧阻尼闭合近似保留。
@@ -53,20 +53,20 @@ conda activate isaacgym
 
 ```bash
 # 连续三跳，最后检查是否恢复安静站立
-./stand.sh --headless --auto-jumps 3 --seconds 30 \
+./manage.sh stand --headless --auto-jumps 3 --seconds 30 \
   --report validation/my_jump.json
 
 # 前进中自动三跳，最后 8 秒停车，检查恢复
-./stand.sh --headless --auto-jumps 3 --seconds 32 --jump-speed 0.6 \
+./manage.sh stand --headless --auto-jumps 3 --seconds 32 --jump-speed 0.6 \
   --report validation/my_forward_jump.json
 
 # 后退使用 --jump-speed -0.6；此参数仅供无界面复测，键盘不需要它
 
 # 零速站立 60 秒
-./stand.sh --headless --seconds 60 --report validation/my_quiet_stand.json
+./manage.sh stand --headless --seconds 60 --report validation/my_quiet_stand.json
 
 # 同腿长/权重的旧接触设置参考：网格、TGS、摩擦1、无停车反馈
-./stand.sh --headless --seconds 60 --wheel-collision mesh \
+./manage.sh stand --headless --seconds 60 --wheel-collision mesh \
   --physics-solver tgs --wheel-friction 1 --no-parking \
   --report validation/my_mesh_reference.json
 ```

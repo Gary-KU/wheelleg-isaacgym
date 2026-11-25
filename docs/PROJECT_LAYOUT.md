@@ -5,8 +5,11 @@ Python 源码统一位于 `legged_gym/`。机器人代码按任务集中，共�
 ## 当前目录
 
 ```text
+manage.sh                        唯一运行入口
+scripts/                         train / play / stand / preview_model / list_tasks
+  legacy/                        旧参数接口实现
+  run.sh                         内部 Python 启动器
 legged_gym/
-  scripts/                       注册任务 train.py / play.py / list_tasks.py；模型 preview_model.py，演示 stand.py
   envs/
     __init__.py                  显式 register_tasks()，调用各机器人 register()
     base/base_config.py          嵌套配置实例化
@@ -53,17 +56,15 @@ assets/wheelleg/                  同一份 URDF、网格、闭合点元数据�
 
 | 入口 | 职责 |
 | --- | --- |
-| 根目录 `train.py` | 原参数集和 `--profile` 训练，调用共用 `PPORunner` |
-| 根目录 `play.py`、`evaluate.py` | 现有播放与评估，供演示和工具调用 |
-| `preview_model.sh` | 无策略的 CAD 模型检查 |
-| `stand.sh`、`stairs.sh`、`train_stairs.sh` | 显式指定新权重播放，或从头训练 |
-| `lift.py`、`lift.sh` | 原地抬轮专用入口 |
+| `scripts/legacy/train.py` | 原参数集和 `--profile` 训练，调用共用 `PPORunner` |
+| `scripts/legacy/play.py`、`scripts/legacy/evaluate.py` | 现有播放与评估，供演示和工具调用 |
+| `manage.sh preview` | 无策略的 CAD 模型检查 |
+| `manage.sh stand`、`manage.sh stairs`、`manage.sh train-stairs` | 显式指定新权重播放，或从头训练 |
+| `lift.py`、`manage.sh lift` | 原地抬轮专用入口 |
 | `smoke_test.py` | 有限动作下的机构数值检查 |
 
 这些命令已改用 `legged_gym` 内的新模块。旧 `wheelleg_gym` Python 导入路径和 `LeggedRobot` 配置别名已移除；自定义脚本应更新为上表目录中的实际模块。`WheelLegRobot.step()` 返回五项，`WheelLegged.step()` 加上已堆叠观测成为六项，由 `OnPolicyRunner` 适配到共用循环。
 
-## 工具、测试与证据
+## 工具与历史记录
 
-[tools/](../tools/README.md) 区分当前诊断/转换/评估、兼容实验流程和归档脚本。[tests/](../tests/) 覆盖几何、控制、奖励、配置恢复、超时估值、任务接口和物理回归。新任务与机器人还需针对自身工况验证。
-
-Git 保留的旧检查点和历史验收报告属于替换前模型。当前 CAD 模型需要重新训练；新权重带模型指纹，加载时必须匹配。当前检查记录见 [CAD 模型检查](../validation/cad_model_replacement.json)。
+[tools/](../tools/README.md) 保存资产检查、转换和评估工具，运行统一经过 `manage.sh`。按用户清理要求，`tests/` 与 Git 跟踪的旧精选权重已移除；历史内容可从 Git 历史追溯。当前 CAD 模型需要重新训练，新权重必须通过模型指纹校验。
