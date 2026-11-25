@@ -25,6 +25,7 @@ manage.sh play / stairs / evaluate → scripts/play.py
 | `wheelleg_stairs` | 252 / 6 | 阶梯课程 |
 | `wheelleg_sensor` | 132 / 6 | 实机可获取的 IMU / 编码器状态 |
 | `wheelleg_sensor_tracking` | 132 / 6 | 停稳与直行课程至 1.0 m/s |
+| `wheelleg_sensor_quiet` | 132 / 6 | 候选安静站立奖励/阻尼对照，尚未通过验收 |
 
 所有任务使用当前 CAD 资产，**当前没有训练好的新模型权重**。旧模型权重已移除，不能用来证明新模型的站立或阶梯能力。
 

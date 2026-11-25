@@ -45,8 +45,24 @@ class SensorWheelLegged(WheelLegged):
                 / self.cfg.rewards.yaw_tracking_sigma**2
             ),
             angular_motion=(self.ang_vel[:, :2] * 0.5).square().sum(-1),
+            stopped_wheel_speed=(self.dof_state[:, self.action_indices[4:], 1] / 3.0)
+            .square()
+            .mean(-1)
+            .clamp(max=25)
+            * (self.commands[:, :3].abs().max(-1).values < 0.02),
         )
         return terms
+
+    def _reward_stopped_wheel_speed(self):
+        return self._task_reward_terms["stopped_wheel_speed"]
+
+    def _extra_step_info(self):
+        info = super()._extra_step_info()
+        # 重置前采样，避免把倒地后重置的零轮速计入评估。
+        info["pre_reset_active_rates"] = self.dof_state[
+            :, self.action_indices, 1
+        ].clone()
+        return info
 
     def training_body_linear_velocity(self, infos):
         # Logging may use terminal-safe simulation truth; actor inputs may not.

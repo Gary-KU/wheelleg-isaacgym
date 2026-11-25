@@ -21,7 +21,10 @@ def register(registry):
             registry.register(name, WheelLegged, env_cfg(), train_cfg())
 
     from legged_gym.envs.wheelleg.tasks.sensors import SensorWheelLegged
-    from legged_gym.envs.wheelleg.config.sensors import WheelLeggedSensorCfg, WheelLeggedSensorCfgPPO
+    from legged_gym.envs.wheelleg.config.sensors import (
+        WheelLeggedSensorCfg,
+        WheelLeggedSensorCfgPPO,
+    )
 
     if "wheelleg_sensor" not in registry.task_classes:
         registry.register(
@@ -32,7 +35,10 @@ def register(registry):
         )
 
     from legged_gym.envs.wheelleg.tasks.tracking import TrackingWheelLegged
-    from legged_gym.envs.wheelleg.config.sensors import WheelLeggedTrackingCfg, WheelLeggedTrackingCfgPPO
+    from legged_gym.envs.wheelleg.config.sensors import (
+        WheelLeggedTrackingCfg,
+        WheelLeggedTrackingCfgPPO,
+    )
 
     if "wheelleg_sensor_tracking" not in registry.task_classes:
         registry.register(
@@ -40,4 +46,18 @@ def register(registry):
             TrackingWheelLegged,
             WheelLeggedTrackingCfg(),
             WheelLeggedTrackingCfgPPO(),
+        )
+
+    # 候选奖励使用独立名称；原 wheelleg_sensor 不因试验而改变默认值。
+    from legged_gym.envs.wheelleg.config.sensors import (
+        WheelLeggedQuietStandCfg,
+        WheelLeggedQuietStandCfgPPO,
+    )
+
+    if "wheelleg_sensor_quiet" not in registry.task_classes:
+        registry.register(
+            "wheelleg_sensor_quiet",
+            SensorWheelLegged,
+            WheelLeggedQuietStandCfg(),
+            WheelLeggedQuietStandCfgPPO(),
         )

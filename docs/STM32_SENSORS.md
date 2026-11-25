@@ -157,3 +157,24 @@ conda activate isaacgym
 `Starting curriculum assessment ...` 表示正在考核，期间不会输出普通iteration行。结果写到控制台、TensorBoard、progress.json和 `curriculum_evaluations.jsonl`，包括 `Assessment/promotions`、速度误差、物理失败次数和考核耗时。训练总步数只统计PPO数据，考核步数单独记录。普通探索回合的RMS可以高于考核RMS，两者不应混为一谈。
 
 第二版验收记录见[独立课程考核修复](../validation/sensor_tracking_v2_work.json)。考核流程修复不等于停车控制已经解决，也不意味着已达到1.0 m/s。
+
+
+## 后置电池模型的安静站立修正
+
+2026-11-25：第 1300 轮策略在确定性 60 秒检查中没有倒地，但零速时前后速度 RMS 约 0.183 m/s、偏航角速度 RMS 约 0.678 rad/s，不能算安静站稳。该结论来自单机器人、seed=42 的有限检查；训练 reward 不能代替这项检查。
+
+候选任务 `wheelleg_sensor_quiet` 的调整在 `config/sensors.py`，原 `wheelleg_sensor` 默认参数保留：缩小速度和偏航奖励容忍范围、增加零速跟踪和腿长支撑权重、增加零指令下的轮速软惩罚，并降低熵系数。轮速惩罚不会锁轮，运动指令下不启用。没有增加绝对位置/航向策略输入，也没有增加电机力矩上限。
+
+候选配置同时调整髋阻尼，旧髋阻尼 0.04 在轻连杆上频繁限幅；同一冻结策略的短对照中，降低到 0.005 改善了腿长支撑和限幅占比，但不能直接解决漂移，必须重新微调并验证。它是仿真控制参数的调整，不代表实机电机参数已经标定。
+
+**修改奖励和控制参数后使用 `--task wheelleg_sensor_quiet --warm-start` 开新实验**，保留 Actor 初始化并重新训练 Critic/优化器；`--checkpoint`/`--resume` 会恢复旧配置。原始权重和诊断报告保存在对应实验的 `diagnosis/` 下。新结果需要重新做连续站立、漂移、腿长、轮速和逐关节限幅检查：
+
+```bash
+./manage.sh run tools/evaluate_sensor_balance.py --task wheelleg_sensor \
+  --checkpoint <新权重> --headless --sim_device cpu --num_steps 3000 \
+  --report logs/quiet_stand_result.json
+```
+
+候选任务目前仅完成有限微调和对照，不等于已经修复漂移；未通过连续站立门槛前，不恢复新的长训练或替换默认策略。
+
+本次 60 轮候选微调的 60 秒确定性复测无倒地，腿长平均约 7.6 cm、偏航角速度 RMS 约 0.305 rad/s，但前后速度 RMS 约 0.711 m/s，比原策略更差，因此未采用为默认配置。候选第 50、60 轮均未通过安静站立门槛，不能把奖励数值或局部指标改善当作整体修复。

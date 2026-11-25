@@ -38,6 +38,7 @@ class WheelLeggedSensorCfg(WheelLeggedCfg):
             hip_symmetry = 0.0
             leg_angle = 0.0
             heading = 0.0  # Absolute yaw is absent from this task's observation.
+            stopped_wheel_speed = 0.0  # 候选安静站立任务可启用；旧任务行为保持不变
 
     class sensors:
         schema = SENSOR_SCHEMA
@@ -152,3 +153,32 @@ class WheelLeggedTrackingCfgPPO(WheelLeggedSensorCfgPPO):
 
     class runner(WheelLeggedSensorCfgPPO.runner):
         experiment_name = "wheelleg_sensor_tracking_v2"
+
+
+class WheelLeggedQuietStandCfg(WheelLeggedSensorCfg):
+    """安静站立候选：独立实验，未通过验收前不替代基础任务默认值。"""
+
+    class control(WheelLeggedSensorCfg.control):
+        leg_kd = 0.005  # 轻连杆低阻尼对照；改变控制后必须重新训练和验收
+
+    class rewards(WheelLeggedSensorCfg.rewards):
+        linear_tracking_sigma = 0.08
+        yaw_tracking_sigma = 0.12
+
+        class scales(WheelLeggedSensorCfg.rewards.scales):
+            termination = -25.0
+            tracking_lin_vel = 2.0
+            tracking_ang_vel = 1.0
+            leg_tracking = 2.0
+            leg_error = -0.5
+            tracking_error = 4.0
+            yaw_error = -2.0
+            stopped_wheel_speed = -0.02  # 软惩罚，不锁轮，非零运动指令下关闭
+
+
+class WheelLeggedQuietStandCfgPPO(WheelLeggedSensorCfgPPO):
+    class algorithm(WheelLeggedSensorCfgPPO.algorithm):
+        entropy_coef = 0.0002
+
+    class runner(WheelLeggedSensorCfgPPO.runner):
+        experiment_name = "wheelleg_sensor_quiet"
