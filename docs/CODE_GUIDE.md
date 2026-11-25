@@ -54,7 +54,7 @@ obs, privileged_obs, rewards, dones, infos, obs_history
 - 坐标：X 前、Y 左、Z 上；Gym 四元数为 **XYZW**。
 - 指令：`[vx, vy, yaw_rate, leg_length]`，单位依次为 `m/s、m/s、rad/s、m`。
 - 动作顺序：左前髋、左后髋、右前髋、右后髋、左轮、右轮，见 `constants.py::ACTION_JOINTS`。
-- `hip_pd`：RL 提供额外力矩；`hip_target`：前四维提供髋角增量。最终关节力矩统一限于 `±9 N·m`。
+- `hip_pd`：RL 提供额外力矩；`hip_target`：前四维提供髋角增量。最终力矩按 `loop_constraints.json::actuator_limits` 分别限幅；髋关节峰值 0.68 N·m、连续 0.32 N·m，累计超连续值 2 秒后本回合内降额。每个轮子限幅 ±0.1 N·m。
 - 支撑前馈：径向力通过雅可比变成髋力矩，不是给机身施加向上的外力，也不是完整的分布质量重力补偿。
 - 闭环：`model/constraints.py` 从两侧锚点计算成对弹簧阻尼力，仍存在有限闭合误差。
 

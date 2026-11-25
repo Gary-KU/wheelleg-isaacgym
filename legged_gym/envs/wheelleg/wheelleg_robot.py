@@ -25,7 +25,7 @@ from legged_gym.envs.wheelleg.constants import (
     DEFAULT_EPISODE_SECONDS, DEFAULT_FORWARD_SPEED_RANGE, DEFAULT_LEG_LENGTH_RANGE,
     DEFAULT_PHYSICS_DT, DEFAULT_YAW_SPEED_RANGE, MAX_LEG_LENGTH, MIN_LEG_LENGTH,
     NUM_ACTIONS, OBSERVATION_BASE_FRAME_SIZE, OBSERVATION_HISTORY_FRAMES,
-    OBSERVATION_LEG_LENGTH_SIZE, TERMINATION_LOOP_ERROR, TERMINATION_TILT, TORQUE_LIMIT,
+    OBSERVATION_LEG_LENGTH_SIZE, TERMINATION_LOOP_ERROR, TERMINATION_TILT, ACTION_TORQUE_LIMITS, WHEEL_TORQUE_LIMIT, HIP_CONTINUOUS_TORQUE, HIP_PEAK_DURATION,
     OBSERVATION_TERRAIN_SIZE,
 )
 from legged_gym.envs.wheelleg.rewards import weighted_flat_reward_terms
@@ -400,6 +400,10 @@ class WheelLegRobot:
         self.episode_length_buf = torch.zeros(n, dtype=torch.long, device=d)
         self.reset_buf = torch.zeros(n, dtype=torch.bool, device=d)
         self.actions = torch.zeros(n, self.num_actions, device=d)
+        self.torque_limits = self.actions.new_tensor(ACTION_TORQUE_LIMITS)
+        self.hip_peak_steps = int(HIP_PEAK_DURATION / self.physics_dt)
+        self.hip_overload_steps = torch.zeros(n, 4, dtype=torch.long, device=d)
+        self.effective_torque_limits = self.torque_limits.repeat(n, 1)
         self.last_actions = torch.zeros_like(self.actions)
         self.last_applied_torques = torch.zeros_like(self.actions)
         self.torques = torch.zeros(n, self.num_dof, device=d)
@@ -578,7 +582,7 @@ class WheelLegRobot:
                            if self.terrain_model is not None else None)
         # 1. 动作 → 控制目标 → 多个物理子步（默认 50 Hz / 2 kHz）。
         effort, targets = self._prepare_control()
-        peak_error, torque_peak, saturation = self._simulate_control(effort, targets)
+        peak_error, torque_peak, saturation, hip_overload = self._simulate_control(effort, targets)
 
         # 2. 刷新派生状态和当前观测，再计算奖励与结束原因。
         self.episode_length_buf += 1
@@ -634,6 +638,9 @@ class WheelLegRobot:
                 "pre_reset_previous_torques": self.last_applied_torques.clone(),
                 "pre_reset_peak_abs_torques": torque_peak,
                 "pre_reset_torque_saturation_fraction": saturation,
+                "pre_reset_hip_over_continuous_fraction": hip_overload,
+                "pre_reset_hip_peak_budget_remaining_s": (self.hip_peak_steps-self.hip_overload_steps).clamp_min(0)*self.physics_dt,
+                "pre_reset_torque_limits": self.effective_torque_limits.clone(),
                 "termination_reasons": termination_reasons,
                 "reward_terms": {name: value.clone() for name, value in self.reward_terms.items()},
                 "approximate_loop": True}
@@ -690,14 +697,14 @@ class WheelLegRobot:
             effort[:, 4:] = balance_heading_torques(
                 self.wheel_balance_scale*effort[:, 4:], self.total_yaw-self.target_yaw,
                 self.ang_vel[:, 2]-self.commands[:, 2], self.ang_vel[:, 1],
-                self.heading_kp, self.heading_kd, self.wheel_pitch_damping, TORQUE_LIMIT)
+                self.heading_kp, self.heading_kd, self.wheel_pitch_damping, WHEEL_TORQUE_LIMIT)
         elif self.heading_kp or self.heading_kd:
             # 左右轮轴镜像：同号关节力矩产生转向，异号产生前后运动。
             # 航向目标由转向速度积分得到，不能把转向指令始终拉回初始朝向。
             heading_bias = (self.heading_kp*(self.total_yaw-self.target_yaw)
                             +self.heading_kd*(self.ang_vel[:, 2]-self.commands[:, 2])).clamp(-1.0, 1.0)
             effort[:, 4:] -= heading_bias[:, None]
-        self.torques[:, self.action_indices] = effort.clamp(-TORQUE_LIMIT, TORQUE_LIMIT)
+        self.torques[:, self.action_indices] = effort.clamp(-self.torque_limits, self.torque_limits)
         targets = self._hip_targets() if self.leg_control in ("hip_pd", "hip_target") else None
         if self.leg_control == "hip_target":
             targets = (targets+self.hip_target_scale*self.actions[:, :4].clamp(-1, 1)).clamp(self.hip_lower, self.hip_upper)
@@ -707,24 +714,25 @@ class WheelLegRobot:
         """执行一个控制周期的 PhysX 子步，返回闭环误差和力矩统计。"""
         # 支撑前馈每个控制步算一次；髋 PD 和闭环力则每个物理步重新计算。
         support_bias = self._leg_support_bias()
-        torque_peak = (torch.zeros_like(self.actions) if targets is not None
-                       else self.torques[:, self.action_indices].abs().clone())
+        torque_peak = torch.zeros_like(self.actions)
         saturation_sum = torch.zeros_like(self.actions)
+        hip_overload_sum = torch.zeros_like(self.actions[:, :4])
         peak_error = torch.zeros_like(self.last_step_loop_error)
         physics_callback = self._physics_step_callback
         for _ in range(self.decimation):
+            total = effort.clone()
             if targets is not None:
                 # RL 动作在整个控制周期保持，PD 使用子步内最新的关节状态。
                 pd = self._hip_pd_torques(targets)
-                total = effort.clone()
                 total[:, :4] += pd
                 if support_bias is not None:
-                    # 前馈叠加到髋力矩上，与 PD/RL 一起接受 ±9 Nm 限幅。
+                    # 前馈叠加到髋力矩上，与 PD/RL 一起按各关节峰值限幅。
                     total[:, :4] += support_bias
-                active = total.clamp(-TORQUE_LIMIT, TORQUE_LIMIT)
-                self.torques[:, self.action_indices] = active
-                torque_peak = torch.maximum(torque_peak, active.abs())
-                saturation_sum += (active.abs() >= TORQUE_LIMIT-1e-5).float()
+            active, overloaded = self._limit_actuator_torques(total)
+            self.torques[:, self.action_indices] = active
+            torque_peak = torch.maximum(torque_peak, active.abs())
+            saturation_sum += (active.abs() >= self.effective_torque_limits-1e-5).float()
+            hip_overload_sum += overloaded.float()
             forces, moments = self.closure.compute(self.rb_states)
             self.gym.apply_rigid_body_force_tensors(self.sim,
                 gymtorch.unwrap_tensor(forces), gymtorch.unwrap_tensor(moments), gymapi.ENV_SPACE)
@@ -739,9 +747,19 @@ class WheelLegRobot:
             peak_error = torch.maximum(peak_error, self.closure.errors(self.rb_states))
         self._refresh()
         self.last_step_loop_error.copy_(peak_error)
-        saturation = (saturation_sum/self.decimation if targets is not None
-                      else (torque_peak >= TORQUE_LIMIT-1e-5).float())
-        return peak_error, torque_peak, saturation
+        saturation = saturation_sum/self.decimation
+        return peak_error, torque_peak, saturation, hip_overload_sum/self.decimation
+
+    def _limit_actuator_torques(self, requested):
+        """每关节独立计时：累计超连续值 2 秒后，本回合余下时间限到连续力矩。"""
+        limits = self.torque_limits.expand_as(requested).clone()
+        exhausted = self.hip_overload_steps >= self.hip_peak_steps
+        limits[:, :4] = torch.where(exhausted, limits.new_tensor(HIP_CONTINUOUS_TORQUE), limits[:, :4])
+        active = requested.clamp(-limits, limits)
+        overloaded = active[:, :4].abs() > HIP_CONTINUOUS_TORQUE+1e-6
+        self.hip_overload_steps += overloaded.long()
+        self.effective_torque_limits.copy_(limits)
+        return active, overloaded
 
     # ---------- 回合与指令：只重置结束的环境，不清空其他环境的历史 ----------
 
@@ -764,6 +782,8 @@ class WheelLegRobot:
         # Restore its matching initial state so no stale terminal wrench is applied.
         self.rb_states[ids] = self.default_rb_states[ids]
         self.episode_length_buf[ids] = 0
+        self.hip_overload_steps[ids] = 0
+        self.effective_torque_limits[ids] = self.torque_limits
         self.episode_returns[ids] = 0
         self.actions[ids] = 0
         self.last_actions[ids] = 0

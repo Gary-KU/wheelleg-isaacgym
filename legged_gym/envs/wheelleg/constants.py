@@ -5,7 +5,7 @@
 """
 
 import math
-from .model.geometry import MIN_LENGTH, MAX_LENGTH
+from .model.geometry import MIN_LENGTH, MAX_LENGTH, ACTUATORS
 
 
 # 动作顺序不可随意改动：旧权重的六个输出按这个顺序解释。
@@ -14,8 +14,13 @@ ACTION_JOINTS = (
     "L_lun_Joint", "R_lun_Joint",
 )
 NUM_ACTIONS = len(ACTION_JOINTS)
-ACTION_SCALES = (0.5, 0.5, 0.5, 0.5, 10.0, 10.0)  # 原始动作 → N·m
-TORQUE_LIMIT = 9.0  # 每个主动关节的力矩限幅，N·m
+# 输出轴力矩；±1 动作对应各自峰值，避免轮子动作大部分落在饱和区。
+HIP_TORQUE_LIMIT = ACTUATORS["hip_peak_nm"]
+HIP_CONTINUOUS_TORQUE = ACTUATORS["hip_continuous_nm"]
+HIP_PEAK_DURATION = ACTUATORS["hip_peak_duration_s"]
+WHEEL_TORQUE_LIMIT = ACTUATORS["wheel_peak_nm"]
+ACTION_TORQUE_LIMITS = (HIP_TORQUE_LIMIT,)*4 + (WHEEL_TORQUE_LIMIT,)*2
+ACTION_SCALES = ACTION_TORQUE_LIMITS
 
 # 新 CAD 直接使用连杆惯量，旧模型的大人工转子惯量已移除。
 DEFAULT_LEG_KD = 0.2  # 髋阻尼，N·m·s/rad；惯量实测后需重新核对。

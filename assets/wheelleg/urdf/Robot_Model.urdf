@@ -213,7 +213,7 @@
     <parent link="base_link" />
     <child link="L_F_Link1" />
     <axis xyz="0.999999999993 2.58283466131e-06 2.57529026393e-06" />
-    <limit effort="9" velocity="30" lower="-0.282999980999" upper="1.2429999456" />
+    <limit effort="0.68" velocity="30" lower="-0.282999980999" upper="1.2429999456" />
     <dynamics damping="0" friction="0" />
   </joint>
   <joint name="L_F_Joint2" type="revolute">
@@ -221,7 +221,7 @@
     <parent link="L_F_Link1" />
     <child link="L_F_Link2" />
     <axis xyz="0.999999999993 -2.5828533063e-06 -2.57527156419e-06" />
-    <limit effort="9" velocity="30" lower="-1.23377382348" upper="0.569850027408" />
+    <limit effort="0.0" velocity="30" lower="-1.23377382348" upper="0.569850027408" />
     <dynamics damping="0" friction="0" />
   </joint>
   <joint name="L_lun_Joint" type="continuous">
@@ -229,7 +229,7 @@
     <parent link="L_F_Link2" />
     <child link="L_lun" />
     <axis xyz="6.21729503913e-06 1.05913741034e-06 0.99999999998" />
-    <limit effort="9" velocity="45" />
+    <limit effort="0.1" velocity="45" />
     <dynamics damping="0" friction="0" />
   </joint>
   <joint name="L_H_Joint1" type="revolute">
@@ -237,7 +237,7 @@
     <parent link="base_link" />
     <child link="L_H_Link1" />
     <axis xyz="-8.74227797415e-08 -4.89663865011e-12 1" />
-    <limit effort="9" velocity="30" lower="-1.2429999456" upper="0.282999980999" />
+    <limit effort="0.68" velocity="30" lower="-1.2429999456" upper="0.282999980999" />
     <dynamics damping="0" friction="0" />
   </joint>
   <joint name="L_H_Joint2" type="revolute">
@@ -245,7 +245,7 @@
     <parent link="L_H_Link1" />
     <child link="L_H_Link2" />
     <axis xyz="-8.74227797415e-08 -4.89663865011e-12 1" />
-    <limit effort="9" velocity="30" lower="-0.569850027408" upper="1.23377382348" />
+    <limit effort="0.0" velocity="30" lower="-0.569850027408" upper="1.23377382348" />
     <dynamics damping="0" friction="0" />
   </joint>
   <joint name="R_F_Joint1" type="revolute">
@@ -253,7 +253,7 @@
     <parent link="base_link" />
     <child link="R_F_Link1" />
     <axis xyz="-7.23997979308e-06 3.62462510311e-06 0.999999999967" />
-    <limit effort="9" velocity="30" lower="-1.2429999456" upper="0.282999980999" />
+    <limit effort="0.68" velocity="30" lower="-1.2429999456" upper="0.282999980999" />
     <dynamics damping="0" friction="0" />
   </joint>
   <joint name="R_F_Joint2" type="revolute">
@@ -261,7 +261,7 @@
     <parent link="R_F_Link1" />
     <child link="R_F_Link2" />
     <axis xyz="-7.23997979308e-06 3.62462510311e-06 0.999999999967" />
-    <limit effort="9" velocity="30" lower="-0.569850027408" upper="1.23377382348" />
+    <limit effort="0.0" velocity="30" lower="-0.569850027408" upper="1.23377382348" />
     <dynamics damping="0" friction="0" />
   </joint>
   <joint name="R_lun_Joint" type="continuous">
@@ -269,7 +269,7 @@
     <parent link="R_H_Link2" />
     <child link="R_lun" />
     <axis xyz="-7.23997979308e-06 3.62462510311e-06 0.999999999967" />
-    <limit effort="9" velocity="45" />
+    <limit effort="0.1" velocity="45" />
     <dynamics damping="0" friction="0" />
   </joint>
   <joint name="R_H_Joint1" type="revolute">
@@ -277,7 +277,7 @@
     <parent link="base_link" />
     <child link="R_H_Link1" />
     <axis xyz="0.999999999993 -2.58284385304e-06 -2.57528072506e-06" />
-    <limit effort="9" velocity="30" lower="-0.282999980999" upper="1.2429999456" />
+    <limit effort="0.68" velocity="30" lower="-0.282999980999" upper="1.2429999456" />
     <dynamics damping="0" friction="0" />
   </joint>
   <joint name="R_H_Joint2" type="revolute">
@@ -285,7 +285,7 @@
     <parent link="R_H_Link1" />
     <child link="R_H_Link2" />
     <axis xyz="6.19570718394e-06 -6.15766073472e-06 0.999999999962" />
-    <limit effort="9" velocity="30" lower="-1.23377382348" upper="0.569850027408" />
+    <limit effort="0.0" velocity="30" lower="-1.23377382348" upper="0.569850027408" />
     <dynamics damping="0" friction="0" />
   </joint>
 </robot>

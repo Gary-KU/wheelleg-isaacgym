@@ -2,7 +2,7 @@
 
 import torch
 
-from legged_gym.envs.wheelleg.constants import OBSERVATION_BASE_FRAME_SIZE, TORQUE_LIMIT
+from legged_gym.envs.wheelleg.constants import OBSERVATION_BASE_FRAME_SIZE
 from legged_gym.learning.policy import scalar
 
 
@@ -22,6 +22,7 @@ class WheelLegTrainingMetrics:
         self.motion_sums = torch.zeros(8, device=self.env.device)
         self.support_sums = torch.zeros(4, device=self.env.device)
         self.reward_term_sums = {}
+        self.hip_overload_sum = 0.0
 
     def update(self, observations, rewards, dones, infos):
         command = infos["pre_reset_commands"]
@@ -40,13 +41,16 @@ class WheelLegTrainingMetrics:
             forward_velocity = measured[:, 0] / 1.5
         torque = infos["pre_reset_applied_torques"]
         delta = torque - infos["pre_reset_previous_torques"]
+        self.hip_overload_sum += float(
+            infos["pre_reset_hip_over_continuous_fraction"].mean()
+        )
         self.motion_sums += torch.stack(
             (
                 infos["pre_reset_pitch"].square().mean(),
                 infos["pre_reset_roll"].square().mean(),
                 infos["pre_reset_ang_vel"][:, :2].square().sum(-1).mean(),
                 delta.square().mean(),
-                (torque.abs() >= TORQUE_LIMIT - 0.001).float().mean(),
+                infos["pre_reset_torque_saturation_fraction"].mean(),
                 (forward_velocity - command[:, 0]).square().mean(),
                 (infos["pre_reset_ang_vel"][:, 2] - command[:, 2]).square().mean(),
                 (infos["pre_reset_leg_length"] - command[:, 3:4]).square().mean(),
@@ -85,6 +89,7 @@ class WheelLegTrainingMetrics:
         metrics = {
             "Episode/physical_failures": self.physical_failures,
             "Loop/failures": self.closure_failures,
+            "Actuator/hip_over_continuous_fraction": self.hip_overload_sum / num_steps,
             "Loop/max_anchor_error_m": self.loop_peak,
         }
         if getattr(self.env, "terrain_model", None) is not None:

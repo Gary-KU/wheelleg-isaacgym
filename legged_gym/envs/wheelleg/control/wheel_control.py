@@ -6,10 +6,19 @@ This asset has mirrored wheel axes: [-drive,+drive] rolls forward, while
 
 import math
 import torch
+from legged_gym.envs.wheelleg.constants import WHEEL_TORQUE_LIMIT
 
 
-def balance_heading_torques(policy_torques, heading_error, yaw_rate_error,
-                            pitch_rate, kp, kd, pitch_damping=0., limit=9.):
+def balance_heading_torques(
+    policy_torques,
+    heading_error,
+    yaw_rate_error,
+    pitch_rate,
+    kp,
+    kd,
+    pitch_damping=0.0,
+    limit=WHEEL_TORQUE_LIMIT,
+):
     """Keep RL differential effort and replace its common steering effort.
 
     Heading error is measured minus target. Steering uses at most 1 Nm per
@@ -19,21 +28,25 @@ def balance_heading_torques(policy_torques, heading_error, yaw_rate_error,
     """
     if policy_torques.ndim != 2 or policy_torques.shape[1] != 2:
         raise ValueError("Wheel policy torques must have shape [N,2]")
-    if any(value.shape != policy_torques.shape[:1]
-           for value in (heading_error, yaw_rate_error, pitch_rate)):
+    if any(
+        value.shape != policy_torques.shape[:1]
+        for value in (heading_error, yaw_rate_error, pitch_rate)
+    ):
         raise ValueError("Heading and rate vectors must have shape [N]")
     if any(not math.isfinite(value) or value < 0 for value in (kp, kd, pitch_damping)):
         raise ValueError("Wheel feedback gains must be finite and nonnegative")
     if not math.isfinite(limit) or limit <= 0:
         raise ValueError("Torque limit must be finite and positive")
-    drive = .5*(policy_torques[:, 1]-policy_torques[:, 0])+pitch_damping*pitch_rate
+    drive = (
+        0.5 * (policy_torques[:, 1] - policy_torques[:, 0]) + pitch_damping * pitch_rate
+    )
     drive = drive.clamp(-limit, limit)
-    steer = (-kp*heading_error-kd*yaw_rate_error).clamp(-1., 1.)
-    headroom = limit-drive.abs()
+    steer = (-kp * heading_error - kd * yaw_rate_error).clamp(-1.0, 1.0)
+    headroom = limit - drive.abs()
     steer = torch.maximum(-headroom, torch.minimum(headroom, steer))
-    return torch.stack((steer-drive, steer+drive), dim=-1)
+    return torch.stack((steer - drive, steer + drive), dim=-1)
 
 
-def bounded_heading_target(measured, target, command, dt, max_error=.35):
+def bounded_heading_target(measured, target, command, dt, max_error=0.35):
     """Integrate requested turning without storing an unachievable yaw backlog."""
-    return measured+(target+command*dt-measured).clamp(-max_error, max_error)
+    return measured + (target + command * dt - measured).clamp(-max_error, max_error)

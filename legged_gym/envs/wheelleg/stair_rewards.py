@@ -7,6 +7,7 @@ termination remain the environment's responsibility; the flat task is unchanged.
 import math
 
 import torch
+from legged_gym.envs.wheelleg.constants import ACTION_TORQUE_LIMITS
 
 
 def stair_reward_terms(
@@ -122,7 +123,12 @@ def stair_reward_terms(
         * (1.0 - passive_margin / 0.1).clamp(0.0, 1.0).square().mean(-1),
         "effort": -0.0001 * applied_torques.square().sum(-1),
         "torque_smoothness": -0.05
-        * ((applied_torques - previous_torques) / 9.0).square().sum(-1),
+        * (
+            (applied_torques - previous_torques)
+            / applied_torques.new_tensor(ACTION_TORQUE_LIMITS)
+        )
+        .square()
+        .sum(-1),
         "failure": -100.0 * terminated.to(lin_vel.dtype),
         "success": 25.0 * success.to(lin_vel.dtype),
     }

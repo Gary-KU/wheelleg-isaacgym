@@ -1,0 +1,107 @@
+{
+  "date": "2026-11-25",
+  "source": "User motor specifications; each wheel confirmed at 0.1 N m",
+  "wheel_peak_nm_each": 0.1,
+  "hip_peak_nm_each": 0.68,
+  "hip_continuous_nm_each": 0.32,
+  "hip_overload_budget_s_each": 2.0,
+  "budget_model": "Cumulative overload above continuous torque per episode, derate to continuous until episode reset; no cooling recovery assumed",
+  "checks": {
+    "cpu_hip_pd": {
+      "mode": "hip_pd",
+      "limits": [
+        0.68,
+        0.68,
+        0.68,
+        0.68,
+        0.1,
+        0.1
+      ],
+      "peak_observed": [
+        0.6800000071525574,
+        0.6800000071525574,
+        0.6800000071525574,
+        0.6800000071525574,
+        0.10000000149011612,
+        0.10000000149011612
+      ],
+      "budget_steps": 4000,
+      "hip_support_torque_at_8cm_nm": [
+        [
+          -0.6851301896646993,
+          0.6849146149694241,
+          0.6849146149694241,
+          -0.6851301896646993
+        ]
+      ],
+      "status": "passed"
+    },
+    "gpu_torque": {
+      "mode": "torque",
+      "limits": [
+        0.68,
+        0.68,
+        0.68,
+        0.68,
+        0.1,
+        0.1
+      ],
+      "peak_observed": [
+        0.6800000071525574,
+        0.6800000071525574,
+        0.6800000071525574,
+        0.6800000071525574,
+        0.10000000149011612,
+        0.10000000149011612
+      ],
+      "budget_steps": 4000,
+      "hip_support_torque_at_8cm_nm": [
+        [
+          -0.6851301896646993,
+          0.6849146149694241,
+          0.6849146149694241,
+          -0.6851301896646993
+        ]
+      ],
+      "status": "passed"
+    },
+    "cpu_hip_target": {
+      "mode": "hip_target",
+      "limits": [
+        0.68,
+        0.68,
+        0.68,
+        0.68,
+        0.1,
+        0.1
+      ],
+      "peak_observed": [
+        0.6800000071525574,
+        0.6800000071525574,
+        0.6800000071525574,
+        0.6800000071525574,
+        0.10000000149011612,
+        0.10000000149011612
+      ],
+      "budget_steps": 4000,
+      "hip_support_torque_at_8cm_nm": [
+        [
+          -0.6851301896646993,
+          0.6849146149694241,
+          0.6849146149694241,
+          -0.6851301896646993
+        ]
+      ],
+      "status": "passed"
+    },
+    "cpu_full_budget_sequence_steps": 4000,
+    "gpu_boundary": "Last peak-budget step and first continuous-limit step; verified independent environment reset"
+  },
+  "limitations": [
+    "Wheel continuous torque and speed/torque curves not supplied",
+    "Motor budget is not yet part of actor observations",
+    "Reference mass and inertia are not measured hardware values",
+    "Approximate support at 8cm requires around 0.685 N m per hip under the current reference loading; long-term stance not certified",
+    "No policy training performed"
+  ]
+}

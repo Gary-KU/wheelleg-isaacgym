@@ -9,6 +9,7 @@ from legged_gym.utils.checkpoints import validate_model_fingerprint
 ASSET_ROOT = Path(__file__).resolve().parents[4] / "assets" / "wheelleg"
 _METADATA = json.loads((ASSET_ROOT / "loop_constraints.json").read_text())
 CAD = _METADATA["cad_geometry"]
+ACTUATORS = _METADATA["actuator_limits"]
 SIDES = CAD["sides"]
 # CAD 左右尺寸有微小导出差异；平面近似取均值，精确初始闭合另由 URDF 校验。
 UPPER = sum(sum(s["upper_m"]) for s in SIDES.values()) / 4

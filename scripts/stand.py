@@ -354,7 +354,7 @@ def main():
             fixed_base=False,
             external_body_support=False,
             root_state_writes_outside_resets=False,
-            joint_torque_limit_nm=9.0,
+            joint_torque_limits_nm=env.torque_limits.cpu().tolist(),
             closure_model="external_force_compliant_approximation",
             config=class_to_dict(cfg),
             checkpoint=str(args.checkpoint.resolve()),

@@ -30,6 +30,8 @@ conda activate isaacgym
 
 `wheelleg_flat`、`wheelleg_stand`、`wheelleg_stairs`、`wheelleg_sensor` 及 `wheelleg_sensor_tracking` 均使用同一份新 CAD 资产。任务接口见[任务入口](docs/LEGGED_GYM.md)，传感器定义见[STM32传感器训练](docs/STM32_SENSORS.md)。
 
+当前输出力矩限幅：**每轮 ±0.1 N·m；每髋峰值 ±0.68 N·m、连续 ±0.32 N·m**。髋关节按每回合累计超连续值 2 秒后降额，详见[资产与电机参数](assets/wheelleg/README.md#电机输出力矩)。参考质量尚需实测校准。
+
 ## 代码从哪里读
 
 Python 源码统一放在 `legged_gym/`：`envs/wheelleg/` 负责当前机器人，`learning/` 负责共用训练，`utils/` 负责注册与配置。建议按以下顺序阅读：

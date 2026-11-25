@@ -158,5 +158,15 @@
       0.08,
       0.13
     ]
+  },
+  "actuator_limits": {
+    "units": "N m at joint/axle output after gearbox",
+    "source": "User confirmed each wheel peak 0.1; hip peak 0.68 for 2 seconds, continuous 0.32; interpreted as output-side N m",
+    "hip_peak_nm": 0.68,
+    "hip_continuous_nm": 0.32,
+    "wheel_peak_nm": 0.1,
+    "wheel_continuous_nm": null,
+    "hip_peak_duration_s": 2.0,
+    "continuous_limit_model": "Per-joint cumulative overload budget per episode; after 2 seconds above continuous torque, derate to continuous limit until episode reset; no cooling recovery assumed"
   }
 }

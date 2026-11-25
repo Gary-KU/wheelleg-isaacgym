@@ -37,6 +37,15 @@ def check_model():
         assert joint.find("parent").get("link") in links
         axis = np.fromstring(joint.find("axis").get("xyz"), sep=" ")
         assert np.isfinite(axis).all() and abs(np.linalg.norm(axis) - 1) < 1e-5
+    actuators = metadata["actuator_limits"]
+    for joint in joints:
+        name = joint.get("name")
+        expected = (
+            actuators["wheel_peak_nm"]
+            if name in ("L_lun_Joint", "R_lun_Joint")
+            else actuators["hip_peak_nm"] if name in metadata["active_joints"] else 0.0
+        )
+        assert abs(float(joint.find("limit").get("effort")) - expected) < 1e-9, name
     mass = 0.0
     for name, link in links.items():
         inertial = link.find("inertial")
@@ -113,6 +122,7 @@ def check_model():
         loop_constraints=len(metadata["constraints"]),
         referenced_meshes=len(meshes),
         total_mass_kg=mass,
+        actuator_limits=actuators,
         wheel_radius_m=WHEEL_RADIUS,
         wheel_width_m=WHEEL_WIDTH,
         command_range_m=[MIN_LENGTH, MAX_LENGTH],

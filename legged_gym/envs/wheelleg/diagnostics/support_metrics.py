@@ -1,6 +1,7 @@
 """主动伸腿支撑的纯 Python 统计与工程初筛，不导入仿真或张量库。"""
 
 import math
+from legged_gym.envs.wheelleg.constants import ACTION_TORQUE_LIMITS
 
 
 LEG_TOLERANCE_M = 0.005
@@ -94,7 +95,7 @@ def summarize_base_motion(samples):
     }
 
 
-def summarize_support(samples, hip_effort_limits_nm=(9.0, 9.0, 9.0, 9.0),
+def summarize_support(samples, hip_effort_limits_nm=ACTION_TORQUE_LIMITS[:4],
                       leg_tolerance_m=LEG_TOLERANCE_M,
                       passive_limit_margin_rad=PASSIVE_LIMIT_MARGIN_RAD):
     """Summarize one finite sample per environment and control step.

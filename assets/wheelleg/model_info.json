@@ -4,7 +4,7 @@
   "source_sha256": "7239a544d2452e604ec5788d04e4efeb217391816c47d9df12789fcaacbdc87c",
   "inertia_status": "Preview estimates from CAD; masses inherited from reference, not measured hardware.",
   "files": {
-    "assets/wheelleg/loop_constraints.json": "a39031ae467b8903e09478cac6da814fef8e081283dcddc90b741dbc4dc1d3a4",
+    "assets/wheelleg/loop_constraints.json": "7cad7ab62260315c1310a47ba5174403c687d819886b64c20625bb37929ab527",
     "assets/wheelleg/meshes/base_link_collision_1.obj": "e5a5a25e63c688ca7851f42edeed5616afe08c079e239604cfb80969deb74035",
     "assets/wheelleg/meshes/base_link_collision_2.obj": "cce4b4d7b9399a3af3421e404a6e349013cbaa292de8169b25258ce855f7717e",
     "assets/wheelleg/meshes/base_link_collision_3.obj": "b0b2802de50db181c1be810d88fb59fd81593c74546be0e0bbd51e835ad6d64d",
@@ -31,6 +31,9 @@
     "assets/wheelleg/meshes/R_H_Link2_visual.obj": "f8313697be2952b2f7fb3ec1d7584dc802d078f610e2aba0cd8d045bba6d04e1",
     "assets/wheelleg/meshes/R_lun_collision.obj": "95ca73c9deaaacc9a079be1d38d204ae7754b8870c6dae9780dbdf2ad58ba14c",
     "assets/wheelleg/meshes/R_lun_visual.obj": "110b267eddbf1ee71614aac6b4be83b027daca2d5ebb9a1c6641675c59214191",
-    "assets/wheelleg/urdf/Robot_Model.urdf": "90fc7adc73491823195cbbc1596e9e506d6ea9de60361669408603e9f8c0eb96"
-  }
+    "assets/wheelleg/urdf/Robot_Model.urdf": "f798c08b842bd0072e53f75e1ca25532076ea378274b819f4b4bcfbcbcf89320"
+  },
+  "runtime_adjustments": [
+    "User supplied output torque limits: each wheel peak 0.1 N m; each hip peak 0.68 N m for 2 seconds, continuous 0.32 N m. Cumulative per-episode overload budget; no cooling recovery assumed."
+  ]
 }

@@ -4,6 +4,7 @@
 import math
 
 import torch
+from legged_gym.envs.wheelleg.constants import ACTION_TORQUE_LIMITS
 
 
 def _length_vector(length, batch_size, name):
@@ -44,7 +45,7 @@ def stability_penalty(
     angular_velocity,
     applied_torques,
     previous_applied_torques,
-    torque_scale=9.0,
+    torque_scale=ACTION_TORQUE_LIMITS,
 ):
     """Penalize body tilt, roll/pitch motion and physical torque changes.
 
@@ -56,8 +57,8 @@ def stability_penalty(
     The per-environment term is -4*|g_xy|^2 -0.1*|omega_xy|^2
     -0.2*|(tau-tau_previous)/torque_scale|^2. Yaw rotation is intentionally
     excluded so commanded turning remains possible. A constant nonzero
-    holding torque receives no torque-change cost. With the default 9 Nm
-    scale, a +9 to -9 Nm step costs 0.8 for any joint, including a wheel.
+    holding torque receives no torque-change cost. Each joint uses its own
+    peak torque scale, so a full positive-to-negative step costs 0.8 per joint.
 
     Read the previous torques before updating that buffer; reset its entries
     to zero whenever the corresponding environment resets. Returns [N].
@@ -75,7 +76,10 @@ def stability_penalty(
         raise ValueError("applied_torques must have shape [N,J] with J >= 1")
     if previous_applied_torques.shape != applied_torques.shape:
         raise ValueError("previous_applied_torques must match applied_torques")
-    if not math.isfinite(torque_scale) or torque_scale <= 0:
+    torque_scale = torch.as_tensor(
+        torque_scale, device=applied_torques.device, dtype=applied_torques.dtype
+    )
+    if not bool(torch.isfinite(torque_scale).all()) or bool((torque_scale <= 0).any()):
         raise ValueError("torque_scale must be finite and positive")
     tilt = projected_gravity[:, :2].square().sum(dim=-1)
     rotation = angular_velocity[:, :2].square().sum(dim=-1)
