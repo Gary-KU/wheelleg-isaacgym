@@ -43,7 +43,7 @@ git push
 | 3 | `play.py`、`keyboard.py` | 按键怎样变成速度和腿长目标 |
 | 4 | `legged_gym/envs/wheelleg/wheelleg_robot.py` | 创建仿真、步进、观测、奖励、终止和复位 |
 | 5 | `constraints.py`、`leg_control.py`、`wheel_control.py` | 近似闭环外力、支撑前馈、PD、轮子平衡与航向反馈 |
-| 6 | `train.py`、`legged_gym/learning/ppo_runner.py`、`third_party/rsl_rl/` | PPO 采样和更新 |
+| 6 | `train.py`、`legged_gym/learning/ppo_trainer.py`、`third_party/rsl_rl/` | PPO 采样和更新 |
 
 更详细的调用流程见[代码导读](CODE_GUIDE.md)。`./manage.sh run scripts/play.py --help` 等帮助命令也需要先安装仿真环境，因为入口会导入 Isaac Gym。
 

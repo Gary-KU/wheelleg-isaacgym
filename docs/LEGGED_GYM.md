@@ -8,7 +8,7 @@
 manage.sh train → scripts/train.py
   → register_tasks() → task_registry.prepare_cfgs()
   → task_registry.make_env() → WheelLegged / 传感器任务
-  → OnPolicyRunner → PPORunner → PPO
+  → TaskRunner → PPOTrainer → PPO
 
 manage.sh play / stairs / evaluate → scripts/play.py
   → 同一任务注册器 → 加载检查点 → 策略推理 → env.step()

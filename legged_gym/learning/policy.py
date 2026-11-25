@@ -1,22 +1,10 @@
-"""Shared feed-forward policy construction and small runtime helpers."""
+"""策略网络工厂：创建 ActorCritic 并按配置初始化输出层。"""
 
 from copy import deepcopy
 import math
 import torch
 
 from rsl_rl.modules import ActorCritic
-
-
-def scalar(value):
-    """Reduce an optional scalar/vector diagnostic for terminal/log output."""
-    if isinstance(value, torch.Tensor):
-        return value.detach().float().max().item()
-    return float(value)
-
-
-def viewer_is_closed(env):
-    viewer = getattr(env, "viewer", None)
-    return viewer is not None and env.gym.query_viewer_has_closed(viewer)
 
 
 def make_policy(num_obs, num_actions, device, policy_config):

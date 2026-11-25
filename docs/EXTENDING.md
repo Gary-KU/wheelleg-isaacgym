@@ -67,7 +67,7 @@ class WheelLeggedSlowCfg(WheelLeggedStandCfg):
 
 方法返回形状 `[num_envs]`、与环境同设备的有限张量；此处方法已经返回负数，正系数控制惩罚强度。设为零移除该项。公式需要多个任务共用时放入 [rewards.py](../legged_gym/envs/wheelleg/rewards.py)，阶梯公式放入 [stair_rewards.py](../legged_gym/envs/wheelleg/stair_rewards.py)，任务方法负责调用。每个控制步累计奖励，不额外乘 `dt`；已有阶梯项内部包含原系数。
 
-在 `register.py` 中导入 `WheelLeggedSlow`，把前面 `wheelleg_slow` 注册项的任务类从 `WheelLegged` 改为 `WheelLeggedSlow`，不要用同名重复注册。新增方法与 `rewards.scales.roll_rate` 名称对应后，训练仍走 `OnPolicyRunner → PPORunner`。检查零系数、返回形状/设备、实际符号和原任务数值，再做有限训练与工况复测。
+在 `register.py` 中导入 `WheelLeggedSlow`，把前面 `wheelleg_slow` 注册项的任务类从 `WheelLegged` 改为 `WheelLeggedSlow`，不要用同名重复注册。新增方法与 `rewards.scales.roll_rate` 名称对应后，训练仍走 `TaskRunner → PPOTrainer`。检查零系数、返回形状/设备、实际符号和原任务数值，再做有限训练与工况复测。
 
 ## 加一个新机器人
 

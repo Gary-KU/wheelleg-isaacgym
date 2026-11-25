@@ -1,4 +1,4 @@
-"""Small, explicit config and checkpoint helpers for the legged_gym entrypoints."""
+"""通用工具：配置转换、随机种子、检查点路径和运行状态。"""
 
 from copy import deepcopy
 from pathlib import Path
@@ -129,3 +129,17 @@ def get_args(mode="train", argv=None):
         )
     args.mode = mode
     return args
+
+
+def scalar(value):
+    """Reduce an optional scalar/vector diagnostic for terminal/log output."""
+    import torch
+
+    if isinstance(value, torch.Tensor):
+        return value.detach().float().max().item()
+    return float(value)
+
+
+def viewer_is_closed(env):
+    viewer = getattr(env, "viewer", None)
+    return viewer is not None and env.gym.query_viewer_has_closed(viewer)

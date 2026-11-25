@@ -13,9 +13,9 @@
 | 5 | [control/leg_control.py](../legged_gym/envs/wheelleg/control/leg_control.py)、[wheel_control.py](../legged_gym/envs/wheelleg/control/wheel_control.py) | 髋 PD、径向支撑前馈、轮子力矩和航向控制 |
 | 6 | [sensor_observations.py](../legged_gym/envs/wheelleg/sensor_observations.py)、[sensor_task.py](../legged_gym/envs/wheelleg/sensor_task.py) | 编码器/IMU 状态、噪声与延迟、132 维策略输入 |
 | 7 | [rewards.py](../legged_gym/envs/wheelleg/rewards.py)、[tracking_task.py](../legged_gym/envs/wheelleg/tracking_task.py) | 奖励分项、停车/直行目标和速度课程 |
-| 8 | [learning/ppo_runner.py](../legged_gym/learning/ppo_runner.py) | 采样、计算回报、PPO 更新、日志和保存 |
+| 8 | [learning/ppo_trainer.py](../legged_gym/learning/ppo_trainer.py) | 采样、计算回报、PPO 更新、日志和保存 |
 
-不必先读 `tools/`、`diagnostics/` 或 `compat/`。它们分别负责检查工具、统计报告和旧命令参数。
+不必先读 `tools/`、`diagnostics/` 或 `compat/`。它们分别负责检查工具、统计报告和专项工具参数。
 
 ## 一次训练怎样启动
 
@@ -24,8 +24,8 @@ scripts/train.py                 解析参数
   → utils/task_registry.py       选择任务，复制配置，校验检查点
   → wheelleg.py                  将配置接到物理环境和奖励接口
   → WheelLegRobot                创建 PhysX 场景和机器人
-  → learning/on_policy_runner.py  适配任务接口
-  → learning/ppo_runner.py        采样并训练
+  → learning/task_runner.py      适配任务接口
+  → learning/ppo_trainer.py      采样并训练
 ```
 
 [register.py](../legged_gym/envs/wheelleg/register.py) 列出任务对应的环境类和配置类。传感器任务用 `sensor_config.py`，跳跃控制参数用 `jump_config.py`；子任务只覆盖自己的差异。

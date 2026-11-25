@@ -3,7 +3,7 @@
 import torch
 
 from legged_gym.envs.wheelleg.constants import OBSERVATION_BASE_FRAME_SIZE
-from legged_gym.learning.policy import scalar
+from legged_gym.utils.helpers import scalar
 
 
 class WheelLegTrainingMetrics:

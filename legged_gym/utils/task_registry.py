@@ -144,7 +144,7 @@ class TaskRegistry:
     def make_alg_runner(
         self, env, name=None, args=None, train_cfg=None, log_root="default"
     ):
-        from legged_gym.learning.on_policy_runner import OnPolicyRunner
+        from legged_gym.learning.task_runner import TaskRunner
 
         args = args or get_args()
         if train_cfg is None:
@@ -166,7 +166,7 @@ class TaskRegistry:
             log_dir = None
         else:
             log_dir = Path(log_root)
-        runner = OnPolicyRunner(
+        runner = TaskRunner(
             env, class_to_dict(train_cfg), log_dir, device=args.rl_device
         )
         if getattr(args, "warm_start_path", None) is not None:

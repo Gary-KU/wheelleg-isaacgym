@@ -7,13 +7,16 @@ import time
 
 import torch
 
-from .policy import make_policy, scalar, viewer_is_closed
+from .policy import make_policy
+from legged_gym.utils.helpers import scalar, viewer_is_closed
 from legged_gym.utils.checkpoints import validate_model_fingerprint
 
 from rsl_rl.algorithms import PPO
 
 
-class PPORunner:
+class PPOTrainer:
+    """执行 PPO 训练循环，维护优化器、日志和检查点。"""
+
     def __init__(
         self,
         env,

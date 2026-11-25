@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""legged_gym training: registered task -> nested configs -> OnPolicyRunner."""
+"""legged_gym training: registered task -> nested configs -> TaskRunner."""
 from pathlib import Path
 import sys
 

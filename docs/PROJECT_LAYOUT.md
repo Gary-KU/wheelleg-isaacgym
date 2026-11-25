@@ -18,7 +18,10 @@ legged_gym/
     rewards.py               平地奖励
     stair_rewards.py         阶梯奖励
     commands.py / keyboard.py 指令平滑与键盘输入
-  learning/                  共用 PPO 循环、策略与任务接口适配
+  learning/
+    task_runner.py           任务配置、环境接口和检查点元数据适配
+    ppo_trainer.py           采样、回报计算、PPO 更新、日志与保存
+    policy.py                创建和初始化策略网络
   utils/                     注册器、配置、检查点校验
   compat/                    抬轮和专项评估仍在使用的参数解析/恢复
 assets/wheelleg/              当前 CAD URDF、网格、闭环和电机参数

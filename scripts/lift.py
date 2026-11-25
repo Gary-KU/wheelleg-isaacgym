@@ -80,7 +80,8 @@ def main():
         WheelLiftKeyboard,
     )
     from legged_gym.envs.wheelleg.constants import DEFAULT_POLICY_CONFIG
-    from legged_gym.learning.policy import make_policy, viewer_is_closed
+    from legged_gym.learning.policy import make_policy
+    from legged_gym.utils.helpers import viewer_is_closed
 
     torch.set_num_threads(1)
     checkpoint = torch.load(str(args.checkpoint), map_location="cpu")

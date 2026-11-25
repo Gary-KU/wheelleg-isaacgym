@@ -28,13 +28,13 @@
 #
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
 
-"""legged_gym API adapter over the project's single PPO training engine."""
+"""任务适配：嵌套配置、环境返回值和检查点元数据接入 PPOTrainer。"""
 
 from copy import deepcopy
 
 import torch
 
-from legged_gym.learning.ppo_runner import PPORunner
+from legged_gym.learning.ppo_trainer import PPOTrainer
 
 
 class _FiveValueEnv:
@@ -51,8 +51,8 @@ class _FiveValueEnv:
         return observations, privileged, rewards, dones, infos
 
 
-class OnPolicyRunner:
-    """Keep registered-task configuration and inference APIs without a second loop."""
+class TaskRunner:
+    """对外提供任务训练/推理接口，实际训练委托给 PPOTrainer。"""
 
     def __init__(self, env, train_cfg, log_dir=None, device="cpu"):
         if torch.device(device) != torch.device(env.device):
@@ -80,17 +80,17 @@ class OnPolicyRunner:
             num_steps_per_env=self.cfg["num_steps_per_env"],
             save_interval=self.cfg["save_interval"],
         )
-        self._runner = PPORunner(
+        self._trainer = PPOTrainer(
             _FiveValueEnv(env),
             log_dir,
             config=config,
             environment_config=env.environment_config,
             checkpoint_metadata=self._checkpoint_metadata,
         )
-        self.device = self._runner.device
-        self.alg = self._runner.algorithm
-        self.alg_cfg = self._runner.config["algorithm"]
-        self.policy_cfg = self._runner.config["policy"]
+        self.device = self._trainer.device
+        self.alg = self._trainer.algorithm
+        self.alg_cfg = self._trainer.config["algorithm"]
+        self.policy_cfg = self._trainer.config["policy"]
         self.env.reset()
 
     def _checkpoint_metadata(self):
@@ -102,9 +102,9 @@ class OnPolicyRunner:
         train["runner"].update(
             num_steps_per_env=self.num_steps_per_env, save_interval=self.save_interval
         )
-        if "initialization_provenance" in self._runner.config:
+        if "initialization_provenance" in self._trainer.config:
             train["initialization_provenance"] = deepcopy(
-                self._runner.config["initialization_provenance"]
+                self._trainer.config["initialization_provenance"]
             )
         return {
             "legged_gym_env_config": class_to_dict(self.env.cfg),
@@ -113,53 +113,52 @@ class OnPolicyRunner:
 
     @property
     def current_learning_iteration(self):
-        return self._runner.iteration
+        return self._trainer.iteration
 
     @current_learning_iteration.setter
     def current_learning_iteration(self, value):
-        self._runner.iteration = value
+        self._trainer.iteration = value
 
     @property
     def tot_timesteps(self):
-        return self._runner.total_steps
+        return self._trainer.total_steps
 
     @tot_timesteps.setter
     def tot_timesteps(self, value):
-        self._runner.total_steps = value
+        self._trainer.total_steps = value
 
     @property
     def tot_time(self):
-        return self._runner.total_time
+        return self._trainer.total_time
 
     @property
     def num_steps_per_env(self):
-        return self._runner.config["num_steps_per_env"]
+        return self._trainer.config["num_steps_per_env"]
 
     @property
     def save_interval(self):
-        return self._runner.config["save_interval"]
+        return self._trainer.config["save_interval"]
 
     @property
     def log_dir(self):
-        value = self._runner.log_dir
+        value = self._trainer.log_dir
         return str(value) if value is not None else None
 
     @property
     def writer(self):
-        return self._runner.writer
+        return self._trainer.writer
 
     def learn(self, num_learning_iterations, init_at_random_ep_len=False):
-        # The registered API resets on construction/load and continues between
-        # learn() calls; the legacy entrypoint resets when learn() starts.
-        return self._runner.learn(
+        # 构造或加载时重置环境；连续调用 learn() 时保留当前环境状态。
+        return self._trainer.learn(
             num_learning_iterations, init_at_random_ep_len, reset_env=False
         )
 
     def save(self, path, infos=None):
-        self._runner.save(path, infos=infos)
+        self._trainer.save(path, infos=infos)
 
     def load(self, path, load_optimizer=True):
-        return self._runner.load(path, load_optimizer=load_optimizer)
+        return self._trainer.load(path, load_optimizer=load_optimizer)
 
     def get_inference_policy(self, device=None):
         self.alg.actor_critic.eval()

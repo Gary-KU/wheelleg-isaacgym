@@ -82,8 +82,8 @@ def main():
     from legged_gym.envs.wheelleg.wheelleg import environment_kwargs
     from legged_gym.envs.wheelleg.control.jump import JumpController, JumpKeyboard
     from legged_gym.envs.wheelleg.control.wheel_lift import WheelLiftEnv
-    from legged_gym.learning.policy import make_policy, viewer_is_closed
-    from legged_gym.utils.helpers import class_to_dict
+    from legged_gym.learning.policy import make_policy
+    from legged_gym.utils.helpers import class_to_dict, viewer_is_closed
 
     torch.set_num_threads(1)
     cfg = WheelLeggedJumpCfg()
