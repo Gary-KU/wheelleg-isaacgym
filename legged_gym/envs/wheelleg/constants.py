@@ -50,30 +50,12 @@ MAX_LEG_LENGTH = MAX_LENGTH
 DEFAULT_LEG_LENGTH_RANGE = (MIN_LEG_LENGTH, MAX_LEG_LENGTH)
 
 
-# PPO 默认值保留原任务设置。训练入口会 deepcopy，再应用命令行或权重配置。
-TRAIN_CONFIG = {
-    "policy": {
-        "actor_hidden_dims": [512, 256, 128, 64],
-        "critic_hidden_dims": [256, 128, 64],
-        "activation": "elu",
-        "init_noise_std": 4.0,
-    },
-    "algorithm": {
-        "value_loss_coef": 1.0,
-        "use_clipped_value_loss": True,
-        "clip_param": 0.2,
-        "entropy_coef": 0.005,
-        "num_learning_epochs": 5,
-        "num_mini_batches": 5,
-        "learning_rate": 1.0e-3,
-        "schedule": "adaptive",
-        "gamma": 0.995,
-        "lam": 0.95,
-        "desired_kl": 0.008,
-        "max_grad_norm": 1.0,
-    },
-    "num_steps_per_env": 25,
-    "save_interval": 100,
+# 抬轮/评估工具加载权重时的网络结构后备值；训练参数统一在 wheelleg_config.py。
+DEFAULT_POLICY_CONFIG = {
+    "actor_hidden_dims": [512, 256, 128, 64],
+    "critic_hidden_dims": [256, 128, 64],
+    "activation": "elu",
+    "init_noise_std": [0.03]*4 + [0.25, 0.25],
 }
 
 # Shared per-control-step flat reward scales. The task config can override each

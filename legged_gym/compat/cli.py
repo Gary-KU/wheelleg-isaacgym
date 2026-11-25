@@ -14,8 +14,6 @@ from legged_gym.envs.wheelleg.constants import (
 
 def common_parser(description, num_envs):
     parser = argparse.ArgumentParser(description=description)
-    parser.add_argument("--profile", choices=("stability", "support", "hybrid", "stairs"),
-                        help="stability: motion; support: pure-RL stance; hybrid: hip PD plus RL residual")
     parser.add_argument("--num-envs", "--num_envs", type=int, default=num_envs)
     parser.add_argument("--sim-device", "--sim_device", default="cuda:0")
     parser.add_argument("--headless", action="store_true", help="Run without the viewer")
@@ -75,7 +73,7 @@ def common_parser(description, num_envs):
         help="Resample commands independently at episode resets instead of using a fixed command",
     )
     parser.add_argument("--no-random-commands", dest="random_commands", action="store_false",
-                        help="Use fixed commands, including when overriding a checkpoint or profile")
+                        help="Use fixed commands, including when overriding a checkpoint")
     parser.add_argument("--forward-speed-range", nargs=2, type=float, default=list(DEFAULT_FORWARD_SPEED_RANGE), metavar=("MIN", "MAX"))
     parser.add_argument("--yaw-speed-range", nargs=2, type=float, default=list(DEFAULT_YAW_SPEED_RANGE), metavar=("MIN", "MAX"))
     parser.add_argument("--leg-length-range", nargs=2, type=float, default=list(DEFAULT_LEG_LENGTH_RANGE), metavar=("MIN", "MAX"))

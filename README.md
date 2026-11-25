@@ -1,6 +1,6 @@
 # WheelLeg · Isaac Gym Preview 4
 
-五连杆轮腿机器人的 Isaac Gym 项目，包含独立运行所需的 URDF、网格、闭环近似、PPO 和历史权重。运行需要 NVIDIA Isaac Gym Preview 4 与 Python 3.8；安装和换电脑使用见[环境指南](docs/COMPANY_SETUP.md)。
+五连杆轮腿机器人的 Isaac Gym 项目，包含独立运行所需的 URDF、网格、闭环近似与 PPO 训练。运行需要 NVIDIA Isaac Gym Preview 4 与 Python 3.8；安装和换电脑使用见[环境指南](docs/COMPANY_SETUP.md)。
 
 所有运行命令统一从 **`./manage.sh`** 启动，脚本集中在 [scripts/](scripts/README.md)。根目录旧的 `.sh` 和训练/播放 `.py` 入口已移除；运行 `./manage.sh --help` 查看命令。
 
@@ -26,7 +26,7 @@ conda activate isaacgym
 ./manage.sh train --task wheelleg_sensor_tracking --num_envs 128 --headless
 ```
 
-训练默认 `cuda:0`；`--max_iterations 3` 用于有限接口检查。训练完成后，使用 `scripts/play.py --task wheelleg_sensor_tracking --checkpoint <新权重路径>` 播放。`./manage.sh stand --checkpoint <新模型198维站立权重>` 保留键盘驾驶和跳跃控制入口；不能把132维传感器策略传给198维演示控制器。
+训练默认 `cuda:0`；`--max_iterations 3` 用于有限接口检查。训练完成后，使用 `./manage.sh play --task wheelleg_sensor_tracking --checkpoint <新权重路径>` 播放。`./manage.sh stand --checkpoint <新模型198维站立权重>` 保留键盘驾驶和跳跃控制入口；不能把132维传感器策略传给198维演示控制器。
 
 `wheelleg_flat`、`wheelleg_stand`、`wheelleg_stairs`、`wheelleg_sensor` 及 `wheelleg_sensor_tracking` 均使用同一份新 CAD 资产。任务接口见[任务入口](docs/LEGGED_GYM.md)，传感器定义见[STM32传感器训练](docs/STM32_SENSORS.md)。
 
@@ -43,20 +43,15 @@ Python 源码统一放在 `legged_gym/`：`envs/wheelleg/` 负责当前机器人
 
 完整阅读路线与动作/观测单位见[代码导读](docs/CODE_GUIDE.md)，目录职责见[项目结构](docs/PROJECT_LAYOUT.md)，添加任务、奖励或机器人见[扩展指南](docs/EXTENDING.md)。现有启动命令保留；Python 导入改用统一的 `legged_gym` 路径。
 
-## 替换前模型的历史结果
+## 当前能力边界
 
-- `manage.sh stand` 统一安静站立、驾驶与行驶跳跃；有限平地复测已降低静止轮速，长期慢漂仍需验证，见[运行与复测](docs/USAGE.md)。
-- 精选阶梯策略通过了 1 cm 课程的有限复测；2 cm 及更高阶梯尚未通过验收，见[阶梯训练与报告](docs/STAIRS.md)。
-- 旧抬轮实验采用轮子策略与显式腿部控制，尚未向前迈步；旧球面胎面代理已从当前模型禁用，见[抬轮说明](docs/WHEEL_LIFT.md)。
-- 五连杆采用弹簧阻尼外力近似闭合，具有有限刚度与闭合误差，见[资产说明](assets/wheelleg/README.md)和[SCUT 闭链核对](docs/SCUT_CLOSED_CHAIN.md)。
-
-以下结构整理记录属于替换前模型，当时沿用已有权重，测试与复测结果见[整理验收记录](validation/readability_cleanup_work.json)；具体实验参数和测量留在[训练优化](docs/TRAINING_OPTIMIZATION.md)、[实验记录](docs/EXPERIMENTS.md)与[整理前 README](docs/archive/README_20261027_before_readability_cleanup.md)。
+新 CAD 模型已经完成导入和基础数值检查，尚无通过验收的站立、跳跃或阶梯策略。闭环仍采用弹簧阻尼近似；参考质量和惯量需实机标定。旧模型权重、转换工具和重复训练流程已移除，历史内容可以通过 Git 追溯。
 
 ## 检查与资料
 
 ```bash
 # 固定机身、零动作检查机构
-./manage.sh run scripts/legacy/play.py --allow-approximate-loop --zero-actions --fix-base --num-steps 500
+./manage.sh preview --headless --steps 500
 # 静态资产检查，不启动策略训练
 ./manage.sh check
 ```

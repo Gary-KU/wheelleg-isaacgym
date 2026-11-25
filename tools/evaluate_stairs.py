@@ -126,7 +126,7 @@ def main():
     import torch
     from legged_gym.envs.wheelleg.model.constraints import quat_rotate_inverse
     from legged_gym.envs.wheelleg.wheelleg_robot import WheelLegRobot
-    from legged_gym.envs.wheelleg.constants import TRAIN_CONFIG
+    from legged_gym.envs.wheelleg.constants import DEFAULT_POLICY_CONFIG
     from legged_gym.learning.policy import make_policy
 
     checkpoint = torch.load(str(args.checkpoint), map_location="cpu")
@@ -153,7 +153,7 @@ def main():
         # Preserve the configured training time limit; distinguish resets from
         # actual failures and successful course endings in all statistics.
         policy = make_policy(env.num_obs, env.num_actions, env.device,
-                             checkpoint.get("training_config", {}).get("policy", TRAIN_CONFIG["policy"]))
+                             checkpoint.get("training_config", {}).get("policy", DEFAULT_POLICY_CONFIG))
         policy.load_state_dict(checkpoint["model_state_dict"], strict=True)
         policy.eval()
         env.reset()

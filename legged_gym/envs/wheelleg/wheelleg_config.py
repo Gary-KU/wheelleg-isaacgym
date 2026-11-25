@@ -1,6 +1,6 @@
 """日常运行的配置入口：环境/控制 → 指令/观测 → 奖励 → PPO → 各任务覆盖。
 
-子任务只覆盖不同的参数；旧根目录命令的历史参数单独保留在 compat/。
+子任务只覆盖不同的参数；抬轮和专项评估的参数工具单独保留在 compat/。
 """
 
 from legged_gym.envs.base.base_config import BaseConfig

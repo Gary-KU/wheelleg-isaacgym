@@ -10,7 +10,7 @@ import sys
 import time
 
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from legged_gym.compat.cli import common_parser, environment_kwargs, validate_common
@@ -79,7 +79,7 @@ def main():
         sagittal_wheel_observations,
         WheelLiftKeyboard,
     )
-    from legged_gym.envs.wheelleg.constants import TRAIN_CONFIG
+    from legged_gym.envs.wheelleg.constants import DEFAULT_POLICY_CONFIG
     from legged_gym.learning.policy import make_policy, viewer_is_closed
 
     torch.set_num_threads(1)
@@ -88,8 +88,6 @@ def main():
     require_model_checkpoint(checkpoint)
     if checkpoint_observation_size(checkpoint) != 198:
         parser.error("Wheel lift requires the 198-observation standing checkpoint")
-    if args.profile is not None:
-        parser.error("Wheel lift has its own task controller; omit --profile")
     explicit = explicit_argument_destinations(parser)
     if "terrain" in explicit and args.terrain != "plane":
         parser.error("The first wheel-lift task supports flat ground only")
@@ -120,7 +118,7 @@ def main():
     source_sha256 = {
         name: hashlib.sha256((root / name).read_bytes()).hexdigest()
         for name in (
-            "scripts/legacy/lift.py",
+            "scripts/lift.py",
             "manage.sh",
             "legged_gym/envs/wheelleg/control/wheel_lift.py",
             "legged_gym/envs/wheelleg/control/leg_control.py",
@@ -161,7 +159,7 @@ def main():
             env.num_obs,
             env.num_actions,
             env.device,
-            checkpoint.get("training_config", {}).get("policy", TRAIN_CONFIG["policy"]),
+            checkpoint.get("training_config", {}).get("policy", DEFAULT_POLICY_CONFIG),
         )
         policy.load_state_dict(checkpoint["model_state_dict"], strict=True)
         policy.eval()

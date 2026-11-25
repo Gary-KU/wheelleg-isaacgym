@@ -89,7 +89,6 @@ class WheelLeggedSlowCfg(WheelLeggedStandCfg):
 
 - `create_training_metrics()` 返回 collector；其 `reset()`、`update(obs, rewards, dones, infos)`、`compute(num_steps)` 收集并返回日志指标字典。
 - collector 的 `checkpoint_metadata()` / `restore_checkpoint(state)` 保存和恢复课程等状态，`configuration_metadata()` 补充运行配置；轮腿实例见 [training_metrics.py](../legged_gym/envs/wheelleg/diagnostics/training_metrics.py)。
-- 任务静态方法 `restore_legacy_environment(cfg, values)` 导入该机器人的旧检查点参数；有旧平铺参数而未提供 importer 时，注册器会报错。
 - `configure_execution(cfg, args, checkpoint_state)` 处理该机器人的播放模式、指令与地形覆盖；轮腿的实现见 [wheelleg.py](../legged_gym/envs/wheelleg/wheelleg.py)。
 
 新机器人的 `register(registry)` 使用同样的 `registry.register(name, task_class, env_cfg, train_cfg)`。最后在 [envs/__init__.py](../legged_gym/envs/__init__.py) 的 `register_tasks()` 中追加它的注册调用。导入和任务加载保持显式，Gym 必须在 Torch 前导入。

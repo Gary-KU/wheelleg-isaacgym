@@ -23,9 +23,7 @@ usage() {
 开发工具：
   smoke          有限步数的物理集成检查
   run            执行指定 Python 脚本或 -m 模块
-  legacy-train   旧参数接口训练（供兼容工具使用）
-  legacy-play    旧参数接口播放
-  evaluate       旧参数接口评估
+  evaluate       注册任务无窗口评估，可加 --report 保存报告
 
 示例：
   ./manage.sh preview --length 0.10 --steps 15000
@@ -47,12 +45,10 @@ case "$command" in
   tasks) exec "$runner" scripts/list_tasks.py "$@" ;;
   train|play|stand) exec "$runner" "scripts/$command.py" "$@" ;;
   train-stairs) exec "$runner" scripts/train.py --task wheelleg_stairs --sim_device cuda:0 --num_envs 128 --headless "$@" ;;
-  stairs) exec "$runner" scripts/legacy/play.py --allow-approximate-loop --sim-device cpu --physics-threads 0 --viewer-width 1280 --viewer-height 720 --command 0.25 0 0 0.10 --stair-min-level 0 --stair-level 0 --no-stair-curriculum --num-steps 100000 "$@" ;;
-  lift) exec "$runner" scripts/legacy/lift.py --allow-approximate-loop --wheel-collision mesh --wheel-observations sagittal "$@" ;;
-  smoke) exec "$runner" scripts/legacy/smoke_test.py "$@" ;;
-  legacy-train) exec "$runner" scripts/legacy/train.py "$@" ;;
-  legacy-play) exec "$runner" scripts/legacy/play.py "$@" ;;
-  evaluate) exec "$runner" scripts/legacy/evaluate.py "$@" ;;
+  stairs) exec "$runner" scripts/play.py --task wheelleg_stairs --sim_device cpu --num_steps 100000 "$@" ;;
+  lift) exec "$runner" scripts/lift.py --allow-approximate-loop --wheel-collision mesh --wheel-observations sagittal "$@" ;;
+  smoke) exec "$runner" scripts/smoke.py "$@" ;;
+  evaluate) exec "$runner" scripts/play.py --headless --no-keyboard "$@" ;;
   run) exec "$runner" "$@" ;;
   *) printf '未知命令：%s\n执行 ./manage.sh --help 查看可用命令。\n' "$command" >&2; exit 2 ;;
 esac

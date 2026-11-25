@@ -1,0 +1,55 @@
+{
+  "scope": "Remove obsolete duplicate entrypoints and checkpoint conversion pipelines; preserve current CAD physics and control",
+  "removed_obsolete_python_files": 15,
+  "moved_entrypoints": {
+    "scripts/legacy/lift.py": "scripts/lift.py",
+    "scripts/legacy/smoke_test.py": "scripts/smoke.py"
+  },
+  "unified_entrypoints": {
+    "train": "scripts/train.py",
+    "play/stairs/evaluate": "scripts/play.py"
+  },
+  "checks": {
+    "python_ast": "passed",
+    "shell_syntax": "passed",
+    "cli_help": {
+      "commands": 11,
+      "specialist_tools": 4,
+      "status": "passed"
+    },
+    "documentation_local_links": "passed",
+    "model_static_check": "passed",
+    "registered_checkpoint_roundtrip": [
+      "wheelleg_stand",
+      "wheelleg_stairs",
+      "wheelleg_sensor",
+      "wheelleg_sensor_tracking"
+    ],
+    "evaluate_alias": "passed, synthetic fixed-base policy, 3 steps",
+    "stairs_alias": "passed, synthetic fixed-base policy, 3 steps",
+    "gpu_smoke": {
+      "num_envs": 4,
+      "steps": 5,
+      "fix_base": true,
+      "action_amplitude": 1.0,
+      "physics_dt": 0.0005,
+      "closure_stiffness": 50000.0,
+      "closure_damping": 25.0,
+      "initial_error_mm": 0.0004098915269423742,
+      "initial_axis_error_rad": 2.8893146009068005e-07,
+      "loop_error_max_mm": 1.938043744303286,
+      "loop_error_p95_mm": 1.8257296178489923,
+      "resets": 0,
+      "closure_failures": 0,
+      "wall_seconds": 0.7401305439998396,
+      "approximate_loop": true,
+      "passed": true
+    },
+    "training": "wheelleg_sensor_tracking, CPU, 2 environments, 1 PPO update completed"
+  },
+  "limitations": [
+    "Synthetic policies and a single PPO update verify integration only; no trained balance policy or gait validation.",
+    "User-deleted tests and old weights remain deleted.",
+    "Pre-existing wheel_lift.py modification excluded from this cleanup commit."
+  ]
+}

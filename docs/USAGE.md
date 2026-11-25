@@ -43,7 +43,7 @@ conda activate isaacgym
 ./manage.sh run tools/check_model.py --report validation/model_check.json
 ```
 
-`train-stairs` 会启动训练，其他命令的参数可用 `--help` 查看。`legacy-train`、`legacy-play` 和 `evaluate` 保留旧参数接口，代码位于 `scripts/legacy/`。
+`train-stairs` 会启动训练，其他命令的参数可用 `--help` 查看。`evaluate` 与 `play` 使用同一注册任务实现，默认无窗口并输出运动报告。
 
 未激活环境时，可以指定 Python：
 

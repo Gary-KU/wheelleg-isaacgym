@@ -75,34 +75,15 @@ class TaskRegistry:
             validate = getattr(task_class, "validate_checkpoint", None)
             if validate is not None:
                 validate(state)
-            if "legged_gym_env_config" in state:
-                update_class_from_dict(env_cfg, state["legged_gym_env_config"])
-            else:
-                legacy = state.get("environment_config", {})
-                restore = getattr(task_class, "restore_legacy_environment", None)
-                if restore is not None:
-                    restore(env_cfg, legacy)
-                elif legacy:
-                    raise ValueError(
-                        "Task has no legacy configuration importer: " + name
-                    )
-            # Legacy checkpoints retain the task defaults for execution-only controls
-            # introduced after training (e.g. current heading feedback in stand play).
-            if "legged_gym_train_config" in state:
-                snapshot = deepcopy(state["legged_gym_train_config"])
-                # Early framework checkpoints serialized unused CLI placeholders.
-                for key in ("resume", "load_run", "checkpoint"):
-                    snapshot.get("runner", {}).pop(key, None)
-                update_class_from_dict(train_cfg, snapshot)
-            elif "training_config" in state:
-                old = state["training_config"]
-                update_class_from_dict(train_cfg.policy, old["policy"])
-                update_class_from_dict(train_cfg.algorithm, old["algorithm"])
-                train_cfg.runner.num_steps_per_env = old["num_steps_per_env"]
-                train_cfg.runner.save_interval = old["save_interval"]
-                train_cfg.initialization_provenance = deepcopy(
-                    old.get("initialization_provenance")
+            if (
+                "legged_gym_env_config" not in state
+                or "legged_gym_train_config" not in state
+            ):
+                raise ValueError(
+                    "Checkpoint must contain registered task configuration snapshots; use --warm-start for weights-only initialization"
                 )
+            update_class_from_dict(env_cfg, state["legged_gym_env_config"])
+            update_class_from_dict(train_cfg, state["legged_gym_train_config"])
         if args.num_envs is not None:
             env_cfg.env.num_envs = args.num_envs
         elif args.mode == "play":

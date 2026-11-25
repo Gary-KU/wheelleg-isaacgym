@@ -12,7 +12,7 @@ from legged_gym.envs.wheelleg.rewards import flat_reward_terms
 from legged_gym.envs.wheelleg.stair_rewards import stair_task_reward_terms
 
 
-# Every saved legacy constructor setting has one readable nested config home.
+# 嵌套任务配置到物理环境构造参数的唯一映射。
 CONFIG_SECTIONS = {
     "env": ("num_envs", "initial_leg_length", "fix_base"),
     "sim": ("physics_solver", "physics_threads"),
@@ -69,32 +69,9 @@ def environment_kwargs(cfg):
     return values
 
 
-def restore_environment_config(cfg, values):
-    known = {
-        name: section for section, names in CONFIG_SECTIONS.items() for name in names
-    }
-    for name, value in values.items():
-        if name in ("sim_device", "headless", "num_envs"):
-            continue  # execution placement/count are chosen on this computer
-        if name in known:
-            setattr(getattr(cfg, known[name]), name, value)
-        elif name == "seed":
-            cfg.seed = value
-        elif name == "physics_dt":
-            cfg.sim.dt = value
-        elif name == "control_dt":
-            ratio = value / values.get("physics_dt", cfg.sim.dt)
-            if not math.isclose(round(ratio), ratio):
-                raise ValueError("Checkpoint has noninteger control decimation")
-            cfg.control.decimation = round(ratio)
-        else:
-            raise ValueError("Unsupported checkpoint environment field: " + name)
-
-
 class WheelLegged(WheelLegRobot):
     """Task owns config/reward registration; base owns real physics and resets."""
 
-    restore_legacy_environment = staticmethod(restore_environment_config)
     # 模型专用校验由任务提供，共用注册器无需知道机器人资产路径。
     validate_checkpoint = staticmethod(require_model_checkpoint)
 
@@ -107,13 +84,6 @@ class WheelLegged(WheelLegRobot):
             cfg.commands.random_commands = False
             cfg.commands.command_resample_seconds = 0.0
             cfg.terrain.stair_curriculum = False
-            if (
-                checkpoint_state is not None
-                and "legged_gym_env_config" not in checkpoint_state
-                and cfg.terrain.terrain != "stairs"
-            ):
-                cfg.control.wheel_control = "heading"
-                cfg.control.heading_kp, cfg.control.heading_kd = 6.0, 0.6
         if args.stair_level is not None:
             if cfg.terrain.terrain != "stairs":
                 raise ValueError("--stair_level requires a stair task")
