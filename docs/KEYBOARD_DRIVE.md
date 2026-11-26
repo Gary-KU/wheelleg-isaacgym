@@ -65,3 +65,40 @@ conda activate isaacgym
   --checkpoint logs/keyboard_drive_20261126_120433/keyboard_play.pt \
   --sim_device cpu --keyboard --num_steps 120000
 ```
+
+## 传感器噪声与高频抖动
+
+`tools/filter_sensor_policy.py` 可把最新传感器帧的短窗口均值滤波折叠进 Actor 第一层（默认保留原转向反馈延迟），利用已有历史帧减小噪声驱动的力矩跳变。它生成新权重，不改电机限幅、噪声配置、指令输入或网络尺寸；原网络已有的其他历史通道保持不变。偏航陀螺仪和两轮差速反馈直接透传，只平滑两轮共同速度分量，避免滤波延迟削弱转向阻尼。
+
+```bash
+./manage.sh run tools/filter_sensor_policy.py \
+  --checkpoint <原权重> --output logs/my_drive/filtered.pt --frames 3
+```
+
+滤波窗口为 N 帧时，额外平均延迟为 `(N-1) × 控制周期 / 2`；200 Hz 下三帧为 5 ms，六帧为 12.5 ms。窗口越大，响应越可能受影响，因此新文件必须重新做连续站立、四方向及组合运动检查，不能仅凭输出平滑就验收。
+
+滤波已包含在新网络权重里，部署仍输入原始的六帧传感器历史，MCU 不要重复加这道滤波。输出文件保留来源 SHA256 与变换等价性检查结果；后续 PPO 使用 `--warm-start` 初始化 Actor，不能沿用变换前的优化器状态直接续训。该工具拒绝对自己已处理过的权重重复滤波。
+
+当前策略不建议启用实验选项 `--filter-yaw-feedback`：完整三帧滤波会增大转向波动，六帧窗口也会损害停车恢复。可选 `--yaw-command-scale` 仅校准转向指令参考（默认 1），不改变零指令站立；调整后必须重新检查运动。
+
+### 2026-11-26 高频抖动修复版
+
+本机 `logs/vibration_20261126/keyboard_play.pt` 使用三帧选择性滤波，转向参考乘 0.98；新增平均延迟 5 ms 仅作用于被平滑的观测，转向阻尼不增加延迟。没有额外 RL 训练，没有关闭噪声或提高力矩。旧权重保留。
+
+对照静止时序，轮力矩逐步变化 RMS 降低约 30–31%，横滚角标准差降低约 62%；仍有残余高频运动。seed17/42 各四台连续 60 秒站立全部通过，无倒地/超时，前后/横向位移峰值约 7.71/1.97 mm。两组四方向及一组组合按键检查全部通过。仅验证固定 8 cm、平地、前后 0.2 m/s、转向 0.6 rad/s，不能外推到实机或跳跃。结果及模型等价性说明见该目录 `fix_summary.json`。
+
+```bash
+./manage.sh play --task wheelleg_sensor_drive \
+  --checkpoint logs/vibration_20261126/keyboard_play.pt \
+  --sim_device cpu --keyboard --num_steps 120000
+```
+
+重建此修复需从未滤波的旧权重导出：
+
+```bash
+./manage.sh run tools/filter_sensor_policy.py \
+  --checkpoint logs/keyboard_drive_20261126_120433/keyboard_play.pt \
+  --output logs/my_drive/smooth.pt --frames 3 --yaw-command-scale 0.98
+```
+
+滤波权重导出时清空旧 Adam 动量；后续微调仍建议用 `--warm-start` 开始新实验。上述实验权重和报告留在本机，源码与文档可通过 GitHub 获取。
