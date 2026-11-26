@@ -66,7 +66,7 @@ def main():
     if args.speed > max(
         abs(x) for x in cfg.commands.forward_speed_range
     ) or args.turn_speed > max(abs(x) for x in cfg.commands.yaw_speed_range):
-        p.error("Requested evaluation speeds exceed the checkpoint training ranges")
+        p.error("Requested evaluation speeds exceed the checkpoint command ranges")
     env, _ = task_registry.make_env(execution.task, args=execution, env_cfg=cfg)
     phases = []
     started = time.perf_counter()
@@ -107,9 +107,23 @@ def main():
             for name, seconds, direction in pattern:
                 target = commands.clone()
                 target[:, :3] *= direction
+                # 高速下斜坡可能超过原固定2秒；先预留斜坡时长再统计稳态。
+                change = target - env.commands
+                ramp_seconds = 0.0
+                if env.linear_acceleration > 0:
+                    ramp_seconds = max(ramp_seconds, float(
+                        torch.linalg.vector_norm(change[:, :2], dim=-1).max()
+                    ) / env.linear_acceleration)
+                if env.yaw_acceleration > 0:
+                    ramp_seconds = max(ramp_seconds, float(
+                        change[:, 2].abs().max()
+                    ) / env.yaw_acceleration)
+                settle_seconds = max(2.0, ramp_seconds + 1.0)
+                if seconds < settle_seconds + 1.0:
+                    raise ValueError("Phase too short: allow command ramp plus at least two seconds")
                 env.set_commands(target)
                 measurements = [
-                    MotionEvaluation(env.root_states[i : i + 1], env.dt)
+                    MotionEvaluation(env.root_states[i : i + 1], env.dt, settle_seconds)
                     for i in range(4)
                 ]
                 phase_failures = phase_timeouts = 0
@@ -138,9 +152,9 @@ def main():
                                 done[i : i + 1],
                                 env.root_states[i : i + 1],
                             )
-                    if (step + 1) * env.dt >= 2:
+                    if (step + 1) * env.dt >= settle_seconds:
                         if settled_measurements is None:
-                            # 松键后的前两秒包含合法减速，原地漂移从减速后计量。
+                            # 停车漂移从完整减速预算后开始；全程轨迹仍在 motion 中。
                             settled_measurements = [
                                 MotionEvaluation(
                                     env.root_states[i : i + 1], env.dt, settle_seconds=0
@@ -205,6 +219,8 @@ def main():
                 phase = dict(
                     name=name,
                     seconds=seconds,
+                    command_ramp_budget_seconds=ramp_seconds,
+                    settle_seconds=settle_seconds,
                     physical_failures=phase_failures,
                     timeouts=phase_timeouts,
                     environments=rows,

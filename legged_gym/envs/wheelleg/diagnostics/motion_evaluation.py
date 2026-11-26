@@ -82,5 +82,5 @@ class MotionEvaluation:
             segment_peak_forward_displacement_m=self.forward_peak,
             segment_peak_cross_track_m=self.lateral_peak,
             segment_peak_heading_change_rad=self.heading_peak,
-            note="Displacements are relative to each reset pose/heading; cross-track is meaningful for straight commands. Settled speed statistics exclude the first two seconds after each reset.",
+            note="Displacements are relative to each reset pose/heading; cross-track is meaningful for straight commands. Settled speed statistics exclude the configured settle_seconds after each reset.",
         )
