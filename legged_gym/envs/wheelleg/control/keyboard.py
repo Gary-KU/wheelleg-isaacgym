@@ -64,9 +64,12 @@ class KeyboardDrive:
 
     def reset_leg_length(self, length):
         """Restore the configured target; held height keys need a fresh press."""
-        if not math.isfinite(length) or not self.leg_range[0] <= length <= self.leg_range[1]:
+        low, high = self.leg_range
+        # float32 张量中的 0.08 会读成 0.079999998；容忍舍入并吸附到边界。
+        tolerance = 1e-7  # m，0.1 微米；仍拒绝实际越界的指令
+        if not math.isfinite(length) or not low - tolerance <= length <= high + tolerance:
             raise ValueError("Initial keyboard leg length must be within the keyboard leg range")
-        self.leg_length = float(length)
+        self.leg_length = min(high, max(low, float(length)))
         held = self.pressed & self.LEG_KEYS
         self.blocked.update(held)
         self.pressed.difference_update(held)
