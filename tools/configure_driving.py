@@ -35,15 +35,26 @@ def main():
                    help="Optional numerical solver selection; does not change physical limits")
     p.add_argument("--turn-reference-scale", type=float, default=1.,
                    help="Encoder-hold turn reference calibration; original yaw target remains unchanged")
+    p.add_argument("--gyro-heading", action="store_true",
+                   help="Calibrate gyro bias while stopped, then use gyro increments for moving heading")
+    p.add_argument("--pitch-rate-kd", type=float, default=0.,
+                   help="Additional IMU pitch-rate wheel feedback, Nm*s/rad; total motor limits unchanged")
+    p.add_argument("--pitch-guard-kp", type=float, default=0.,
+                   help="Extra wheel feedback outside the pitch soft band, Nm/rad; no pose clamp")
+    p.add_argument("--pitch-guard-angle", type=float, default=.16,
+                   help="Pitch soft-band boundary in radians; original acceptance limits unchanged")
     args = p.parse_args()
     if args.output.suffix != ".pt" or args.output.resolve() == args.checkpoint.resolve():
         p.error("Save to a different .pt path; keep the original checkpoint")
     values = (args.speed, args.leg_speed, args.standing_trim_ki, args.standing_trim_slope,
-              args.hold_position_kp, args.hold_heading_kp, args.turn_reference_scale, *args.leg_range)
+              args.hold_position_kp, args.hold_heading_kp, args.turn_reference_scale,
+              args.pitch_rate_kd, args.pitch_guard_kp, args.pitch_guard_angle, *args.leg_range)
     if (not all(math.isfinite(x) for x in values)
             or min(args.speed, args.leg_speed, args.hold_position_kp,
-                   args.hold_heading_kp, args.turn_reference_scale) <= 0
+                   args.hold_heading_kp, args.turn_reference_scale, args.pitch_guard_angle) <= 0
             or args.standing_trim_ki < 0
+            or args.pitch_rate_kd < 0
+            or args.pitch_guard_kp < 0
             or not MIN_LEG_LENGTH <= args.leg_range[0] < args.leg_range[1] <= MAX_LEG_LENGTH):
         p.error("Use positive finite speeds, nonnegative gain and a leg range within the CAD limits")
     if abs(args.standing_trim_slope) * (args.leg_range[1]-args.leg_range[0]) > .08:
@@ -52,6 +63,8 @@ def main():
         p.error("A calibrated trim slope requires standing-trim-ki >0")
     if args.turn_reference_scale != 1. and not args.encoder_hold:
         p.error("turn-reference-scale requires --encoder-hold")
+    if args.gyro_heading and not args.encoder_hold:
+        p.error("gyro-heading requires --encoder-hold")
     if args.linear_acceleration is not None and (
             not math.isfinite(args.linear_acceleration) or args.linear_acceleration <= 0):
         p.error("linear-acceleration must be finite and positive")
@@ -82,6 +95,10 @@ def main():
         encoder_hold_position_kp=args.hold_position_kp,
         encoder_hold_heading_kp=args.hold_heading_kp,
         encoder_hold_turn_reference_scale=args.turn_reference_scale,
+        encoder_hold_gyro_heading=args.gyro_heading,
+        sensor_pitch_rate_kd=args.pitch_rate_kd,
+        sensor_pitch_guard_kp=args.pitch_guard_kp,
+        sensor_pitch_guard_angle=args.pitch_guard_angle,
         encoder_hold_speed_limit=.08, encoder_hold_yaw_limit=.2,
         encoder_hold_height_slope=args.standing_trim_slope)
     if args.encoder_hold:
@@ -111,6 +128,10 @@ def main():
         linear_acceleration_m_s2=cfg['commands']['linear_acceleration'],
         physics_solver=cfg['sim']['physics_solver'],
         turn_reference_scale=args.turn_reference_scale,
+        stationary_calibrated_gyro_heading=args.gyro_heading,
+        sensor_pitch_rate_kd_nm_s_rad=args.pitch_rate_kd,
+        sensor_pitch_guard_kp_nm_rad=args.pitch_guard_kp,
+        sensor_pitch_guard_angle_rad=args.pitch_guard_angle,
         network_unchanged=True, extra_training=False,
         status="candidate_requires_evaluation",
         note="MCU must port the command ramp, hip control/limits and enabled standing trim as well as the network.",

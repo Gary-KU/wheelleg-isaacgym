@@ -67,6 +67,56 @@ class PlanarWheelOdometry:
         return ready
 
 
+class StationaryCalibratedGyroHeading:
+    """停车时用轮角差估计陀螺零偏，运动时积分陀螺，避免轮胎滚动误差。
+
+    不改变网络收到的原始传感器。未取得至少1秒安静样本时沿用轮角增量，
+    不阻止用户起步；标定仅在指令、轮速和腿部运动均很小时更新。
+    """
+
+    def __init__(self, n, device, dt):
+        if not math.isfinite(dt) or dt <= 0:
+            raise ValueError("Gyro heading requires a positive finite sample period")
+        self.dt = dt
+        self.heading = torch.zeros(n, device=device)
+        self.bias = torch.zeros_like(self.heading)
+        self.previous_wheel_yaw = torch.zeros_like(self.heading)
+        self.quiet_time = torch.zeros_like(self.heading)
+        self.gyro_integral = torch.zeros_like(self.heading)
+        self.wheel_integral = torch.zeros_like(self.heading)
+        self.calibrated = torch.zeros(n, dtype=torch.bool, device=device)
+
+    def reset(self, ids):
+        for value in (self.heading, self.bias, self.previous_wheel_yaw,
+                      self.quiet_time, self.gyro_integral, self.wheel_integral):
+            value[ids] = 0.
+        self.calibrated[ids] = False
+
+    def update(self, sensors, wheel_yaw, commands, targets, ready, observed):
+        delta = wheel_yaw - self.previous_wheel_yaw
+        quiet = (ready & (commands[:, :3].abs().amax(-1) < .01)
+                 & (targets[:, :3].abs().amax(-1) < 1e-5)
+                 & (sensors[:, 11:13].abs().amax(-1) < .5)
+                 & (sensors[:, 1:3].abs().amax(-1) < .08)
+                 & (sensors[:, 7:9].abs().amax(-1) < .15)
+                 & (sensors[:, 9:11].abs().amax(-1) < .02))
+        broken = observed & ~quiet
+        self.quiet_time[broken] = 0.
+        self.gyro_integral[broken] = self.wheel_integral[broken] = 0.
+        self.quiet_time[quiet] += self.dt
+        self.gyro_integral[quiet] += sensors[quiet, 2] * self.dt
+        self.wheel_integral[quiet] += delta[quiet]
+        learn = quiet & (self.quiet_time >= 1.)
+        self.bias[learn] = ((self.gyro_integral[learn] - self.wheel_integral[learn])
+                            / self.quiet_time[learn])
+        self.calibrated[learn] = True
+        increment = torch.where(quiet | ~self.calibrated, delta,
+                                (sensors[:, 2] - self.bias) * self.dt)
+        self.heading += torch.where(ready, increment, 0.)
+        # 无效/丢失帧不积分；恢复时重捕获上一轮角，不补算未知区间。
+        self.previous_wheel_yaw[observed] = wheel_yaw[observed]
+
+
 class EncoderPositionSampler:
     """与13维传感器对齐的轮角采样；噪声为假设值，需按实机标定。
 

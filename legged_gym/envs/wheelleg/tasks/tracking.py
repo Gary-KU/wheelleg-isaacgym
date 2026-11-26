@@ -31,6 +31,15 @@ class DrivingWheelLegged(SensorWheelLegged):
             raise ValueError("leg_length_rate must be finite and nonnegative")
         if not isinstance(cfg.control.encoder_hold, bool):
             raise ValueError("encoder_hold must be boolean")
+        if not isinstance(cfg.control.encoder_hold_gyro_heading, bool):
+            raise ValueError("encoder_hold_gyro_heading must be boolean")
+        if not math.isfinite(cfg.control.sensor_pitch_rate_kd) or cfg.control.sensor_pitch_rate_kd < 0:
+            raise ValueError("sensor_pitch_rate_kd must be finite and nonnegative")
+        if (not math.isfinite(cfg.control.sensor_pitch_guard_kp)
+                or cfg.control.sensor_pitch_guard_kp < 0
+                or not math.isfinite(cfg.control.sensor_pitch_guard_angle)
+                or cfg.control.sensor_pitch_guard_angle <= 0):
+            raise ValueError("Pitch guard requires nonnegative gain and positive finite angle")
         if cfg.control.encoder_hold and cfg.control.standing_height_trim_ki:
             raise ValueError("Encoder hold and wheel-rate integral trim are alternative controllers")
 
@@ -53,7 +62,7 @@ class DrivingWheelLegged(SensorWheelLegged):
                 self.num_envs, self.device, self.cfg.keyboard.leg_range[0],
                 c.encoder_hold_position_kp, c.encoder_hold_heading_kp,
                 c.encoder_hold_speed_limit, c.encoder_hold_yaw_limit, c.encoder_hold_height_slope,
-                c.encoder_hold_turn_reference_scale)
+                c.encoder_hold_turn_reference_scale, c.encoder_hold_gyro_heading, self.dt)
             self.wheel_position_sampler = EncoderPositionSampler(
                 self.num_envs, self.device, s.delay_steps,
                 s.wheel_angle_noise_std, s.wheel_angle_bias_std, self.cfg.seed)
@@ -92,6 +101,18 @@ class DrivingWheelLegged(SensorWheelLegged):
         reference[:, 0] += self.height_standing_trim.correction(self.commands)
         return reference
 
+    def _prepare_control(self):
+        effort, targets = super()._prepare_control()
+        c = self.cfg.control
+        if c.sensor_pitch_rate_kd or c.sensor_pitch_guard_kp:
+            # 镜像轮轴：[-drive,+drive]的机体反作用力矩阻尼正俯仰角速度。
+            # 只取原IMU采样；叠加后仍由每个物理子步执行原电机总力矩限幅。
+            pitch, rate = self.sensor_sampler.sample[:, :2].unbind(-1)
+            excess = pitch.sign() * (pitch.abs() - c.sensor_pitch_guard_angle).clamp_min(0.)
+            drive = c.sensor_pitch_rate_kd * rate + c.sensor_pitch_guard_kp * excess
+            effort[:, 4:] += drive[:, None] * effort.new_tensor([-1., 1.])
+        return effort, targets
+
     def _observations(self, advance_history=True):
         resetting = (self.sensor_reset_pending.clone()
                      if self.height_standing_trim is not None or self.encoder_hold is not None else None)
@@ -120,6 +141,9 @@ class DrivingWheelLegged(SensorWheelLegged):
             info['pre_reset_policy_commands'] = self._policy_commands().clone()
             info['pre_reset_encoder_odometry_m'] = self.encoder_hold.odometry.distance.clone()
             info['pre_reset_encoder_heading_rad'] = self.encoder_hold.odometry.yaw.clone()
+            if self.encoder_hold.gyro_heading is not None:
+                info['pre_reset_fused_heading_rad'] = self.encoder_hold.heading.clone()
+                info['pre_reset_gyro_heading_bias_rad_s'] = self.encoder_hold.gyro_heading.bias.clone()
         if self.standstill_reward is not None:
             info["pre_reset_standstill_drift_m"] = self.standstill_reward.displacement.clone()
             info["pre_reset_standstill_heading_rad"] = self.standstill_reward.heading_error.clone()
@@ -240,6 +264,10 @@ class DrivingWheelLegged(SensorWheelLegged):
             heading_kp_s_inv=c.encoder_hold_heading_kp if c.encoder_hold else None,
             turn_reference_scale=c.encoder_hold_turn_reference_scale if c.encoder_hold else None,
             physics_solver=self.physics_solver,
+            stationary_calibrated_gyro_heading=bool(c.encoder_hold_gyro_heading and c.encoder_hold),
+            sensor_pitch_rate_kd_nm_s_rad=c.sensor_pitch_rate_kd,
+            sensor_pitch_guard_kp_nm_rad=c.sensor_pitch_guard_kp,
+            sensor_pitch_guard_angle_rad=c.sensor_pitch_guard_angle,
             height_speed_slope_s_inv=c.encoder_hold_height_slope if c.encoder_hold else None,
             odometry_assumption='Planar rolling; carrier rotation and leg translation compensated',
             world_pose_or_velocity_feedback=False,

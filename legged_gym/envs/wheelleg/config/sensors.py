@@ -221,6 +221,10 @@ class WheelLeggedDriveCfg(WheelLeggedQuietStandCfg):
         encoder_hold_position_kp = .5  # s^-1，停车位置误差→速度参考
         encoder_hold_heading_kp = 1.0  # s^-1，直行相对航向误差→转速参考
         encoder_hold_turn_reference_scale = 1.0  # 转向参考标定，默认保持旧策略
+        encoder_hold_gyro_heading = False  # 停车标定陀螺零偏，运动航向不依赖轮胎滚动
+        sensor_pitch_rate_kd = 0.0  # Nm*s/rad，IMU俯仰角速度反馈到轮力矩，非物理阻尼
+        sensor_pitch_guard_kp = 0.0  # Nm/rad，仅在俯仰超过软区间后增加轮子追赶力矩
+        sensor_pitch_guard_angle = .16  # rad，软件反馈起点，不是姿态钳制或验收门槛
         encoder_hold_speed_limit = .08  # m/s，含高度标定的总参考修正限幅
         encoder_hold_yaw_limit = .2  # rad/s，转向指令非零时不叠加航向修正
         encoder_hold_height_slope = 0.0  # s^-1，离线标定的高度速度参考初值
