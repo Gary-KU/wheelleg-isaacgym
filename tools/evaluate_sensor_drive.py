@@ -128,6 +128,7 @@ def main():
         longest_steps = age_steps.clone()
         torques = env.actions.new_zeros(6)
         saturation = env.actions.new_zeros(4, 6)
+        leg_error_squares = env.actions.new_zeros(4, 2)
         hip_overload_seconds = env.actions.new_zeros(4, 4)
         peak_budget_minimum = env.actions.new_full((4, 4), float("inf"))
         evaluated_steps = 0
@@ -219,6 +220,8 @@ def main():
                         torques, info["pre_reset_peak_abs_torques"].max(0).values
                     )
                     saturation += info["pre_reset_torque_saturation_fraction"]
+                    leg_error_squares += (info['pre_reset_leg_length']
+                        - info['pre_reset_commands'][:, 3:4]).square()
                     hip_overload_seconds += info["pre_reset_hip_over_continuous_fraction"] * env.dt
                     peak_budget_minimum = torch.minimum(
                         peak_budget_minimum, info["pre_reset_hip_peak_budget_remaining_s"])
@@ -303,6 +306,8 @@ def main():
             roll_peak_rad=roll,
             closure_peak_m=closure,
             torque_peak_nm_by_joint=torques.tolist(),
+            rms_leg_length_error_m_by_env=(
+                leg_error_squares / max(evaluated_steps, 1)).sqrt().tolist(),
             saturation_fraction_by_env_joint=(saturation / max(evaluated_steps, 1)).tolist(),
             hip_over_continuous_seconds_by_env_joint=hip_overload_seconds.tolist(),
             minimum_hip_peak_budget_remaining_s_by_env_joint=peak_budget_minimum.tolist(),
