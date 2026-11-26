@@ -29,6 +29,8 @@ def main():
                    help="Use wheel-angle odometry for stop/straight heading feedback instead of rate integration")
     p.add_argument("--hold-position-kp", type=float, default=.5)
     p.add_argument("--hold-heading-kp", type=float, default=1.)
+    p.add_argument("--linear-acceleration", type=float,
+                   help="Optional command ramp acceleration m/s^2; retains the speed cap")
     args = p.parse_args()
     if args.output.suffix != ".pt" or args.output.resolve() == args.checkpoint.resolve():
         p.error("Save to a different .pt path; keep the original checkpoint")
@@ -43,6 +45,9 @@ def main():
         p.error("standing-trim-slope exceeds the0.08m/s correction limit")
     if args.standing_trim_slope and not args.standing_trim_ki and not args.encoder_hold:
         p.error("A calibrated trim slope requires standing-trim-ki >0")
+    if args.linear_acceleration is not None and (
+            not math.isfinite(args.linear_acceleration) or args.linear_acceleration <= 0):
+        p.error("linear-acceleration must be finite and positive")
     state = torch.load(str(args.checkpoint), map_location="cpu")
     require_model_checkpoint(state)
     cfg = state["legged_gym_env_config"]
@@ -75,6 +80,9 @@ def main():
     # environment_config 仅存底层构造参数；修正器属于任务，不传入物理构造器。
     state["environment_config"].update(
         forward_speed_range=[-args.speed, args.speed], leg_length_range=args.leg_range)
+    if args.linear_acceleration is not None:
+        cfg['commands']['linear_acceleration'] = args.linear_acceleration
+        state['environment_config']['linear_acceleration'] = args.linear_acceleration
     provenance = dict(
         source_checkpoint=str(args.checkpoint.resolve()),
         source_sha256=hashlib.sha256(args.checkpoint.read_bytes()).hexdigest(),
@@ -86,6 +94,7 @@ def main():
         encoder_hold_position_kp=args.hold_position_kp,
         encoder_hold_heading_kp=args.hold_heading_kp,
         height_speed_slope_s_inv=args.standing_trim_slope,
+        linear_acceleration_m_s2=cfg['commands']['linear_acceleration'],
         network_unchanged=True, extra_training=False,
         status="candidate_requires_evaluation",
         note="MCU must port the command ramp, hip control/limits and enabled standing trim as well as the network.",

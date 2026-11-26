@@ -163,6 +163,7 @@ def main():
                     for i in range(4)
                 ]
                 phase_failures = phase_timeouts = 0
+                phase_pitch = phase_roll = phase_closure = 0.0
                 rate_sum = env.actions.new_zeros(4)
                 settled_measurements = None
                 samples = 0
@@ -216,6 +217,9 @@ def main():
                     closure = max(closure, float(info["loop_error_max"]))
                     pitch = max(pitch, float(info["pre_reset_pitch"].abs().max()))
                     roll = max(roll, float(info["pre_reset_roll"].abs().max()))
+                    phase_pitch = max(phase_pitch, float(info['pre_reset_pitch'].abs().max()))
+                    phase_roll = max(phase_roll, float(info['pre_reset_roll'].abs().max()))
+                    phase_closure = max(phase_closure, float(info['loop_error_max']))
                     torques = torch.maximum(
                         torques, info["pre_reset_peak_abs_torques"].max(0).values
                     )
@@ -275,6 +279,9 @@ def main():
                     settle_seconds=settle_seconds,
                     physical_failures=phase_failures,
                     timeouts=phase_timeouts,
+                    pitch_peak_rad=phase_pitch,
+                    roll_peak_rad=phase_roll,
+                    closure_peak_m=phase_closure,
                     environments=rows,
                 )
                 phases.append(phase)
