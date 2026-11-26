@@ -1,4 +1,4 @@
-"""Straight-speed curriculum; all extra truth is used for reward/evaluation only."""
+"""运动任务：低速前后/转向，以及独立的直行速度课程。"""
 
 import time
 
@@ -6,7 +6,62 @@ import torch
 
 from legged_gym.envs.wheelleg.tasks.sensors import SensorWheelLegged
 from legged_gym.envs.wheelleg.control.commands import slew_commands
-from legged_gym.envs.wheelleg.diagnostics.training_metrics import WheelLegTrainingMetrics
+from legged_gym.envs.wheelleg.diagnostics.training_metrics import (
+    WheelLegTrainingMetrics,
+)
+
+
+class DrivingWheelLegged(SensorWheelLegged):
+    """训练采样与键盘请求共用同一加速度限制，不叠加额外轮子控制器。"""
+
+    def _reset_idx(self, ids):
+        super()._reset_idx(ids)
+        self.commands[ids, :3] = 0.0
+
+    def _sample_command_targets(self, ids):
+        # 对应方向键单按、组合按和松键；每个回合仍通过同一速度斜坡。
+        speed = max(abs(x) for x in self.forward_speed_range)
+        turn = max(abs(x) for x in self.yaw_speed_range)
+        choices = self.commands.new_tensor(
+            [
+                [speed, 0],
+                [-speed, 0],
+                [0, turn],
+                [0, -turn],
+                [speed, turn],
+                [speed, -turn],
+                [-speed, turn],
+                [-speed, -turn],
+            ]
+        )
+        selection = choices[torch.randint(8, (len(ids),), device=self.device)]
+        self.command_targets[ids] = self.default_command
+        self.command_targets[ids, 0] = selection[:, 0]
+        self.command_targets[ids, 2] = selection[:, 1]
+        stopped = torch.rand(len(ids), device=self.device) < self.zero_command_fraction
+        self.command_targets[ids[stopped], :3] = 0.0
+
+    def set_commands(self, commands):
+        previous = self.commands.clone()
+        super().set_commands(commands)  # 校验并更新请求目标
+        self.commands.copy_(previous)  # 请求不是瞬时速度，留到控制步末做斜坡
+        self._refresh_command_observations()
+        return self.obs_buf
+
+    def _advance_random_commands(self, dones):
+        if self.random_commands:
+            return super()._advance_random_commands(dones)
+        self.commands.copy_(
+            slew_commands(
+                self.commands,
+                self.command_targets,
+                self.dt,
+                self.linear_acceleration,
+                self.yaw_acceleration,
+            )
+        )
+        self._refresh_command_observations()
+        return 0
 
 
 class TrackingWheelLegged(SensorWheelLegged):

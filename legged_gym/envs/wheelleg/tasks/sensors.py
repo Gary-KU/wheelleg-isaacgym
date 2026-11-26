@@ -7,6 +7,7 @@ from legged_gym.envs.wheelleg.model.kinematics import inverse_symmetric
 from legged_gym.envs.wheelleg.model.constraints import quat_rotate_inverse
 from legged_gym.envs.wheelleg.observations.sensors import (
     COMMAND_SLICE,
+    COMMAND_SCALES,
     FRAME_SIZE,
     FRAME_FIELDS,
     HISTORY_FRAMES,
@@ -196,7 +197,7 @@ class SensorWheelLegged(WheelLegged):
         # Commands are current; editing one never resamples sensors or shifts history.
         self.slice_obs[:, COMMAND_SLICE] = self.commands[
             :, [0, 2, 3]
-        ] * self.commands.new_tensor([1.5, 1.0, 5.0])
+        ] * self.commands.new_tensor(COMMAND_SCALES)
         self.obs_buf[:, -FRAME_SIZE:] = self.slice_obs
         self.history[:, -1] = self.slice_obs
 

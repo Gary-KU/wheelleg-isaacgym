@@ -1,0 +1,67 @@
+# 传感器策略的键盘运动训练
+
+`wheelleg_sensor_drive` 基于后置电池模型已经验收的站立配置，固定 8 cm 腿长，训练前进、后退、左右转向以及松键停车。左右是转向，不是横向平移。本阶段速度为 ±0.2 m/s、转向为 ±0.6 rad/s，暂不代表达到 1.0 m/s 或学会跳跃。
+
+键盘请求先经过速度斜坡，再进入网络的目标速度输入；网络输出六维动作，由原髋部 PD/质量前馈与电机力矩限幅执行。没有键盘直接覆盖轮子力矩，也没有向策略增加仿真位置、线速度或接触力。
+
+## 训练与检查
+
+```bash
+conda activate isaacgym
+# 用已验收的站立网络初始化新任务：调整转向阻尼与速度指令参考。
+./manage.sh run tools/bootstrap_motion.py \
+  --standing-checkpoint logs/closure_fix_20261126_105745/standing_verified.pt \
+  --output logs/my_drive/motion_init.pt
+./manage.sh train --task wheelleg_sensor_drive \
+  --checkpoint logs/my_drive/motion_init.pt --num_envs 32 --headless \
+  --max_iterations 50 --log-root logs/my_drive/train
+```
+
+初始化只改新网络副本的权重，不覆盖站立文件；它不是已经训练完成的运动策略。由于转向阻尼也调整过，零速稳定性必须重新验收。Actor 结构仍是原来的 132 输入、6 输出 ELU 网络，部署时不需要额外的教师控制器。每帧目标速度缩放沿用同一个 `COMMAND_SCALES`。
+
+训练采样方向键单按、组合按以及 30% 的停车目标，每 3 秒重新采样；前后加速度限制 0.3 m/s²，转向角加速度限制 1.5 rad/s²。训练和键盘播放使用同一斜坡。固定腿长训练期间，Q/E 不改变腿长。
+
+```bash
+# 四环境分别执行前进、后退、左转、右转，再松键、反向、松键。
+./manage.sh run tools/evaluate_sensor_drive.py \
+  --checkpoint <本任务权重> --report logs/my_drive/motion.json
+# 加 --combined 可检查前进/后退与转向同时按下的四种组合。
+# 另做连续60秒零速检查，不能把运动序列中的停车片段当作完整站立验收。
+./manage.sh run tools/evaluate_sensor_balance.py --task wheelleg_sensor_drive \
+  --checkpoint <本任务权重> --headless --sim_device cpu \
+  --num_envs 4 --num_steps 12000 --report logs/my_drive/standing_60s.json
+```
+
+运动检查默认每台连续 27 秒，包含两次 6 秒运动和三次 5 秒停车。速度与角速度 RMS 在每段前 2 秒后统计；停车漂移也从减速后的第 2 秒起计量，完整减速过程仍保留在报告中。物理失败和超时逐一计数，任何倒地都不能用重置后的时长抵消。前后速度误差门槛为运动 0.05 m/s、停车 0.02 m/s；偏航误差门槛分别为 0.12/0.06 rad/s，并检查横移、直行航向、停车漂移和闭环误差。通过有限检查不等于覆盖所有地形或实机。
+
+## 播放与修改位置
+
+```bash
+./manage.sh play --task wheelleg_sensor_drive \
+  --checkpoint <已验收的运动权重> --sim_device cpu --keyboard --num_steps 120000
+```
+
+上述播放上限为 10 分钟仿真时间，也可以随时关闭窗口。点击仿真窗口后，↑/↓ 前进后退，←/→ 左右转向，松开停止该方向；空格停车，R 重置。本任务没有启用跳跃。
+
+| 文件 | 修改内容 |
+| --- | --- |
+| `legged_gym/envs/wheelleg/config/sensors.py` | `WheelLeggedDriveCfg` 的训练速度、加速度、键盘速度与腿长设置 |
+| `legged_gym/envs/wheelleg/tasks/tracking.py` | `DrivingWheelLegged` 的方向组合采样与播放斜坡 |
+| `scripts/play.py` | 读取任务键盘配置，连接窗口事件与目标速度 |
+| `legged_gym/envs/wheelleg/control/keyboard.py` | 按下、松开、停车和重置事件 |
+| `tools/bootstrap_motion.py` | 新网络的指令参考与转向阻尼初始化 |
+
+当前仍使用近似闭环与同原点环境；同原点 GPU 训练最多使用已验证的 32 个并行环境。实验和权重留在本机，源码与说明同步 GitHub。
+
+
+## 本机当前结果
+
+实验 `logs/keyboard_drive_20261126_120433/` 的第三版完成 32 环境、50 轮运动微调，训练物理失败为零、无 GPU 容量警告。最终权重在 seed=17/42、各 4 个机器人连续 60 秒静止检查中全部通过，前后/横向位移峰值约 7.5/2.1 mm。运动序列中四方向实际响应、反向和松键停车均无倒地。
+
+完整运动精度门槛尚未全部通过：一项反向转向的角速度误差 RMS 为 0.1245 rad/s，略高于 0.12 rad/s 门槛；组合按键也有约 0.122 rad/s 的超限项。因此本机保存为 `keyboard_play.pt`，定位为低速可操作候选，没有标记成全面验收权重。完整报告为同目录 `keyboard_play.json`，原站立验收权重保持不变。
+
+```bash
+./manage.sh play --task wheelleg_sensor_drive \
+  --checkpoint logs/keyboard_drive_20261126_120433/keyboard_play.pt \
+  --sim_device cpu --keyboard --num_steps 120000
+```

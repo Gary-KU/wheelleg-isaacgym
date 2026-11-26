@@ -21,9 +21,10 @@ def main():
         "wheelleg_sensor",
         "wheelleg_sensor_tracking",
         "wheelleg_sensor_quiet",
+        "wheelleg_sensor_drive",
     ):
         raise ValueError(
-            "Select --task wheelleg_sensor, wheelleg_sensor_quiet or wheelleg_sensor_tracking"
+            "Select a sensor task: wheelleg_sensor, wheelleg_sensor_quiet, wheelleg_sensor_drive or wheelleg_sensor_tracking"
         )
     torch.set_num_threads(1)
     register_tasks()

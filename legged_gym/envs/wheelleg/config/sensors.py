@@ -192,3 +192,37 @@ class WheelLeggedQuietStandCfgPPO(WheelLeggedSensorCfgPPO):
 
     class runner(WheelLeggedSensorCfgPPO.runner):
         experiment_name = "wheelleg_sensor_quiet"
+
+
+class WheelLeggedDriveCfg(WheelLeggedQuietStandCfg):
+    """已验证站立物理配置上的低速前后/转向任务。"""
+
+    class commands(WheelLeggedQuietStandCfg.commands):
+        random_commands = True
+        forward_speed_range = (-0.2, 0.2)
+        yaw_speed_range = (-0.6, 0.6)
+        command_resample_seconds = 3.0
+        linear_acceleration = 0.3
+        yaw_acceleration = 1.5
+        zero_command_fraction = 0.3
+
+    class keyboard:
+        speed = 0.2
+        turn_speed = 0.6
+        adjust_leg_length = False  # 本轮固定 8 cm，只训练移动和停车
+
+
+class WheelLeggedDriveCfgPPO(WheelLeggedQuietStandCfgPPO):
+    class policy(WheelLeggedQuietStandCfgPPO.policy):
+        init_noise_std = [0.005] * 4 + [0.015, 0.015]
+
+    class algorithm(WheelLeggedQuietStandCfgPPO.algorithm):
+        learning_rate = 0.000003
+        max_learning_rate = 0.00001
+        schedule = "fixed"
+        num_learning_epochs = 2
+        entropy_coef = 0.00001
+
+    class runner(WheelLeggedQuietStandCfgPPO.runner):
+        experiment_name = "wheelleg_sensor_drive"
+        num_steps_per_env = 100  # 200 Hz 下每轮采样 0.5 s

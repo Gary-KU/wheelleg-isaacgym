@@ -36,6 +36,8 @@ conda activate isaacgym
 
 当前输出力矩限幅：**每轮 ±0.1 N·m；每髋峰值 ±0.68 N·m、连续 ±0.32 N·m**。髋关节按每回合累计超连续值 2 秒后降额，详见[资产与电机参数](assets/wheelleg/README.md#电机输出力矩)。新 CAD 质量尚需实测校准。
 
+键盘前后/转向训练使用独立任务 `wheelleg_sensor_drive`，配置、启动与验收见[键盘运动训练](docs/KEYBOARD_DRIVE.md)。
+
 ## 代码从哪里读
 
 Python 源码统一放在 `legged_gym/`：`envs/wheelleg/` 负责当前机器人，`learning/` 负责共用训练，`utils/` 负责注册与配置。建议按以下顺序阅读：

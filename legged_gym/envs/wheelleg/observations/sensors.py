@@ -43,6 +43,7 @@ HISTORY_FRAMES = 6
 OBSERVATION_SIZE = FRAME_SIZE * HISTORY_FRAMES
 SENSOR_SCALES = (1.0, 0.5, 0.5, 1.0, 1.0, 5.0, 5.0, 0.05, 0.05, 5.0, 5.0, 0.05, 0.05)
 COMMAND_SLICE = slice(13, 16)
+COMMAND_SCALES = (1.5, 1.0, 5.0)
 
 
 def build_sensor_frame(sensors, commands, previous_actions):
@@ -57,7 +58,7 @@ def build_sensor_frame(sensors, commands, previous_actions):
     return torch.cat(
         (
             sensors * sensors.new_tensor(SENSOR_SCALES),
-            commands[:, [0, 2, 3]] * commands.new_tensor([1.5, 1.0, 5.0]),
+            commands[:, [0, 2, 3]] * commands.new_tensor(COMMAND_SCALES),
             previous_actions,
         ),
         dim=-1,
@@ -134,8 +135,8 @@ def encoder_leg_state(joint_position, joint_velocity):
     h = (LOWER**2 - 0.25 * d2).clamp_min(1e-12).sqrt()
     d = d2.clamp_min(1e-12).sqrt()
     cx, cy = 0.5 * (bx + dx) - h * uy / d, 0.5 * (by + dy) + h * ux / d
-    x = cx - (HIP_SPAN/2)
-    cy_centered = cy-HIP_DOWN/2
+    x = cx - (HIP_SPAN / 2)
+    cy_centered = cy - HIP_DOWN / 2
     length2 = x.square() + cy_centered.square()
     length = length2.sqrt()
     r1x, r1y, r4x, r4y = cx - bx, cy - by, cx - dx, cy - dy

@@ -30,16 +30,19 @@ def main():
         if env.terrain_model is None:
             env.max_episode_length = args.num_steps + 1
         keyboard = None
+        keyboard_cfg = getattr(env_cfg, "keyboard", None)
+        adjust_leg_length = getattr(keyboard_cfg, "adjust_leg_length", True)
         if args.keyboard:
             keyboard = KeyboardDrive(
-                speed=0.6,
-                turn_speed=2.0,
+                speed=getattr(keyboard_cfg, "speed", 0.6),
+                turn_speed=getattr(keyboard_cfg, "turn_speed", 2.0),
                 leg_length=env.commands[0, 3].item(),
                 leg_range=(MIN_LEG_LENGTH, MAX_LEG_LENGTH),
             )
             keyboard.bind(env.gym, env.viewer, isaacgym.gymapi)
             print(
-                "点击仿真窗口：方向键前后/转向，Q/E调腿长，空格停止，R重置。",
+                "点击仿真窗口：方向键前后/转向，空格停止，R重置。"
+                + ("Q/E调腿长。" if adjust_leg_length else "本权重固定8 cm腿长。"),
                 flush=True,
             )
         pitch = roll = loop = 0.0
@@ -58,7 +61,8 @@ def main():
                     ):
                         env.reset()
                         keyboard.reset_leg_length(env.cfg.commands.command[3])
-                    keyboard.advance_leg_length(env.dt)
+                    if adjust_leg_length:
+                        keyboard.advance_leg_length(env.dt)
                     env.set_commands(keyboard.command())
                 obs, _ = env.get_observations()
                 action = policy(obs.to(args.rl_device)).to(env.device)

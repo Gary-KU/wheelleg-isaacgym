@@ -61,3 +61,17 @@ def register(registry):
             WheelLeggedQuietStandCfg(),
             WheelLeggedQuietStandCfgPPO(),
         )
+
+    from legged_gym.envs.wheelleg.tasks.tracking import DrivingWheelLegged
+    from legged_gym.envs.wheelleg.config.sensors import (
+        WheelLeggedDriveCfg,
+        WheelLeggedDriveCfgPPO,
+    )
+
+    if "wheelleg_sensor_drive" not in registry.task_classes:
+        registry.register(
+            "wheelleg_sensor_drive",
+            DrivingWheelLegged,
+            WheelLeggedDriveCfg(),
+            WheelLeggedDriveCfgPPO(),
+        )
