@@ -208,6 +208,7 @@ class WheelLeggedDriveCfg(WheelLeggedQuietStandCfg):
 
     class control(WheelLeggedQuietStandCfg.control):
         decimation = 4  # 2 kHz 物理 / 500 Hz 策略，缩短转向反馈延迟
+        leg_kd = 0.08  # Nm·s/rad，增加左右腿横滚模态阻尼；刚度仍为2
 
     class keyboard:
         speed = 0.3

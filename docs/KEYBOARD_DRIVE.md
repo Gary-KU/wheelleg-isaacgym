@@ -142,3 +142,31 @@ conda activate isaacgym
 高速评估还修正了固定2秒等待的不足：1 m/s以0.4 m/s²减速，仅指令斜坡就需要2.5秒。新评估按本阶段命令差和限加速度计算斜坡预算，稳态等待取 `max(2秒, 斜坡预算+1秒)`，并要求之后至少1秒测量。全程轨迹仍记录，倒地/超时仍全程计数，速度、横移、航向及漂移门槛未放宽。原先1 m/s报告的停车误差包含部分正常制动，不能把这些条目全部归因于策略不稳定。
 
 0.3 m/s等原低速检查的等待仍为2秒；更高速度的稳态统计窗口可能改变，比较报告时应核对 `settle_seconds`。完整结果为该目录 `summary.json`；目前尚未解决1 m/s的直行保持和停车恢复精度。
+
+### 转弯时两腿反相振荡：阻尼修正
+
+原地转向的对照时序中，两腿长度相关系数约 -0.93，伴随约8 Hz横滚模态；腿长标准差约0.28–0.32 mm。把髋刚度2增至4效果有限，提高了振荡频率。保持刚度2，将髋PD阻尼从0.04增至0.08 N·m·s/rad，原地转向腿长标准差下降约30–40%，0.6 m/s边走边转下降约15–25%；仍有残余振荡。比较窗口为四台各18秒中的第6–13秒，传感器噪声、支撑前馈、闭环参数和力矩上限未改变，没有额外RL训练。
+
+本机实验目录 `logs/turn_legs_20261126/` 保留基线、刚度与两档阻尼对照的时序和 `comparison.json`。新文件只修改检查点的外部髋PD阻尼，Actor参数逐项保持原值；旧权重不会自动更新。源配置位于 `config/sensors.py` 的 `WheelLeggedDriveCfg.control.leg_kd`，控制计算在 `control/leg_control.py`。
+
+长期操作还应检查峰值额度耗尽的情况：
+
+```bash
+./manage.sh run tools/evaluate_sensor_drive.py \
+  --checkpoint <权重> --speed 0.6 --turn-speed 0.8 --combined \
+  --continuous-hip-limit --report logs/my_drive/continuous_limit.json
+```
+
+该标志仅用于评估，令每一步开始时所有髋关节的2秒峰值额度均已用尽，因此自动重置也不会重新获得峰值力矩。实际输出须遵守0.32 N·m连续上限，原播放逻辑与电机峰值上限不受该标志修改。不能把这个对照当成正常峰值控制或实机热测试。
+
+本次修正已通过：seed42的0.6 m/s四方向和组合运动、seed17的0.3 m/s四方向，均包含反向与停车；四台各连续站立60秒，倒地及超时为零。另通过0.6 m/s组合运动的连续力矩对照（所有髋关节输出不超过0.32 N·m）。这不等于验证实机温升或任意长时间运行。
+
+新版0.6 m/s播放：
+
+```bash
+./manage.sh play --task wheelleg_sensor_drive \
+  --checkpoint logs/turn_legs_20261126/keyboard_play.pt \
+  --sim_device cpu --keyboard --num_steps 300000
+```
+
+慢速版将权重改为同目录 `keyboard_03.pt`（0.3 m/s），两版左右转向均为0.8 rad/s，固定8 cm腿长。验收汇总为 `summary.json`。本次验证CPU平地仿真，旧0.3/0.6文件和1 m/s试用文件均未覆盖；1 m/s的整体稳定性仍未通过，不能因为阻尼修正就宣称已解决高速偏移。

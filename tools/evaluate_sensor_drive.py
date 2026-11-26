@@ -26,6 +26,8 @@ def main():
         action="store_true",
         help="Test simultaneous forward/backward and turning keys",
     )
+    p.add_argument("--continuous-hip-limit", action="store_true",
+                   help="Evaluate with the hip2s peak allowance exhausted")
     p.add_argument("--speed", type=float, default=0.2)
     p.add_argument("--turn-speed", type=float, default=0.6)
     p.add_argument("--motion-seconds", type=float, default=6.0)
@@ -131,6 +133,9 @@ def main():
                 settled_measurements = None
                 samples = 0
                 for step in range(round(seconds / env.dt)):
+                    if args.continuous_hip_limit:
+                        # 每步设定，确保自动重置也不会恢复峰值额度而掩盖失败。
+                        env.hip_overload_steps.fill_(env.hip_peak_steps)
                     obs, _ = env.get_observations()
                     obs, _, reward, done, info, _ = env.step(policy(obs))
                     if not bool(
@@ -236,6 +241,7 @@ def main():
             checkpoint=str(args.checkpoint.resolve()),
             seed=args.seed,
             command_mode="combined" if args.combined else "cardinal",
+            continuous_hip_limit_only=args.continuous_hip_limit,
             control_dt=env.dt,
             num_envs=4,
             seconds_per_environment=sum(s for _, s, _ in pattern),
