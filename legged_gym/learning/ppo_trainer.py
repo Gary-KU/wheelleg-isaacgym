@@ -75,8 +75,7 @@ class PPOTrainer:
                 self.algorithm.optimizer.param_groups[0]["lr"],
                 self.algorithm.max_learning_rate,
             )
-            for group in self.algorithm.optimizer.param_groups:
-                group["lr"] = self.algorithm.learning_rate
+            self.algorithm.set_learning_rate(self.algorithm.learning_rate)
         self.iteration = int(state.get("iter", 0))
         self.total_steps = int(state.get("total_steps", 0))
         # Warm-start tools record provenance beside the four training settings.

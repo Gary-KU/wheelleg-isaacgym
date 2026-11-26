@@ -4,7 +4,7 @@ import torch
 
 from legged_gym.envs.wheelleg.tasks.base import WheelLegged
 from legged_gym.envs.wheelleg.model.kinematics import inverse_symmetric
-from legged_gym.envs.wheelleg.model.constraints import quat_rotate_inverse
+from legged_gym.envs.wheelleg.model.constraints import quat_rotate, quat_rotate_inverse
 from legged_gym.envs.wheelleg.observations.sensors import (
     COMMAND_SLICE,
     COMMAND_SCALES,
@@ -28,6 +28,8 @@ class SensorWheelLegged(WheelLegged):
             saved = checkpoint_state.get("legged_gym_env_config", {}).get("env", {})
             if "balance_initial_com" not in saved:
                 cfg.env.balance_initial_com = False  # 旧检查点保持原始重置姿态
+            if "upright_about_com" not in checkpoint_state.get("legged_gym_env_config", {}).get("rewards", {}):
+                cfg.rewards.upright_about_com = False
 
     def _load_robot(self, stiffness, damping):
         if self.cfg.env.balance_initial_com:
@@ -77,7 +79,20 @@ class SensorWheelLegged(WheelLegged):
             .clamp(max=25)
             * (self.commands[:, :3].abs().max(-1).values < 0.02),
         )
+        if self.cfg.rewards.upright_about_com:
+            angle = self._com_balance_error()
+            terms["upright"] = torch.exp(
+                -(angle.square() + self.roll.square()) / self.cfg.rewards.upright_sigma**2)
         return terms
+
+    def _com_balance_error(self):
+        """训练打分：整机重心相对轮轴的前后倾角，不进入策略观测。"""
+        body_com = self.rb_states[:, :, :3] + quat_rotate(
+            self.rb_states[:, :, 3:7], self.closure.com_local)
+        center = (body_com * self.reward_mass_fractions[:, :, None]).sum(1)
+        delta = center - self.rb_states[:, self.wheel_indices, :3].mean(1)
+        forward = self.yaw.cos() * delta[:, 0] + self.yaw.sin() * delta[:, 1]
+        return torch.atan2(forward, delta[:, 2])
 
     def _reward_stopped_wheel_speed(self):
         return self._task_reward_terms["stopped_wheel_speed"]
@@ -96,6 +111,8 @@ class SensorWheelLegged(WheelLegged):
         return quat_rotate_inverse(roots[:, 3:7], roots[:, 7:10])
 
     def _validate_observation_config(self, cfg):
+        if not isinstance(cfg.rewards.upright_about_com, bool):
+            raise ValueError("upright_about_com must be boolean")
         if not isinstance(cfg.env.balance_initial_com, bool):
             raise ValueError("balance_initial_com must be boolean")
         if cfg.env.balance_initial_com and cfg.env.initial_leg_length is None:
@@ -132,6 +149,13 @@ class SensorWheelLegged(WheelLegged):
     def _allocate_buffers(self):
         self.observation_frame_size, self.num_obs = FRAME_SIZE, OBSERVATION_SIZE
         super()._allocate_buffers()
+        if self.cfg.rewards.upright_about_com:
+            masses = [
+                [p.mass for p in self.gym.get_actor_rigid_body_properties(env, actor)]
+                for env, actor in zip(self.envs, self.actors)
+            ]
+            masses = self.actions.new_tensor(masses)
+            self.reward_mass_fractions = masses / masses.sum(-1, keepdim=True)
         s = self.cfg.sensors
         self.sensor_sampler = SensorSampler(
             self.num_envs,

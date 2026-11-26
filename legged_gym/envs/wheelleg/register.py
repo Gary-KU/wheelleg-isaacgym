@@ -68,6 +68,8 @@ def register(registry):
         WheelLeggedDriveCfgPPO,
         WheelLeggedTelescopicCfg,
         WheelLeggedTelescopicCfgPPO,
+        WheelLeggedHeightStandCfg,
+        WheelLeggedHeightStandCfgPPO,
     )
 
     if "wheelleg_sensor_drive" not in registry.task_classes:
@@ -84,4 +86,12 @@ def register(registry):
             DrivingWheelLegged,
             WheelLeggedTelescopicCfg(),
             WheelLeggedTelescopicCfgPPO(),
+        )
+
+    if "wheelleg_sensor_height_stand" not in registry.task_classes:
+        registry.register(
+            "wheelleg_sensor_height_stand",
+            DrivingWheelLegged,
+            WheelLeggedHeightStandCfg(),
+            WheelLeggedHeightStandCfgPPO(),
         )

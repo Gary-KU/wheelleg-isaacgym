@@ -35,6 +35,7 @@ class PPO:
         kl_decay=0,
         device="cpu",
         max_learning_rate=1e-2,
+        critic_learning_rate=None,
     ):
         self.device = device
 
@@ -45,6 +46,11 @@ class PPO:
             raise ValueError("max_learning_rate must be finite and at least 1e-5")
         self.max_learning_rate = float(max_learning_rate)
         self.learning_rate = min(learning_rate, self.max_learning_rate)
+        if critic_learning_rate is not None and (
+            not math.isfinite(critic_learning_rate) or critic_learning_rate <= 0
+        ):
+            raise ValueError("critic_learning_rate must be finite and positive")
+        self.critic_learning_rate = critic_learning_rate
 
         # PPO components
         self.actor_critic = actor_critic
@@ -53,7 +59,8 @@ class PPO:
         self.optimizer = optim.Adam(
             [
                 {"params": self.actor_critic.actor.parameters()},
-                {"params": self.actor_critic.critic.parameters()},
+                {"params": self.actor_critic.critic.parameters(),
+                 "lr": critic_learning_rate or self.learning_rate},
                 {"params": self.actor_critic.std},
             ],
             lr=self.learning_rate,
@@ -191,6 +198,14 @@ class PPO:
         last_values = self.actor_critic.evaluate(last_critic_obs).detach()
         self.storage.compute_returns(last_values, self.gamma, self.lam)
 
+    def set_learning_rate(self, learning_rate):
+        """Actor/std follow the PPO schedule; an explicit critic rate stays fixed."""
+        self.learning_rate = learning_rate
+        for index, group in enumerate(self.optimizer.param_groups):
+            group["lr"] = (self.critic_learning_rate
+                           if index == 1 and self.critic_learning_rate is not None
+                           else learning_rate)
+
     def update(self):
         if self.kl_decay != 0:
             self.desired_kl = max(self.desired_kl - self.kl_decay, 0.001)
@@ -261,8 +276,7 @@ class PPO:
                     elif kl_mean < self.desired_kl / 2.0 and kl_mean > 0.0:
                         self.learning_rate = min(self.max_learning_rate, self.learning_rate * 1.5)
 
-                    for param_group in self.optimizer.param_groups:
-                        param_group["lr"] = self.learning_rate
+                    self.set_learning_rate(self.learning_rate)
 
             # Surrogate loss
             ratio = torch.exp(

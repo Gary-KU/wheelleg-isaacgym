@@ -137,6 +137,7 @@ class WheelLeggedCfgPPO(BaseConfig):
         num_learning_epochs = 5
         num_mini_batches = 5
         learning_rate = 0.001
+        critic_learning_rate = None  # None 与 Actor 共用；微调任务可单独加快新 Critic
         max_learning_rate = 0.01
         schedule = "adaptive"
         gamma = 0.995

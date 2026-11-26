@@ -84,6 +84,11 @@ class TaskRegistry:
                 )
             update_class_from_dict(env_cfg, state["legged_gym_env_config"])
             update_class_from_dict(train_cfg, state["legged_gym_train_config"])
+            # 未记录独立 Critic 步长的旧检查点继续共用原学习率。
+            if (hasattr(train_cfg.algorithm, "critic_learning_rate")
+                    and "critic_learning_rate" not in
+                    state["legged_gym_train_config"]["algorithm"]):
+                train_cfg.algorithm.critic_learning_rate = None
         if args.num_envs is not None:
             env_cfg.env.num_envs = args.num_envs
         elif args.mode == "play":
@@ -123,6 +128,9 @@ class TaskRegistry:
                 checkpoint=str(warm),
                 sha256=hashlib.sha256(warm.read_bytes()).hexdigest(),
             )
+            if warm_state.get("actor_metadata"):
+                train_cfg.initialization_provenance["actor_metadata"] = deepcopy(
+                    warm_state["actor_metadata"])
         args.checkpoint_path = checkpoint
         return env_cfg, train_cfg
 

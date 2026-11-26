@@ -109,6 +109,8 @@ class TaskRunner:
         return {
             "legged_gym_env_config": class_to_dict(self.env.cfg),
             "legged_gym_train_config": train,
+            "actor_metadata": (train.get("initialization_provenance") or {}).get(
+                "actor_metadata", {}),
         }
 
     @property

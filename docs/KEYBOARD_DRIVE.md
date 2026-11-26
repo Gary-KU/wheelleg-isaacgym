@@ -304,3 +304,28 @@ seed42、四台机器人14秒时序对照，第5–11秒的原地转向腿长标
 ```
 
 当前实验位于本机 `logs/telescopic_training_20261126/`。训练完成不等于验收通过；须检查多种随机种子的连续站立，以及 8/9/10 cm 下的四方向、组合转向、反向、松键停车。运动报告同时保存各电机限幅占比、髋关节超过连续力矩的累计时长及峰值额度余量，用于区分策略问题和执行器饱和。
+
+### 变高度恢复实验
+
+上一轮100次微调完成后，10cm仍有持续漂移，未被接受为稳定版本。恢复实验保存在本机 `logs/height_rescue_20261126/`，仍保留0.7m/s、8–10cm和原电机限幅。
+
+`tools/normalize_height_policy.py` 可从固定高度策略生成待验收的初始化：把腿长观测和目标转换为相对8cm的变化量，并补偿CAD模型随高度变化的名义重心平衡俯仰。参照取最新有效目标，因此8cm启动时的空历史也保留原语义。变换折叠进网络第一层权重和偏置，输入仍是原132维传感器历史，MCU不要重复做同样处理。这是输入校准，不能称为新增RL训练；径向支撑前馈仍是原近似，未被替换成完整重力补偿。
+
+```bash
+./manage.sh run tools/normalize_height_policy.py \
+  --checkpoint logs/turn_refine_20261126/keyboard_play.pt \
+  --output logs/my_height/normalized.pt --speed 0.7 --leg-range 0.08 0.10
+./manage.sh train --task wheelleg_sensor_telescopic \
+  --warm-start logs/my_height/normalized.pt --num-envs 32 \
+  --max-iterations 50 --headless --sim-device cuda:0
+```
+
+新的 `WheelLeggedTelescopicCfgPPO` 为新Critic设置独立学习率0.001，Actor仍为0.00001，并关闭价值损失裁剪，避免新Critic的值变化被限制在旧预测附近。`algorithm.critic_learning_rate=None` 保留共用学习率的行为；旧检查点缺少该字段时恢复为None，因此播放和旧实验续训不会自动启用新设置。新的Actor warm-start会采用恢复配置。独立Critic步长在Actor的自适应学习率变化和优化器恢复后保持不变。
+
+价值网络在固定目标上的拟合通过，仅证明优化器能学习，不能证明策略站稳；候选仍须通过长时间静止、变高度、驾驶和停车验收。速度误差反馈并非越大越好：本次提高该反馈的诊断出现倒地，未采用。
+
+后置电池还使“机体俯仰为零”与“整机重心在轮轴上方”不完全相同。新的变高度任务设置 `rewards.upright_about_com=True`，使用CAD质量和仿真刚体状态计算整机重心相对轮轴的前后倾角，作为upright奖励；横滚项保持原定义。该真值仅供奖励使用，不进入132维Actor输入，也不修改物理模型或施加额外支撑。旧检查点缺少该字段时保持原奖励。
+
+`wheelleg_sensor_height_stand` 是站立课程：一回合保持一个8–10cm目标高度，伸腿后约有14秒静止数据，并收紧实际速度误差的奖励尺度。先用该任务学习停车，通过多种子长时间检查后，再用Actor warm-start进入 `wheelleg_sensor_telescopic` 的0.7m/s完整运动课程；站立中间权重不能直接称为驾驶版。恢复流程和验收参数保存在实验目录 `pipeline_plan.json`。
+
+Actor的输入校准信息保存在检查点 `actor_metadata`，warm-start时跟随Actor写入新检查点，避免把高度校准误加两遍。该元数据不参与推理。

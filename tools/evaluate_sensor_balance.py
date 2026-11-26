@@ -23,6 +23,7 @@ def main():
         "wheelleg_sensor_quiet",
         "wheelleg_sensor_drive",
         "wheelleg_sensor_telescopic",
+        "wheelleg_sensor_height_stand",
     ):
         raise ValueError(
             "Select a registered sensor balance, tracking, drive or telescopic task"

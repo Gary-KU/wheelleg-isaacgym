@@ -27,6 +27,7 @@ class WheelLeggedSensorCfg(WheelLeggedCfg):
 
     class rewards(WheelLeggedCfg.rewards):
         upright_sigma = 0.10  # rad; exp(-(pitch^2 + roll^2)/sigma^2)
+        upright_about_com = False  # True仅改训练打分，不给策略输入重心真值
         linear_tracking_sigma = 0.20  # m/s
         yaw_tracking_sigma = 0.40  # rad/s
 
@@ -266,6 +267,7 @@ class WheelLeggedTelescopicCfg(WheelLeggedDriveCfg):
 
     class rewards(WheelLeggedDriveCfg.rewards):
         upright_sigma = 0.15  # 允许加减速时适量俯仰，避免奖励要求与平衡冲突
+        upright_about_com = True
         speed_error_scale = 0.20
         lateral_error_scale = 0.05
         yaw_error_scale = 0.10
@@ -281,6 +283,32 @@ class WheelLeggedTelescopicCfgPPO(WheelLeggedDriveCfgPPO):
     class algorithm(WheelLeggedDriveCfgPPO.algorithm):
         learning_rate = 0.00001
         max_learning_rate = 0.00001
+        critic_learning_rate = 0.001
+        use_clipped_value_loss = False  # fresh Critic 不受每轮0.2的旧值变化限制
 
     class runner(WheelLeggedDriveCfgPPO.runner):
         experiment_name = "wheelleg_sensor_telescopic"
+
+
+class WheelLeggedHeightStandCfg(WheelLeggedTelescopicCfg):
+    """变高度课程第一阶段：每回合保持一个高度，先学会长期停车。"""
+
+    class commands(WheelLeggedTelescopicCfg.commands):
+        forward_speed_range = (0., 0.)
+        yaw_speed_range = (0., 0.)
+        zero_command_fraction = 1.
+        command_resample_seconds = 0.  # 16秒回合中保留约14秒的伸腿后站立
+
+    class rewards(WheelLeggedTelescopicCfg.rewards):
+        speed_error_scale = .03
+        lateral_error_scale = .02
+        yaw_error_scale = .05
+
+        class scales(WheelLeggedTelescopicCfg.rewards.scales):
+            speed_error = -1.
+            yaw_rate_error = -.2
+
+
+class WheelLeggedHeightStandCfgPPO(WheelLeggedTelescopicCfgPPO):
+    class runner(WheelLeggedTelescopicCfgPPO.runner):
+        experiment_name = "wheelleg_sensor_height_stand"
