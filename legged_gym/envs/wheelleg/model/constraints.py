@@ -8,10 +8,12 @@ origins, whereas their linear velocities refer to centers of mass.
 import json
 import math
 from pathlib import Path
+from typing import Optional
 
 import torch
 
 
+@torch.jit.script
 def quat_rotate(q, v):
     """Rotate vectors by unit XYZW quaternions, with broadcasting."""
     xyz, v = torch.broadcast_tensors(q[..., :3], v)
@@ -19,6 +21,7 @@ def quat_rotate(q, v):
     return v + 2.0 * (q[..., 3:4] * uv + torch.cross(xyz, uv, dim=-1))
 
 
+@torch.jit.script
 def quat_rotate_inverse(q, v):
     """Apply the inverse of a unit XYZW quaternion to vectors."""
     xyz, v = torch.broadcast_tensors(-q[..., :3], v)
@@ -26,10 +29,59 @@ def quat_rotate_inverse(q, v):
     return v + 2.0 * (q[..., 3:4] * uv + torch.cross(xyz, uv, dim=-1))
 
 
-def _limit_norm(v, limit):
+@torch.jit.script
+def _limit_norm(v, limit: Optional[float]):
     if limit is None:
         return v
     return v * torch.clamp(limit / torch.linalg.vector_norm(v, dim=-1, keepdim=True).clamp_min(1e-12), max=1.0)
+
+
+@torch.jit.script
+def _closure_geometry(rb_state, body0, body1, geometry_local0, geometry_local1):
+    s0, s1 = rb_state[:, body0], rb_state[:, body1]
+    q0, q1 = s0[..., 3:7], s1[..., 3:7]
+    rotated0 = quat_rotate(q0.unsqueeze(-2), geometry_local0)
+    rotated1 = quat_rotate(q1.unsqueeze(-2), geometry_local1)
+    anchor0 = s0[..., :3] + rotated0[..., 0, :]
+    anchor1 = s1[..., :3] + rotated1[..., 0, :]
+    # Lever arms start at COM, not the link origin in rb_state[..., :3].
+    lever0, lever1 = rotated0[..., 1, :], rotated1[..., 1, :]
+    velocity0 = s0[..., 7:10] + torch.cross(s0[..., 10:13], lever0, dim=-1)
+    velocity1 = s1[..., 7:10] + torch.cross(s1[..., 10:13], lever1, dim=-1)
+    axis0, axis1 = rotated0[..., 2, :], rotated1[..., 2, :]
+    return s0, s1, anchor0, anchor1, lever0, lever1, velocity0, velocity1, axis0, axis1
+
+
+@torch.jit.script
+def _closure_wrenches(rb_state, body0, body1, geometry_local0, geometry_local1,
+                      stiffness: float, damping: float, angular_stiffness: float,
+                      angular_damping: float, max_force: Optional[float],
+                      max_torque: Optional[float]):
+    # 高频闭环数学交给 TorchScript，保留原力学方程和逐物理步刷新。
+    s0, s1, p0, p1, r0, r1, v0, v1, a0, a1 = _closure_geometry(rb_state, body0, body1, geometry_local0, geometry_local1)
+    force = _limit_norm(stiffness * (p1 - p0) + damping * (v1 - v0), max_force)
+    cross = torch.cross(a0, a1, dim=-1)
+    sine = torch.linalg.vector_norm(cross, dim=-1, keepdim=True)
+    cosine = (a0 * a1).sum(dim=-1, keepdim=True).clamp(-1.0, 1.0)
+    angle = torch.atan2(sine, cosine)
+    # At 180 degrees choose a deterministic perpendicular correction axis.
+    basis = torch.nn.functional.one_hot(a0.abs().argmin(dim=-1), 3).to(a0.dtype)
+    fallback = torch.cross(a0, basis, dim=-1)
+    fallback = fallback / torch.linalg.vector_norm(fallback, dim=-1, keepdim=True).clamp_min(1e-12)
+    direction = torch.where(sine > 1e-7, cross / sine.clamp_min(1e-12), fallback)
+    average_axis = a0 + a1
+    average_norm = torch.linalg.vector_norm(average_axis, dim=-1, keepdim=True)
+    hinge_axis = torch.where(average_norm > 1e-7, average_axis / average_norm.clamp_min(1e-12), a0)
+    delta_omega = s1[..., 10:13] - s0[..., 10:13]
+    perpendicular_omega = delta_omega - (delta_omega * hinge_axis).sum(dim=-1, keepdim=True) * hinge_axis
+    couple = _limit_norm(angular_stiffness * angle * direction + angular_damping * perpendicular_omega, max_torque)
+    forces = torch.zeros((rb_state.shape[0], rb_state.shape[1], 3), dtype=rb_state.dtype, device=rb_state.device)
+    torques = torch.zeros_like(forces)
+    forces.index_add_(1, body0, force)
+    forces.index_add_(1, body1, -force)
+    torques.index_add_(1, body0, torch.cross(r0, force, dim=-1) + couple)
+    torques.index_add_(1, body1, torch.cross(r1, -force, dim=-1) - couple)
+    return forces, torques
 
 
 class ClosureForces:
@@ -112,18 +164,8 @@ class ClosureForces:
     def _geometry(self, rb_state):
         if rb_state.shape != (self.num_envs, self.num_bodies, 13):
             raise ValueError("rb_state must have shape [N,B,13]")
-        s0, s1 = rb_state[:, self.body0], rb_state[:, self.body1]
-        q0, q1 = s0[..., 3:7], s1[..., 3:7]
-        rotated0 = quat_rotate(q0.unsqueeze(-2), self._geometry_local0)
-        rotated1 = quat_rotate(q1.unsqueeze(-2), self._geometry_local1)
-        anchor0 = s0[..., :3] + rotated0[..., 0, :]
-        anchor1 = s1[..., :3] + rotated1[..., 0, :]
-        # Lever arms start at COM, not the link origin in rb_state[..., :3].
-        lever0, lever1 = rotated0[..., 1, :], rotated1[..., 1, :]
-        velocity0 = s0[..., 7:10] + torch.cross(s0[..., 10:13], lever0, dim=-1)
-        velocity1 = s1[..., 7:10] + torch.cross(s1[..., 10:13], lever1, dim=-1)
-        axis0, axis1 = rotated0[..., 2, :], rotated1[..., 2, :]
-        return s0, s1, anchor0, anchor1, lever0, lever1, velocity0, velocity1, axis0, axis1
+        return _closure_geometry(rb_state, self.body0, self.body1,
+                                 self._geometry_local0, self._geometry_local1)
 
     def errors(self, rb_state):
         """Return anchor separation in meters, shape [N, closures]."""
@@ -144,27 +186,9 @@ class ClosureForces:
 
     def compute(self, rb_state):
         """Return [N,B,3] forces and torques about each body's COM."""
-        s0, s1, p0, p1, r0, r1, v0, v1, a0, a1 = self._geometry(rb_state)
-        force = _limit_norm(self.stiffness * (p1 - p0) + self.damping * (v1 - v0), self.max_force)
-        cross = torch.cross(a0, a1, dim=-1)
-        sine = torch.linalg.vector_norm(cross, dim=-1, keepdim=True)
-        cosine = (a0 * a1).sum(dim=-1, keepdim=True).clamp(-1.0, 1.0)
-        angle = torch.atan2(sine, cosine)
-        # At 180 degrees choose a deterministic perpendicular correction axis.
-        basis = torch.nn.functional.one_hot(a0.abs().argmin(dim=-1), 3).to(a0.dtype)
-        fallback = torch.cross(a0, basis, dim=-1)
-        fallback = fallback / torch.linalg.vector_norm(fallback, dim=-1, keepdim=True).clamp_min(1e-12)
-        direction = torch.where(sine > 1e-7, cross / sine.clamp_min(1e-12), fallback)
-        average_axis = a0 + a1
-        average_norm = torch.linalg.vector_norm(average_axis, dim=-1, keepdim=True)
-        hinge_axis = torch.where(average_norm > 1e-7, average_axis / average_norm.clamp_min(1e-12), a0)
-        delta_omega = s1[..., 10:13] - s0[..., 10:13]
-        perpendicular_omega = delta_omega - (delta_omega * hinge_axis).sum(dim=-1, keepdim=True) * hinge_axis
-        couple = _limit_norm(self.angular_stiffness * angle * direction + self.angular_damping * perpendicular_omega, self.max_torque)
-        forces = torch.zeros((self.num_envs, self.num_bodies, 3), dtype=rb_state.dtype, device=rb_state.device)
-        torques = torch.zeros_like(forces)
-        forces.index_add_(1, self.body0, force)
-        forces.index_add_(1, self.body1, -force)
-        torques.index_add_(1, self.body0, torch.cross(r0, force, dim=-1) + couple)
-        torques.index_add_(1, self.body1, torch.cross(r1, -force, dim=-1) - couple)
-        return forces, torques
+        if rb_state.shape != (self.num_envs, self.num_bodies, 13):
+            raise ValueError("rb_state must have shape [N,B,13]")
+        return _closure_wrenches(
+            rb_state, self.body0, self.body1, self._geometry_local0, self._geometry_local1,
+            self.stiffness, self.damping, self.angular_stiffness, self.angular_damping,
+            self.max_force, self.max_torque)

@@ -82,6 +82,10 @@ def get_args(mode="train", argv=None):
     p.add_argument("--rl_device", "--rl-device")
     p.add_argument("--headless", action="store_true")
     p.add_argument("--viewer-fps", type=float, help="Target viewer FPS (wall clock by default)")
+    p.add_argument("--linear-acceleration", type=float,
+                   help="Override command acceleration/braking limit in m/s²")
+    p.add_argument("--yaw-acceleration", type=float,
+                   help="Override command yaw acceleration/braking limit in rad/s²")
     p.add_argument("--resume", action="store_true")
     p.add_argument(
         "--warm_start",

@@ -84,6 +84,11 @@ class WheelLegged(WheelLegRobot):
                 cfg.env.spacing = 1.5  # 历史检查点保留原网格布局
         if args.viewer_fps is not None:
             cfg.viewer.viewer_fps = args.viewer_fps
+        # 显式参数覆盖检查点里的速度斜坡；物理步长和电机限幅仍由原配置决定。
+        for name in ("linear_acceleration", "yaw_acceleration"):
+            value = getattr(args, name, None)
+            if value is not None:
+                setattr(cfg.commands, name, value)
         if args.command is not None:
             cfg.commands.command = args.command
         if args.mode == "play":
