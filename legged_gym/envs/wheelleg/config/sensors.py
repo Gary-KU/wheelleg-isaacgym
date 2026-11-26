@@ -48,6 +48,8 @@ class WheelLeggedSensorCfg(WheelLeggedCfg):
         frame_fields = FRAME_FIELDS
         sensor_scales = SENSOR_SCALES
         history_frames = HISTORY_FRAMES
+        wheel_angle_noise_std = .001  # rad；可选轮角里程的假设噪声，不是实测规格
+        wheel_angle_bias_std = .01  # rad；每回合固定，角度差会消去固定零偏
         # 20 ms at the default policy rate; an assumed training latency.
         delay_steps = 1
         # These are example training perturbations, NOT measured BMI088 statistics.
@@ -215,6 +217,12 @@ class WheelLeggedDriveCfg(WheelLeggedQuietStandCfg):
         standing_height_trim_ki = 0.0  # 伸腿静止修正默认关闭，旧权重行为不变
         standing_height_trim_limit = 0.08  # m/s，策略速度参考修正上限
         standing_height_trim_initial_coefficient = 0.0  # s^-1，可选高度偏置标定；旧权重为0
+        encoder_hold = False  # 可选轮角里程外环；与轮速积分修正互斥
+        encoder_hold_position_kp = .5  # s^-1，停车位置误差→速度参考
+        encoder_hold_heading_kp = 1.0  # s^-1，直行相对航向误差→转速参考
+        encoder_hold_speed_limit = .08  # m/s，含高度标定的总参考修正限幅
+        encoder_hold_yaw_limit = .2  # rad/s，转向指令非零时不叠加航向修正
+        encoder_hold_height_slope = 0.0  # s^-1，离线标定的高度速度参考初值
 
     class rewards(WheelLeggedQuietStandCfg.rewards):
         standstill_position_sigma = 0.05  # m；仅训练打分，不向Actor提供位置

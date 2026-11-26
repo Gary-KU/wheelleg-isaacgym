@@ -23,19 +23,25 @@ def main():
     p.add_argument("--leg-range", type=float, nargs=2, required=True, metavar=("MIN", "MAX"))
     p.add_argument("--leg-speed", type=float, default=0.01, help="Q/E rate, m/s")
     p.add_argument("--standing-trim-ki", type=float, default=0.4, help="Stationary integral gain; 0 disables it")
-    p.add_argument("--standing-trim-slope", type=float, default=0.0,
+    p.add_argument("--standing-trim-slope", "--height-speed-slope", type=float, default=0.0,
                    help="Calibrated initial speed correction per metre of extension (s^-1)")
+    p.add_argument("--encoder-hold", action="store_true",
+                   help="Use wheel-angle odometry for stop/straight heading feedback instead of rate integration")
+    p.add_argument("--hold-position-kp", type=float, default=.5)
+    p.add_argument("--hold-heading-kp", type=float, default=1.)
     args = p.parse_args()
     if args.output.suffix != ".pt" or args.output.resolve() == args.checkpoint.resolve():
         p.error("Save to a different .pt path; keep the original checkpoint")
-    values = (args.speed, args.leg_speed, args.standing_trim_ki, args.standing_trim_slope, *args.leg_range)
+    values = (args.speed, args.leg_speed, args.standing_trim_ki, args.standing_trim_slope,
+              args.hold_position_kp, args.hold_heading_kp, *args.leg_range)
     if (not all(math.isfinite(x) for x in values)
-            or min(args.speed, args.leg_speed) <= 0 or args.standing_trim_ki < 0
+            or min(args.speed, args.leg_speed, args.hold_position_kp, args.hold_heading_kp) <= 0
+            or args.standing_trim_ki < 0
             or not MIN_LEG_LENGTH <= args.leg_range[0] < args.leg_range[1] <= MAX_LEG_LENGTH):
         p.error("Use positive finite speeds, nonnegative gain and a leg range within the CAD limits")
     if abs(args.standing_trim_slope) * (args.leg_range[1]-args.leg_range[0]) > .08:
         p.error("standing-trim-slope exceeds the0.08m/s correction limit")
-    if args.standing_trim_slope and not args.standing_trim_ki:
+    if args.standing_trim_slope and not args.standing_trim_ki and not args.encoder_hold:
         p.error("A calibrated trim slope requires standing-trim-ki >0")
     state = torch.load(str(args.checkpoint), map_location="cpu")
     require_model_checkpoint(state)
@@ -54,8 +60,18 @@ def main():
         # 键盘、API目标和训练/验收共用同一伸腿斜坡；不能只改键盘显示档位。
         leg_length_rate=args.leg_speed)
     cfg["control"].update(
-        standing_height_trim_ki=args.standing_trim_ki, standing_height_trim_limit=0.08,
-        standing_height_trim_initial_coefficient=args.standing_trim_slope)
+        standing_height_trim_ki=0.0 if args.encoder_hold else args.standing_trim_ki,
+        standing_height_trim_limit=0.08,
+        standing_height_trim_initial_coefficient=args.standing_trim_slope,
+        encoder_hold=args.encoder_hold,
+        encoder_hold_position_kp=args.hold_position_kp,
+        encoder_hold_heading_kp=args.hold_heading_kp,
+        encoder_hold_speed_limit=.08, encoder_hold_yaw_limit=.2,
+        encoder_hold_height_slope=args.standing_trim_slope)
+    if args.encoder_hold:
+        # 显式保存假设的角度测量误差，避免以后类默认值改变旧候选的行为。
+        cfg['sensors'].setdefault('wheel_angle_noise_std', .001)
+        cfg['sensors'].setdefault('wheel_angle_bias_std', .01)
     # environment_config 仅存底层构造参数；修正器属于任务，不传入物理构造器。
     state["environment_config"].update(
         forward_speed_range=[-args.speed, args.speed], leg_length_range=args.leg_range)
@@ -63,8 +79,13 @@ def main():
         source_checkpoint=str(args.checkpoint.resolve()),
         source_sha256=hashlib.sha256(args.checkpoint.read_bytes()).hexdigest(),
         speed_m_s=args.speed, leg_range_m=args.leg_range,
-        leg_speed_m_s=args.leg_speed, standing_trim_ki=args.standing_trim_ki,
+        leg_speed_m_s=args.leg_speed,
+        standing_trim_ki=cfg['control']['standing_height_trim_ki'],
         standing_trim_initial_coefficient_s_inv=args.standing_trim_slope,
+        encoder_position_hold=args.encoder_hold,
+        encoder_hold_position_kp=args.hold_position_kp,
+        encoder_hold_heading_kp=args.hold_heading_kp,
+        height_speed_slope_s_inv=args.standing_trim_slope,
         network_unchanged=True, extra_training=False,
         status="candidate_requires_evaluation",
         note="MCU must port the command ramp, hip control/limits and enabled standing trim as well as the network.",

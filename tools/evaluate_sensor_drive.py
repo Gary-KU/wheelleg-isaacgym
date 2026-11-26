@@ -34,6 +34,8 @@ def main():
     p.add_argument("--turn-speed", type=float, default=0.6)
     p.add_argument("--leg-length", type=float, default=0.08,
                    help="Target length in metres; ramp from the initial height at the keyboard rate")
+    p.add_argument("--height-cycle", action="store_true",
+                   help="Extend and retract between the checkpoint's low height and --leg-length while moving")
     p.add_argument("--motion-seconds", type=float, default=6.0)
     p.add_argument("--stop-seconds", type=float, default=5.0)
     args = p.parse_args()
@@ -73,6 +75,8 @@ def main():
     checkpoint_sha256 = hashlib.sha256(args.checkpoint.read_bytes()).hexdigest()
     if not cfg.commands.leg_length_range[0]-1e-7 <= args.leg_length <= cfg.commands.leg_length_range[1]+1e-7:
         p.error("Requested leg length exceeds the checkpoint command range")
+    if args.height_cycle and args.leg_length <= cfg.commands.leg_length_range[0] + 1e-7:
+        p.error("height-cycle requires --leg-length above the checkpoint's minimum height")
     if args.speed > max(
         abs(x) for x in cfg.commands.forward_speed_range
     ) or args.turn_speed > max(abs(x) for x in cfg.commands.yaw_speed_range):
@@ -92,6 +96,18 @@ def main():
             ("reverse_keys", args.motion_seconds, -1),
             ("final_release", args.stop_seconds, 0),
         ]
+        if args.height_cycle:
+            pattern = [
+                ("initial_stop", args.stop_seconds, 0),
+                ("keys_low", args.motion_seconds, 1),
+                ("keys_high", args.motion_seconds, 1),
+                ("keys_low_again", args.motion_seconds, 1),
+                ("release", args.stop_seconds, 0),
+                ("reverse_keys_low", args.motion_seconds, -1),
+                ("reverse_keys_high", args.motion_seconds, -1),
+                ("reverse_keys_low_again", args.motion_seconds, -1),
+                ("final_release", args.stop_seconds, 0),
+            ]
         env.max_episode_length = sum(round(s / env.dt) for _, s, _ in pattern) + 1
         commands = env.commands.new_tensor(
             [
@@ -121,6 +137,8 @@ def main():
             for name, seconds, direction in pattern:
                 target = commands.clone()
                 target[:, :3] *= direction
+                if args.height_cycle and not name.endswith('_high'):
+                    target[:, 3] = cfg.commands.leg_length_range[0]
                 # 高速下斜坡可能超过原固定2秒；先预留斜坡时长再统计稳态。
                 change = target - env.commands
                 ramp_seconds = 0.0
@@ -267,10 +285,14 @@ def main():
             checkpoint=str(args.checkpoint.resolve()),
             checkpoint_sha256=checkpoint_sha256,
             task=args.task,
+            runtime_control=getattr(env, 'runtime_control_contract', lambda: None)(),
             seed=args.seed,
             command_mode="combined" if args.combined else "cardinal",
             continuous_hip_limit_only=args.continuous_hip_limit,
             target_leg_length_m=args.leg_length,
+            height_cycle=args.height_cycle,
+            cycle_min_leg_length_m=(cfg.commands.leg_length_range[0]
+                                    if args.height_cycle else None),
             control_dt=env.dt,
             num_envs=4,
             seconds_per_environment=sum(s for _, s, _ in pattern),

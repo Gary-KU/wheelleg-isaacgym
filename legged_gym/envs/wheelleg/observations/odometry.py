@@ -1,0 +1,100 @@
+"""由轮编码器角度和腿部几何估计相对里程；不读取仿真位姿或速度。"""
+
+import math
+
+import torch
+
+from legged_gym.envs.wheelleg.model.geometry import (
+    UPPER, LOWER, HIP_SPAN, HIP_DOWN, WHEEL_RADIUS, WHEEL_TRACK,
+)
+
+
+class PlanarWheelOdometry:
+    """平地滚动近似：补偿轮子安装连杆的旋转及伸腿引起的轮心平移。
+
+    输入为原13维SI传感器和两个原始轮轴角度（左/右、rad）。角度零偏
+    在差分中抵消，不积分电机速度通道的恒定零偏。输出是相对路程/航向，
+    不是绝对定位；轮胎打滑、腾空、明显横滚时不保证准确。
+    """
+
+    def __init__(self, n, device):
+        self.distance = torch.zeros(n, device=device)
+        self.yaw = torch.zeros_like(self.distance)
+        self.previous_angles = torch.zeros(n, 2, device=device)
+        self.previous_projection = torch.zeros_like(self.previous_angles)
+        self.initialized = torch.zeros(n, dtype=torch.bool, device=device)
+
+    @staticmethod
+    def _wheel_geometry(sensors, wheel_angles):
+        pitch = sensors[:, 0:1]
+        angle, length = sensors[:, 3:5], sensors[:, 5:7]
+        # 当前CAD轮子分别安装在L_F_Link2/R_H_Link2，均对应各侧phi1分支。
+        # FK平面坐标左右相反；由腿角/腿长反解安装杆角度，换模型须核对分支。
+        side = sensors.new_tensor([-1., 1.])
+        cx = HIP_SPAN / 2 + side * length * angle.sin()
+        cy = HIP_DOWN / 2 + length * angle.cos()
+        radius = (cx.square() + cy.square()).clamp_min(1e-12).sqrt()
+        cosine = (radius.square() + UPPER**2 - LOWER**2) / (2 * UPPER * radius)
+        upper_angle = torch.atan2(cy, cx) + cosine.clamp(-1., 1.).acos()
+        carrier = torch.atan2(cy - UPPER * upper_angle.sin(),
+                              cx - UPPER * upper_angle.cos())
+        absolute_wheel_angle = side * wheel_angles + pitch + side * carrier
+        projection = length * (angle - pitch).sin()
+        valid = (torch.isfinite(sensors).all(-1)
+                 & torch.isfinite(wheel_angles).all(-1)
+                 & (length > 1e-5).all(-1) & (cosine.abs() <= 1.0001).all(-1))
+        return absolute_wheel_angle, projection, valid
+
+    def reset(self, ids):
+        self.distance[ids] = self.yaw[ids] = 0.
+        self.initialized[ids] = False
+
+    def update(self, sensors, wheel_angles, observed=None):
+        angles, projection, valid = self._wheel_geometry(sensors, wheel_angles)
+        if observed is None:
+            observed = torch.ones_like(valid)
+        valid &= observed
+        delta = angles - self.previous_angles
+        delta = torch.atan2(delta.sin(), delta.cos())  # 编码器跨±pi时仍连续
+        travel = WHEEL_RADIUS * delta - (projection - self.previous_projection)
+        ready = valid & self.initialized
+        travel = torch.where(ready[:, None], travel, 0.)
+        self.distance += travel.mean(-1)
+        self.yaw += (travel[:, 1] - travel[:, 0]) / WHEEL_TRACK
+        self.previous_angles[valid] = angles[valid]
+        self.previous_projection[valid] = projection[valid]
+        self.initialized[observed] = valid[observed]
+        return ready
+
+
+class EncoderPositionSampler:
+    """与13维传感器对齐的轮角采样；噪声为假设值，需按实机标定。
+
+    每回合固定角度零偏、逐帧白噪声及同样的整数拍延迟。独立随机源不
+    改变旧13维传感器的噪声序列；原始角度只供可选里程控制器使用。
+    """
+
+    def __init__(self, n, device, delay_steps, noise_std, bias_std, seed):
+        if isinstance(delay_steps, bool) or not isinstance(delay_steps, int) or not 0 <= delay_steps <= 10:
+            raise ValueError("Wheel angle delay must be an integer in0..10")
+        if not all(math.isfinite(v) and v >= 0 for v in (noise_std, bias_std)):
+            raise ValueError("Wheel angle noise/bias must be finite and nonnegative")
+        self.noise_std, self.bias_std = noise_std, bias_std
+        self.bias = torch.zeros(n, 2, device=device)
+        self.queue = torch.zeros(n, delay_steps + 1, 2, device=device)
+        self.sample = torch.zeros_like(self.bias)
+        self.generator = torch.Generator(device=device).manual_seed(seed + 1429)
+
+    def _noise(self, shape):
+        return torch.randn(shape, device=self.sample.device, generator=self.generator)
+
+    def reset(self, ids, angles):
+        self.bias[ids] = self.bias_std * self._noise((len(ids), 2))
+        value = angles[ids] + self.bias[ids] + self.noise_std * self._noise((len(ids), 2))
+        self.queue[ids] = value[:, None]
+        self.sample[ids] = value
+
+    def advance(self, angles):
+        self.queue[:, :-1] = self.queue[:, 1:].clone()
+        self.queue[:, -1] = angles + self.bias + self.noise_std * self._noise(angles.shape)
+        self.sample.copy_(self.queue[:, 0])

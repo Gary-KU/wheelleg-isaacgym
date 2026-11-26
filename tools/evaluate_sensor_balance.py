@@ -123,6 +123,7 @@ def main():
         report = dict(
             checkpoint=str(args.checkpoint_path),
             task=args.task,
+            runtime_control=getattr(env, 'runtime_control_contract', lambda: None)(),
             seed=cfg.seed,
             simulation=dict(
                 physics_dt_s=env.physics_dt,

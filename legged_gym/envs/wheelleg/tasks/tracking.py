@@ -29,6 +29,10 @@ class DrivingWheelLegged(SensorWheelLegged):
         rate = cfg.commands.leg_length_rate
         if not math.isfinite(rate) or rate < 0:
             raise ValueError("leg_length_rate must be finite and nonnegative")
+        if not isinstance(cfg.control.encoder_hold, bool):
+            raise ValueError("encoder_hold must be boolean")
+        if cfg.control.encoder_hold and cfg.control.standing_height_trim_ki:
+            raise ValueError("Encoder hold and wheel-rate integral trim are alternative controllers")
 
     def _allocate_buffers(self):
         super()._allocate_buffers()
@@ -40,6 +44,18 @@ class DrivingWheelLegged(SensorWheelLegged):
                 self.num_envs, self.device, self.dt, r.standstill_settle_seconds,
                 r.standstill_position_sigma, r.standstill_heading_sigma)
         self.height_standing_trim = None
+        self.encoder_hold = self.wheel_position_sampler = None
+        if self.cfg.control.encoder_hold:
+            from legged_gym.envs.wheelleg.control.encoder_hold import EncoderHold
+            from legged_gym.envs.wheelleg.observations.odometry import EncoderPositionSampler
+            c, s = self.cfg.control, self.cfg.sensors
+            self.encoder_hold = EncoderHold(
+                self.num_envs, self.device, self.cfg.keyboard.leg_range[0],
+                c.encoder_hold_position_kp, c.encoder_hold_heading_kp,
+                c.encoder_hold_speed_limit, c.encoder_hold_yaw_limit, c.encoder_hold_height_slope)
+            self.wheel_position_sampler = EncoderPositionSampler(
+                self.num_envs, self.device, s.delay_steps,
+                s.wheel_angle_noise_std, s.wheel_angle_bias_std, self.cfg.seed)
         if self.cfg.control.standing_height_trim_ki:
             from legged_gym.envs.wheelleg.control.standing_trim import HeightStandingTrim
             low, high = self.cfg.keyboard.leg_range
@@ -59,8 +75,16 @@ class DrivingWheelLegged(SensorWheelLegged):
             self.height_standing_trim.reset(ids)
         if self.standstill_reward is not None:
             self.standstill_reward.reset(ids)
+        if self.encoder_hold is not None:
+            self.encoder_hold.reset(ids)
 
     def _policy_commands(self):
+        if self.encoder_hold is not None:
+            reference = self.commands.clone()
+            forward, yaw = self.encoder_hold.corrections(self.commands, self.command_targets)
+            reference[:, 0] += forward
+            reference[:, 2] += yaw
+            return reference
         if self.height_standing_trim is None:
             return self.commands
         reference = self.commands.clone()
@@ -68,8 +92,21 @@ class DrivingWheelLegged(SensorWheelLegged):
         return reference
 
     def _observations(self, advance_history=True):
-        resetting = self.sensor_reset_pending.clone() if self.height_standing_trim is not None else None
+        resetting = (self.sensor_reset_pending.clone()
+                     if self.height_standing_trim is not None or self.encoder_hold is not None else None)
         obs = super()._observations(advance_history)
+        if self.encoder_hold is not None:
+            angles = self.dof_state[:, self.action_indices[4:], 0]
+            ids = resetting.nonzero(as_tuple=False).flatten()
+            if len(ids):
+                self.wheel_position_sampler.reset(ids, angles)
+            if advance_history:
+                self.wheel_position_sampler.advance(angles)
+            observed = torch.ones_like(resetting) if advance_history else resetting
+            self.encoder_hold.update(
+                self.sensor_sampler.sample, self.wheel_position_sampler.sample,
+                self.commands, self.command_targets, observed)
+            self._refresh_command_observations()
         if self.height_standing_trim is not None and advance_history:
             self.height_standing_trim.update(
                 self.sensor_sampler.sample, self.commands, ~resetting, self.dt)
@@ -78,6 +115,10 @@ class DrivingWheelLegged(SensorWheelLegged):
 
     def _extra_step_info(self):
         info = super()._extra_step_info()
+        if self.encoder_hold is not None:
+            info['pre_reset_policy_commands'] = self._policy_commands().clone()
+            info['pre_reset_encoder_odometry_m'] = self.encoder_hold.odometry.distance.clone()
+            info['pre_reset_encoder_heading_rad'] = self.encoder_hold.odometry.yaw.clone()
         if self.standstill_reward is not None:
             info["pre_reset_standstill_drift_m"] = self.standstill_reward.displacement.clone()
             info["pre_reset_standstill_heading_rad"] = self.standstill_reward.heading_error.clone()
@@ -181,6 +222,25 @@ class DrivingWheelLegged(SensorWheelLegged):
 
     def _reward_standstill_heading(self):
         return self._task_reward_terms["standstill_heading"]
+
+    def runtime_control_contract(self):
+        """报告额外控制状态的来源，避免把轮角外环误称为纯132维策略。"""
+        c, s = self.cfg.control, self.cfg.sensors
+        return dict(
+            actor_input_size=self.num_obs,
+            encoder_position_hold=bool(c.encoder_hold),
+            wheel_rate_integral_trim_ki=c.standing_height_trim_ki,
+            additional_measurements=(['left_wheel_angle_rad', 'right_wheel_angle_rad']
+                                     if c.encoder_hold else []),
+            wheel_angle_noise_std_rad=s.wheel_angle_noise_std if c.encoder_hold else None,
+            wheel_angle_bias_std_rad=s.wheel_angle_bias_std if c.encoder_hold else None,
+            measurement_delay_seconds=s.delay_steps * self.dt,
+            position_kp_s_inv=c.encoder_hold_position_kp if c.encoder_hold else None,
+            heading_kp_s_inv=c.encoder_hold_heading_kp if c.encoder_hold else None,
+            height_speed_slope_s_inv=c.encoder_hold_height_slope if c.encoder_hold else None,
+            odometry_assumption='Planar rolling; carrier rotation and leg translation compensated',
+            world_pose_or_velocity_feedback=False,
+        )
 
 
 class TrackingWheelLegged(SensorWheelLegged):
