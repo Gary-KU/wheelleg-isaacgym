@@ -66,6 +66,8 @@ def register(registry):
     from legged_gym.envs.wheelleg.config.sensors import (
         WheelLeggedDriveCfg,
         WheelLeggedDriveCfgPPO,
+        WheelLeggedTelescopicCfg,
+        WheelLeggedTelescopicCfgPPO,
     )
 
     if "wheelleg_sensor_drive" not in registry.task_classes:
@@ -74,4 +76,12 @@ def register(registry):
             DrivingWheelLegged,
             WheelLeggedDriveCfg(),
             WheelLeggedDriveCfgPPO(),
+        )
+
+    if "wheelleg_sensor_telescopic" not in registry.task_classes:
+        registry.register(
+            "wheelleg_sensor_telescopic",
+            DrivingWheelLegged,
+            WheelLeggedTelescopicCfg(),
+            WheelLeggedTelescopicCfgPPO(),
         )

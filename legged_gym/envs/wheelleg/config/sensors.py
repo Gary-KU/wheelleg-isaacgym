@@ -206,6 +206,7 @@ class WheelLeggedDriveCfg(WheelLeggedQuietStandCfg):
         linear_acceleration = 0.4
         yaw_acceleration = 1.8
         zero_command_fraction = 0.3
+        leg_length_rate = 0.0  # m/s；0 保持旧任务的即时高度指令
 
     class control(WheelLeggedQuietStandCfg.control):
         decimation = 4  # 2 kHz 物理 / 500 Hz 策略，缩短转向反馈延迟
@@ -238,3 +239,48 @@ class WheelLeggedDriveCfgPPO(WheelLeggedQuietStandCfgPPO):
     class runner(WheelLeggedQuietStandCfgPPO.runner):
         experiment_name = "wheelleg_sensor_drive"
         num_steps_per_env = 250  # 500 Hz 下每轮仍采样 0.5 s
+
+
+class WheelLeggedTelescopicCfg(WheelLeggedDriveCfg):
+    """8–10 cm 变高度运动候选；独立训练和验收，不覆盖已保存的播放配置。"""
+
+    class commands(WheelLeggedDriveCfg.commands):
+        forward_speed_range = (-0.7, 0.7)
+        yaw_speed_range = (-1.0, 1.0)
+        leg_length_range = (0.08, 0.10)
+        leg_length_rate = 0.01
+        command_resample_seconds = 4.0
+        linear_acceleration = 0.8
+        yaw_acceleration = 2.5
+        zero_command_fraction = 0.5
+
+    class control(WheelLeggedDriveCfg.control):
+        leg_differential_kd = 0.08
+
+    class keyboard(WheelLeggedDriveCfg.keyboard):
+        speed = 0.7
+        turn_speed = 1.0
+        adjust_leg_length = True
+        leg_range = (0.08, 0.10)
+        leg_speed = 0.01
+
+    class rewards(WheelLeggedDriveCfg.rewards):
+        upright_sigma = 0.15  # 允许加减速时适量俯仰，避免奖励要求与平衡冲突
+        speed_error_scale = 0.20
+        lateral_error_scale = 0.05
+        yaw_error_scale = 0.10
+
+        class scales(WheelLeggedDriveCfg.rewards.scales):
+            speed_error = -0.5
+            lateral_speed = -0.5
+            yaw_rate_error = -0.1
+            stopped_wheel_speed = -0.002  # 允许必要的平衡修正，不鼓励只锁轮而机体滑动
+
+
+class WheelLeggedTelescopicCfgPPO(WheelLeggedDriveCfgPPO):
+    class algorithm(WheelLeggedDriveCfgPPO.algorithm):
+        learning_rate = 0.00001
+        max_learning_rate = 0.00001
+
+    class runner(WheelLeggedDriveCfgPPO.runner):
+        experiment_name = "wheelleg_sensor_telescopic"

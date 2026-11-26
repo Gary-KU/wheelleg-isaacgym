@@ -286,3 +286,21 @@ seed42、四台机器人14秒时序对照，第5–11秒的原地转向腿长标
 ```
 
 生成器只复制配置并记录来源，不能代替训练或验收。只修改播放档位时使用该工具；开始新训练应使用合适的任务配置和 Actor warm-start。
+
+### 变腿长训练候选
+
+`wheelleg_sensor_telescopic` 保留前后 ±0.7 m/s、转向 ±1.0 rad/s，训练时随机请求 8–10 cm 腿长，包含两个端点，每 4 秒重新采样；50% 请求为停车。腿长从实际重置姿态的 8 cm 开始，以 1 cm/s 变化，训练和播放使用同一斜坡。原 `wheelleg_sensor_drive` 的固定高度采样以前没有使用 `leg_length_range`；现在变高度范围会参与采样，固定范围保持原行为。
+
+配置在 `config/sensors.py` 的 `WheelLeggedTelescopicCfg`，仍使用相同 IMU/编码器 132 维输入、髋 PD/支撑前馈及实际电机限幅。该候选关闭旧的高度积分修正，由网络学习不同高度的平衡；奖励额外惩罚实际侧向速度和速度/转速跟踪误差，降低停车锁轮惩罚，允许必要的轮子平衡修正。仿真真值只用于奖励与验收。
+
+```bash
+./manage.sh train --task wheelleg_sensor_telescopic \
+  --warm-start logs/turn_refine_20261126/keyboard_play.pt \
+  --num-envs 32 --max-iterations 100 --headless --sim-device cuda:0
+./manage.sh run tools/evaluate_sensor_drive.py \
+  --task wheelleg_sensor_telescopic --checkpoint <候选权重> \
+  --report logs/my_height/drive.json --speed 0.7 --turn-speed 1 \
+  --leg-length 0.10 --stop-seconds 8
+```
+
+当前实验位于本机 `logs/telescopic_training_20261126/`。训练完成不等于验收通过；须检查多种随机种子的连续站立，以及 8/9/10 cm 下的四方向、组合转向、反向、松键停车。运动报告同时保存各电机限幅占比、髋关节超过连续力矩的累计时长及峰值额度余量，用于区分策略问题和执行器饱和。

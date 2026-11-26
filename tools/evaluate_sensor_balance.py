@@ -22,9 +22,10 @@ def main():
         "wheelleg_sensor_tracking",
         "wheelleg_sensor_quiet",
         "wheelleg_sensor_drive",
+        "wheelleg_sensor_telescopic",
     ):
         raise ValueError(
-            "Select a sensor task: wheelleg_sensor, wheelleg_sensor_quiet, wheelleg_sensor_drive or wheelleg_sensor_tracking"
+            "Select a registered sensor balance, tracking, drive or telescopic task"
         )
     torch.set_num_threads(1)
     register_tasks()
@@ -38,8 +39,8 @@ def main():
         env.max_episode_length = args.num_steps + 1  # 不把 16 秒超时重置当作站稳
         initial_root_positions = env.root_states[:, :3].tolist()
         motion = MotionEvaluation(env.root_states, env.dt)
-        age = torch.zeros(env.num_envs, device=env.device)
-        longest = age.clone()
+        age_steps = torch.zeros(env.num_envs, dtype=torch.long, device=env.device)
+        longest_steps = age_steps.clone()
         saturation = torch.zeros(6, device=env.device)
         torque_peak = saturation.clone()
         wheel_squares = torch.zeros(2, device=env.device)
@@ -67,9 +68,9 @@ def main():
                     done,
                     env.root_states,
                 )
-                age += env.dt
-                longest = torch.maximum(longest, age)
-                age[done] = 0
+                age_steps += 1
+                longest_steps = torch.maximum(longest_steps, age_steps)
+                age_steps[done] = 0
                 failures += int(info["physical_failures"].sum())
                 timeouts += int(info["time_outs"].sum())
                 pitch_peak = max(pitch_peak, float(info["pre_reset_pitch"].abs().max()))
@@ -119,7 +120,7 @@ def main():
             wall_seconds=time.perf_counter() - start,
             physical_failures=failures,
             timeouts=timeouts,
-            longest_continuous_seconds_by_env=longest.tolist(),
+            longest_continuous_seconds_by_env=(longest_steps.double() * env.dt).tolist(),
             pitch_peak_rad=pitch_peak,
             roll_peak_rad=roll_peak,
             closure_peak_m=loop_peak,

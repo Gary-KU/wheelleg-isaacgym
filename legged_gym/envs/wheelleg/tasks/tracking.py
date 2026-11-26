@@ -1,5 +1,6 @@
 """运动任务：低速前后/转向，以及独立的直行速度课程。"""
 
+import math
 import time
 
 import torch
@@ -13,6 +14,12 @@ from legged_gym.envs.wheelleg.diagnostics.training_metrics import (
 
 class DrivingWheelLegged(SensorWheelLegged):
     """训练/键盘共用速度斜坡；可选伸腿站立修正，不覆盖网络力矩。"""
+
+    def _validate_observation_config(self, cfg):
+        super()._validate_observation_config(cfg)
+        rate = cfg.commands.leg_length_rate
+        if not math.isfinite(rate) or rate < 0:
+            raise ValueError("leg_length_rate must be finite and nonnegative")
 
     def _allocate_buffers(self):
         super()._allocate_buffers()
@@ -28,6 +35,9 @@ class DrivingWheelLegged(SensorWheelLegged):
     def _reset_idx(self, ids):
         super()._reset_idx(ids)
         self.commands[ids, :3] = 0.0
+        if self.cfg.commands.leg_length_rate > 0:
+            # 物理重置姿态是初始腿长；随机高度目标也要经过伸缩斜坡。
+            self.commands[ids, 3] = self.initial_leg_length
         if self.height_standing_trim is not None:
             self.height_standing_trim.reset(ids)
 
@@ -76,6 +86,14 @@ class DrivingWheelLegged(SensorWheelLegged):
         self.command_targets[ids, 2] = selection[:, 1]
         stopped = torch.rand(len(ids), device=self.device) < self.zero_command_fraction
         self.command_targets[ids[stopped], :3] = 0.0
+        low, high = self.leg_length_range
+        if high > low:
+            # 包含中间高度及两个端点；旧的固定高度任务不多消耗随机数。
+            heights = low + (high - low) * torch.rand(len(ids), device=self.device)
+            endpoints = torch.randint(4, (len(ids),), device=self.device)
+            heights = torch.where(endpoints == 0, low, heights)
+            heights = torch.where(endpoints == 1, high, heights)
+            self.command_targets[ids, 3] = heights
 
     def set_commands(self, commands):
         previous = self.commands.clone()
@@ -85,19 +103,53 @@ class DrivingWheelLegged(SensorWheelLegged):
         return self.obs_buf
 
     def _advance_random_commands(self, dones):
+        rate = self.cfg.commands.leg_length_rate
+        height = self.commands[:, 3].clone() if rate > 0 else None
         if self.random_commands:
-            return super()._advance_random_commands(dones)
-        self.commands.copy_(
-            slew_commands(
-                self.commands,
-                self.command_targets,
-                self.dt,
-                self.linear_acceleration,
-                self.yaw_acceleration,
+            resamples = super()._advance_random_commands(dones)
+        else:
+            self.commands.copy_(
+                slew_commands(
+                    self.commands,
+                    self.command_targets,
+                    self.dt,
+                    self.linear_acceleration,
+                    self.yaw_acceleration,
+                )
             )
-        )
+            resamples = 0
+        if rate > 0:
+            # 训练和播放使用同一腿长变化率，不能用瞬时改高度代替 Q/E。
+            limited = height + (self.command_targets[:, 3] - height).clamp(
+                -rate * self.dt, rate * self.dt)
+            self.commands[:, 3] = torch.where(dones, height, limited)
         self._refresh_command_observations()
-        return 0
+        return resamples
+
+    def _compute_reward_terms(self, terminated):
+        terms = super()._compute_reward_terms(terminated)
+        r = self.cfg.rewards
+        if hasattr(r, "lateral_error_scale"):
+            # 仿真真值只用于打分，仍不进入 IMU/编码器策略观测。
+            terms["lateral_speed"] = (
+                self.lin_vel[:, 1] / r.lateral_error_scale
+            ).square().clamp(max=25)
+            terms["speed_error"] = (
+                (self.lin_vel[:, 0] - self.commands[:, 0]) / r.speed_error_scale
+            ).square().clamp(max=25)
+            terms["yaw_rate_error"] = (
+                (self.ang_vel[:, 2] - self.commands[:, 2]) / r.yaw_error_scale
+            ).square().clamp(max=25)
+        return terms
+
+    def _reward_lateral_speed(self):
+        return self._task_reward_terms["lateral_speed"]
+
+    def _reward_speed_error(self):
+        return self._task_reward_terms["speed_error"]
+
+    def _reward_yaw_rate_error(self):
+        return self._task_reward_terms["yaw_rate_error"]
 
 
 class TrackingWheelLegged(SensorWheelLegged):

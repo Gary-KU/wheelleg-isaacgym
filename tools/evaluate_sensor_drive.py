@@ -18,6 +18,7 @@ from legged_gym.envs.wheelleg.diagnostics.motion_evaluation import MotionEvaluat
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument("--task", default="wheelleg_sensor_drive")
     p.add_argument("--checkpoint", type=Path, required=True)
     p.add_argument("--report", type=Path, required=True)
     p.add_argument("--sim-device", default="cpu")
@@ -56,7 +57,7 @@ def main():
         "play",
         [
             "--task",
-            "wheelleg_sensor_drive",
+            args.task,
             "--checkpoint",
             str(args.checkpoint),
             "--headless",
@@ -107,9 +108,13 @@ def main():
             commands[:, 2] = commands.new_tensor(
                 [args.turn_speed, -args.turn_speed, args.turn_speed, -args.turn_speed]
             )
-        age = torch.zeros(4, device=env.device)
-        longest = age.clone()
+        age_steps = torch.zeros(4, dtype=torch.long, device=env.device)
+        longest_steps = age_steps.clone()
         torques = env.actions.new_zeros(6)
+        saturation = env.actions.new_zeros(4, 6)
+        hip_overload_seconds = env.actions.new_zeros(4, 4)
+        peak_budget_minimum = env.actions.new_full((4, 4), float("inf"))
+        evaluated_steps = 0
         closure = pitch = roll = 0.0
         failures = timeouts = 0
         with torch.inference_mode():
@@ -139,7 +144,7 @@ def main():
                     for i in range(4)
                 ]
                 phase_failures = phase_timeouts = 0
-                rate_sum = torch.zeros_like(age)
+                rate_sum = env.actions.new_zeros(4)
                 settled_measurements = None
                 samples = 0
                 for step in range(round(seconds / env.dt)):
@@ -184,9 +189,9 @@ def main():
                             ]
                         rate_sum += info["pre_reset_ang_vel"][:, 2]
                         samples += 1
-                    age += env.dt
-                    longest = torch.maximum(longest, age)
-                    age[done] = 0
+                    age_steps += 1
+                    longest_steps = torch.maximum(longest_steps, age_steps)
+                    age_steps[done] = 0
                     phase_failures += int(info["physical_failures"].sum())
                     phase_timeouts += int(info["time_outs"].sum())
                     closure = max(closure, float(info["loop_error_max"]))
@@ -195,6 +200,11 @@ def main():
                     torques = torch.maximum(
                         torques, info["pre_reset_peak_abs_torques"].max(0).values
                     )
+                    saturation += info["pre_reset_torque_saturation_fraction"]
+                    hip_overload_seconds += info["pre_reset_hip_over_continuous_fraction"] * env.dt
+                    peak_budget_minimum = torch.minimum(
+                        peak_budget_minimum, info["pre_reset_hip_peak_budget_remaining_s"])
+                    evaluated_steps += 1
                 failures += phase_failures
                 timeouts += phase_timeouts
                 rows = []
@@ -256,6 +266,7 @@ def main():
         report = dict(
             checkpoint=str(args.checkpoint.resolve()),
             checkpoint_sha256=checkpoint_sha256,
+            task=args.task,
             seed=args.seed,
             command_mode="combined" if args.combined else "cardinal",
             continuous_hip_limit_only=args.continuous_hip_limit,
@@ -263,13 +274,16 @@ def main():
             control_dt=env.dt,
             num_envs=4,
             seconds_per_environment=sum(s for _, s, _ in pattern),
-            longest_continuous_seconds_by_env=longest.tolist(),
+            longest_continuous_seconds_by_env=(longest_steps.double() * env.dt).tolist(),
             physical_failures=failures,
             timeouts=timeouts,
             pitch_peak_rad=pitch,
             roll_peak_rad=roll,
             closure_peak_m=closure,
             torque_peak_nm_by_joint=torques.tolist(),
+            saturation_fraction_by_env_joint=(saturation / max(evaluated_steps, 1)).tolist(),
+            hip_over_continuous_seconds_by_env_joint=hip_overload_seconds.tolist(),
+            minimum_hip_peak_budget_remaining_s_by_env_joint=peak_budget_minimum.tolist(),
             phases=phases,
             wall_seconds=time.perf_counter() - started,
         )
