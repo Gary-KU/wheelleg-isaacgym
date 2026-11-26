@@ -46,7 +46,8 @@ class DrivingWheelLegged(SensorWheelLegged):
             self.height_standing_trim = HeightStandingTrim(
                 self.num_envs, self.device, low, high-low,
                 self.cfg.control.standing_height_trim_ki,
-                self.cfg.control.standing_height_trim_limit)
+                self.cfg.control.standing_height_trim_limit,
+                self.cfg.control.standing_height_trim_initial_coefficient)
 
     def _reset_idx(self, ids):
         super()._reset_idx(ids)

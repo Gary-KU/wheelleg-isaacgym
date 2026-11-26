@@ -12,15 +12,22 @@ class HeightStandingTrim:
 
     只在指令静止、腿长指令不变且已接近停稳时更新。行驶/伸缩时冻结系数，
     补偿随伸腿量变化，缩回中立长度自然归零，不更改原网络或电机限幅。
+    initial_coefficient是离线标定的启动系数，不是传感器零偏或重力力矩；
+    旧检查点默认0，重置时恢复同一初值，在线更新仅修正剩余速度误差。
     """
 
-    def __init__(self, num_envs, device, baseline, span, ki, limit):
-        if (not all(math.isfinite(x) for x in (baseline, span, ki, limit))
+    def __init__(self, num_envs, device, baseline, span, ki, limit, initial_coefficient=0.0):
+        if (not all(math.isfinite(x) for x in (baseline, span, ki, limit, initial_coefficient))
                 or min(span, ki, limit) <= 0):
             raise ValueError("Standing trim requires finite positive span, ki and limit")
         self.baseline, self.ki, self.limit = baseline, ki, limit
         self.coefficient_limit = limit / span
-        self.coefficient = torch.zeros(num_envs, device=device)
+        if abs(initial_coefficient) * span > limit:
+            raise ValueError("Initial standing trim exceeds the reference correction limit")
+        # 可选的离线高度标定初值，单位s^-1；8cm时仍严格为零。
+        # 用它减少升高后从零积分的等待，在线修正仍只读原传感器。
+        self.initial_coefficient = initial_coefficient
+        self.coefficient = torch.full((num_envs,), float(initial_coefficient), device=device)
         self.settled_seconds = torch.zeros_like(self.coefficient)
         self.previous_length = torch.full_like(self.coefficient, baseline)
         self.velocity = torch.zeros_like(self.coefficient)
@@ -31,7 +38,7 @@ class HeightStandingTrim:
         self.pitch_rate_column = SENSOR_FIELDS.index("pitch_rate")
 
     def reset(self, ids):
-        self.coefficient[ids] = 0.0
+        self.coefficient[ids] = self.initial_coefficient
         self.settled_seconds[ids] = 0.0
         self.previous_length[ids] = self.baseline
         self.velocity[ids] = 0.0

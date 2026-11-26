@@ -214,6 +214,7 @@ class WheelLeggedDriveCfg(WheelLeggedQuietStandCfg):
         leg_kd = 0.08  # Nm·s/rad，增加左右腿横滚模态阻尼；刚度仍为2
         standing_height_trim_ki = 0.0  # 伸腿静止修正默认关闭，旧权重行为不变
         standing_height_trim_limit = 0.08  # m/s，策略速度参考修正上限
+        standing_height_trim_initial_coefficient = 0.0  # s^-1，可选高度偏置标定；旧权重为0
 
     class rewards(WheelLeggedQuietStandCfg.rewards):
         standstill_position_sigma = 0.05  # m；仅训练打分，不向Actor提供位置
