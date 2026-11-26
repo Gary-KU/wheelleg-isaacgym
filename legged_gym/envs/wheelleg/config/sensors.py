@@ -215,6 +215,15 @@ class WheelLeggedDriveCfg(WheelLeggedQuietStandCfg):
         standing_height_trim_ki = 0.0  # 伸腿静止修正默认关闭，旧权重行为不变
         standing_height_trim_limit = 0.08  # m/s，策略速度参考修正上限
 
+    class rewards(WheelLeggedQuietStandCfg.rewards):
+        standstill_position_sigma = 0.05  # m；仅训练打分，不向Actor提供位置
+        standstill_heading_sigma = 0.10  # rad；相对本次停稳点
+        standstill_settle_seconds = 2.0
+
+        class scales(WheelLeggedQuietStandCfg.rewards.scales):
+            standstill_position = 0.0
+            standstill_heading = 0.0
+
     class keyboard:
         speed = 0.3
         turn_speed = 0.8
@@ -293,20 +302,25 @@ class WheelLeggedTelescopicCfgPPO(WheelLeggedDriveCfgPPO):
 class WheelLeggedHeightStandCfg(WheelLeggedTelescopicCfg):
     """变高度课程第一阶段：每回合保持一个高度，先学会长期停车。"""
 
+    class env(WheelLeggedTelescopicCfg.env):
+        episode_length_s = 80.0  # 原16秒回合不足以暴露长时间的缓慢漂移
+
     class commands(WheelLeggedTelescopicCfg.commands):
         forward_speed_range = (0., 0.)
         yaw_speed_range = (0., 0.)
         zero_command_fraction = 1.
-        command_resample_seconds = 0.  # 16秒回合中保留约14秒的伸腿后站立
+        command_resample_seconds = 0.  # 整个80秒回合保持同一高度
 
     class rewards(WheelLeggedTelescopicCfg.rewards):
-        speed_error_scale = .03
-        lateral_error_scale = .02
-        yaw_error_scale = .05
+        speed_error_scale = .01
+        lateral_error_scale = .01
+        yaw_error_scale = .03
 
         class scales(WheelLeggedTelescopicCfg.rewards.scales):
             speed_error = -1.
             yaw_rate_error = -.2
+            standstill_position = -.5
+            standstill_heading = -.1
 
 
 class WheelLeggedHeightStandCfgPPO(WheelLeggedTelescopicCfgPPO):

@@ -15,6 +15,15 @@ from legged_gym.envs.wheelleg.diagnostics.training_metrics import (
 class DrivingWheelLegged(SensorWheelLegged):
     """训练/键盘共用速度斜坡；可选伸腿站立修正，不覆盖网络力矩。"""
 
+    @staticmethod
+    def configure_execution(cfg, args, checkpoint_state):
+        SensorWheelLegged.configure_execution(cfg, args, checkpoint_state)
+        if checkpoint_state is not None:
+            scales = checkpoint_state.get("legged_gym_env_config", {}).get("rewards", {}).get("scales", {})
+            for name in ("standstill_position", "standstill_heading"):
+                if name not in scales:
+                    setattr(cfg.rewards.scales, name, 0.0)  # 旧检查点沿用原奖励
+
     def _validate_observation_config(self, cfg):
         super()._validate_observation_config(cfg)
         rate = cfg.commands.leg_length_rate
@@ -23,6 +32,13 @@ class DrivingWheelLegged(SensorWheelLegged):
 
     def _allocate_buffers(self):
         super()._allocate_buffers()
+        self.standstill_reward = None
+        r = self.cfg.rewards
+        if r.scales.standstill_position or r.scales.standstill_heading:
+            from legged_gym.envs.wheelleg.rewards.standstill import StandstillReward
+            self.standstill_reward = StandstillReward(
+                self.num_envs, self.device, self.dt, r.standstill_settle_seconds,
+                r.standstill_position_sigma, r.standstill_heading_sigma)
         self.height_standing_trim = None
         if self.cfg.control.standing_height_trim_ki:
             from legged_gym.envs.wheelleg.control.standing_trim import HeightStandingTrim
@@ -40,6 +56,8 @@ class DrivingWheelLegged(SensorWheelLegged):
             self.commands[ids, 3] = self.initial_leg_length
         if self.height_standing_trim is not None:
             self.height_standing_trim.reset(ids)
+        if self.standstill_reward is not None:
+            self.standstill_reward.reset(ids)
 
     def _policy_commands(self):
         if self.height_standing_trim is None:
@@ -59,6 +77,9 @@ class DrivingWheelLegged(SensorWheelLegged):
 
     def _extra_step_info(self):
         info = super()._extra_step_info()
+        if self.standstill_reward is not None:
+            info["pre_reset_standstill_drift_m"] = self.standstill_reward.displacement.clone()
+            info["pre_reset_standstill_heading_rad"] = self.standstill_reward.heading_error.clone()
         if self.height_standing_trim is not None:
             info['pre_reset_policy_commands'] = self._policy_commands().clone()
             info['pre_reset_standing_height_trim_m_s'] = self.height_standing_trim.correction(self.commands)
@@ -128,6 +149,9 @@ class DrivingWheelLegged(SensorWheelLegged):
 
     def _compute_reward_terms(self, terminated):
         terms = super()._compute_reward_terms(terminated)
+        if self.standstill_reward is not None:
+            terms.update(self.standstill_reward.update(
+                self.root_states[:, :3], self.yaw, self.commands, self.command_targets))
         r = self.cfg.rewards
         if hasattr(r, "lateral_error_scale"):
             # 仿真真值只用于打分，仍不进入 IMU/编码器策略观测。
@@ -150,6 +174,12 @@ class DrivingWheelLegged(SensorWheelLegged):
 
     def _reward_yaw_rate_error(self):
         return self._task_reward_terms["yaw_rate_error"]
+
+    def _reward_standstill_position(self):
+        return self._task_reward_terms["standstill_position"]
+
+    def _reward_standstill_heading(self):
+        return self._task_reward_terms["standstill_heading"]
 
 
 class TrackingWheelLegged(SensorWheelLegged):

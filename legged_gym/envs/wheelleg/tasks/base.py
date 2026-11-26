@@ -83,6 +83,8 @@ class WheelLegged(WheelLegRobot):
             saved = checkpoint_state.get("legged_gym_env_config", {}).get("env", {})
             if "spacing" not in saved:
                 cfg.env.spacing = 1.5  # 历史检查点保留原网格布局
+            if "episode_length_s" not in saved:
+                cfg.env.episode_length_s = None
         if args.viewer_fps is not None:
             cfg.viewer.viewer_fps = args.viewer_fps
         # 显式参数覆盖检查点里的速度斜坡；物理步长和电机限幅仍由原配置决定。
@@ -123,9 +125,17 @@ class WheelLegged(WheelLegRobot):
         self.cfg = cfg
         self.environment_config = environment_kwargs(cfg)
         self.environment_config.update(sim_device=sim_device, headless=headless)
+        duration = cfg.env.episode_length_s
+        if duration is not None and (
+            isinstance(duration, bool) or not isinstance(duration, (int, float))
+            or not math.isfinite(duration) or duration <= 0
+        ):
+            raise ValueError("episode_length_s must be finite and positive, or None")
         self._validate_observation_config(cfg)
         self._prepare_reward_function()
         super().__init__(**self.environment_config)
+        if duration is not None:
+            self.max_episode_length = max(1, round(duration / self.dt))
         self.obs_history_length = 1  # obs_buf already contains all six frames
         self.privileged_obs_buf = None
         self.rew_buf = torch.zeros(self.num_envs, device=self.device)

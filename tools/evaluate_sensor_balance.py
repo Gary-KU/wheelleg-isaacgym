@@ -40,12 +40,22 @@ def main():
         env.max_episode_length = args.num_steps + 1  # 不把 16 秒超时重置当作站稳
         initial_root_positions = env.root_states[:, :3].tolist()
         motion = MotionEvaluation(env.root_states, env.dt)
+        # 先完成高度指令斜坡，再单独计连续站立，避免把伸腿位移或重置算成站稳。
+        height_delta = float((env.commands[:, 3] - env.command_targets[:, 3]).abs().max())
+        height_rate = getattr(cfg.commands, "leg_length_rate", 0.0)
+        warmup_seconds = max(2.0, height_delta / height_rate + 1.0) if height_rate > 0 else 2.0
+        warmup_steps = round(warmup_seconds / env.dt)
+        hold_motion = None
+        hold_age_steps = torch.zeros(env.num_envs, dtype=torch.long, device=env.device)
+        hold_longest_steps = hold_age_steps.clone()
         age_steps = torch.zeros(env.num_envs, dtype=torch.long, device=env.device)
         longest_steps = age_steps.clone()
         saturation = torch.zeros(6, device=env.device)
         torque_peak = saturation.clone()
         wheel_squares = torch.zeros(2, device=env.device)
         wheel_peak = wheel_squares.clone()
+        hip_overload_seconds = torch.zeros(env.num_envs, 4, device=env.device)
+        peak_budget_minimum = torch.full_like(hip_overload_seconds, float("inf"))
         legs = torch.zeros(2, device=env.device)
         leg_errors = legs.clone()
         action_abs = saturation.clone()
@@ -57,6 +67,8 @@ def main():
             for i in range(args.num_steps):
                 if viewer_is_closed(env):
                     break
+                if i == warmup_steps:
+                    hold_motion = MotionEvaluation(env.root_states, env.dt, settle_seconds=0.0)
                 obs, _ = env.get_observations()
                 action = policy(obs)
                 action_abs += action.abs().mean(0)
@@ -69,6 +81,12 @@ def main():
                     done,
                     env.root_states,
                 )
+                if hold_motion is not None:
+                    hold_motion.update(info["pre_reset_root_states"],
+                        info["pre_reset_commands"], done, env.root_states)
+                    hold_age_steps += 1
+                    hold_longest_steps = torch.maximum(hold_longest_steps, hold_age_steps)
+                    hold_age_steps[done] = 0
                 age_steps += 1
                 longest_steps = torch.maximum(longest_steps, age_steps)
                 age_steps[done] = 0
@@ -78,6 +96,9 @@ def main():
                 roll_peak = max(roll_peak, float(info["pre_reset_roll"].abs().max()))
                 loop_peak = max(loop_peak, float(info["loop_error_max"]))
                 saturation += info["pre_reset_torque_saturation_fraction"].mean(0)
+                hip_overload_seconds += info["pre_reset_hip_over_continuous_fraction"] * env.dt
+                peak_budget_minimum = torch.minimum(peak_budget_minimum,
+                    info["pre_reset_hip_peak_budget_remaining_s"])
                 torque_peak = torch.maximum(
                     torque_peak, info["pre_reset_peak_abs_torques"].max(0).values
                 )
@@ -126,6 +147,13 @@ def main():
             roll_peak_rad=roll_peak,
             closure_peak_m=loop_peak,
             motion=motion.report(),
+            standing_window=dict(
+                warmup_seconds=warmup_steps * env.dt,
+                evaluated_seconds=max(0, completed - warmup_steps) * env.dt,
+                longest_continuous_seconds_by_env=(hold_longest_steps.double() * env.dt).tolist(),
+                motion=None if hold_motion is None else hold_motion.report(),
+                note="Height ramp plus settling excluded; durations are per environment, never added across resets.",
+            ),
             initial_com_balance=getattr(env, "initial_com_balance_diagnostics", None),
             joint_order=list(ACTION_JOINTS),
             saturation_fraction_by_joint=(saturation / max(completed, 1)).tolist(),
@@ -135,14 +163,18 @@ def main():
                 action_abs / max(completed, 1)
             ).tolist(),
             torque_peak_nm_by_joint=torque_peak.tolist(),
+            hip_over_continuous_seconds_by_env=hip_overload_seconds.tolist(),
+            minimum_hip_peak_budget_seconds_by_env=(
+                peak_budget_minimum.tolist() if completed else None),
             wheel_rms_rad_s=(wheel_squares / max(completed, 1)).sqrt().tolist(),
             wheel_peak_rad_s=wheel_peak.tolist(),
             mean_reward_terms={k: v / max(completed, 1) for k, v in rewards.items()},
             note="No policy exploration noise; configured sensor noise remains. Physical failures reset automatically and are counted; displacement excludes reset teleports. No quality pass is implied by completion.",
         )
-        motion_report = report["motion"]
+        motion_report = report["standing_window"]["motion"] or report["motion"]
         checks = {
-            "at_least_60_seconds": completed * env.dt >= 60.0,
+            "at_least_60_continuous_standing_seconds_each": bool(
+                (hold_longest_steps.double() * env.dt >= 60.0).all()),
             "no_physical_failures": failures == 0,
             "no_timeout_resets": timeouts == 0,
             "zero_motion_command": all(abs(v) < 1e-6 for v in cfg.commands.command[:3]),
@@ -155,20 +187,21 @@ def main():
             "yaw_rate_rms_below_006_rad_s": motion_report["rms_yaw_rate_error_rad_s"]
             is not None
             and motion_report["rms_yaw_rate_error_rad_s"] <= 0.06,
-            "forward_displacement_below_01_m": motion_report[
+            "forward_displacement_below_005_m": motion_report[
                 "segment_peak_forward_displacement_m"
             ]
-            <= 0.1,
-            "lateral_displacement_below_01_m": motion_report[
+            <= 0.05,
+            "lateral_displacement_below_005_m": motion_report[
                 "segment_peak_cross_track_m"
             ]
-            <= 0.1,
+            <= 0.05,
             "heading_change_below_01_rad": motion_report[
                 "segment_peak_heading_change_rad"
             ]
             <= 0.1,
             "leg_rms_error_below_005_m": max(report["rms_leg_length_error_m"]) <= 0.005,
             "pitch_roll_peaks_below_02_rad": max(pitch_peak, roll_peak) <= 0.2,
+            "closure_peak_below_001_m": loop_peak <= 0.001,
         }
         report["quiet_stand_checks"] = checks
         report["quiet_stand_passed"] = all(checks.values())

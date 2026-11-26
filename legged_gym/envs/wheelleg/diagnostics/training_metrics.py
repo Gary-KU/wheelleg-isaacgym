@@ -23,8 +23,14 @@ class WheelLegTrainingMetrics:
         self.support_sums = torch.zeros(4, device=self.env.device)
         self.reward_term_sums = {}
         self.hip_overload_sum = 0.0
+        self.standstill_drift_peak = self.standstill_heading_peak = 0.0
 
     def update(self, observations, rewards, dones, infos):
+        if "pre_reset_standstill_drift_m" in infos:
+            self.standstill_drift_peak = max(self.standstill_drift_peak, float(
+                infos["pre_reset_standstill_drift_m"].max()))
+            self.standstill_heading_peak = max(self.standstill_heading_peak, float(
+                infos["pre_reset_standstill_heading_rad"].abs().max()))
         command = infos["pre_reset_commands"]
         velocity_provider = getattr(self.env, "training_body_linear_velocity", None)
         if velocity_provider is not None:
@@ -92,6 +98,9 @@ class WheelLegTrainingMetrics:
             "Actuator/hip_over_continuous_fraction": self.hip_overload_sum / num_steps,
             "Loop/max_anchor_error_m": self.loop_peak,
         }
+        if getattr(self.env, "standstill_reward", None) is not None:
+            metrics["Standstill/peak_drift_m"] = self.standstill_drift_peak
+            metrics["Standstill/peak_heading_rad"] = self.standstill_heading_peak
         if getattr(self.env, "terrain_model", None) is not None:
             metrics.update(
                 {

@@ -25,6 +25,7 @@ class WheelLeggedCfg(BaseConfig):
         obs_history_length = 1
         initial_leg_length = 0.08
         fix_base = False
+        episode_length_s = None  # None沿用物理环境默认值；专项课程可延长连续回合
 
     class sim:
         dt = 0.0005  # s，物理频率 2 kHz
