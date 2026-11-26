@@ -35,6 +35,7 @@ def main():
         )
         policy = runner.get_inference_policy()
         env.max_episode_length = args.num_steps + 1  # 不把 16 秒超时重置当作站稳
+        initial_root_positions = env.root_states[:, :3].tolist()
         motion = MotionEvaluation(env.root_states, env.dt)
         age = torch.zeros(env.num_envs, device=env.device)
         longest = age.clone()
@@ -88,10 +89,29 @@ def main():
                 for key, value in info["reward_terms"].items():
                     rewards[key] = rewards.get(key, 0.0) + float(value.mean())
                 completed = i + 1
+                if completed % max(1, round(10.0 / env.dt)) == 0:
+                    print(
+                        "balance_eval simulated_s={:.1f} failures={} timeouts={}".format(
+                            completed * env.dt, failures, timeouts
+                        ),
+                        flush=True,
+                    )
         report = dict(
             checkpoint=str(args.checkpoint_path),
             task=args.task,
             seed=cfg.seed,
+            simulation=dict(
+                physics_dt_s=env.physics_dt,
+                control_dt_s=env.dt,
+                policy_hz=1.0 / env.dt,
+                environment_spacing_m=cfg.env.spacing,
+                gpu_buffer_size_multiplier=env.gpu_buffer_size_multiplier,
+                closure_stiffness_n_m=cfg.closure.closure_stiffness,
+                closure_damping_ns_m=cfg.closure.closure_damping,
+                sensor_delay_seconds=cfg.sensors.delay_steps * env.dt,
+            ),
+            initial_root_positions_m=initial_root_positions,
+            initialization_provenance=runner.train_cfg.get("initialization_provenance"),
             steps=completed,
             seconds_per_environment=completed * env.dt,
             num_envs=env.num_envs,
@@ -103,6 +123,7 @@ def main():
             roll_peak_rad=roll_peak,
             closure_peak_m=loop_peak,
             motion=motion.report(),
+            initial_com_balance=getattr(env, "initial_com_balance_diagnostics", None),
             joint_order=list(ACTION_JOINTS),
             saturation_fraction_by_joint=(saturation / max(completed, 1)).tolist(),
             mean_leg_length_m=(legs / max(completed, 1)).tolist(),

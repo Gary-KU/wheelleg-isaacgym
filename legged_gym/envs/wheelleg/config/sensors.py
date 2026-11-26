@@ -13,6 +13,7 @@ from legged_gym.envs.wheelleg.observations.sensors import (
 class WheelLeggedSensorCfg(WheelLeggedCfg):
     class env(WheelLeggedCfg.env):
         num_observations = OBSERVATION_SIZE
+        balance_initial_com = False
 
     class commands(WheelLeggedCfg.commands):
         # 起步先学习零速支撑，再由 tracking 任务逐级增加速度。
@@ -158,8 +159,13 @@ class WheelLeggedTrackingCfgPPO(WheelLeggedSensorCfgPPO):
 class WheelLeggedQuietStandCfg(WheelLeggedSensorCfg):
     """安静站立候选：独立实验，未通过验收前不替代基础任务默认值。"""
 
+    class env(WheelLeggedSensorCfg.env):
+        balance_initial_com = True
+        num_envs = 32  # 同原点 GPU 广相容量已验证的并行数量
+        spacing = 0.0  # 小尺寸高刚度闭环避免网格远原点的浮点精度损失
+
     class control(WheelLeggedSensorCfg.control):
-        leg_kd = 0.005  # 轻连杆低阻尼对照；改变控制后必须重新训练和验收
+        decimation = 10  # 2 kHz 物理，200 Hz 策略与传感器历史更新
 
     class rewards(WheelLeggedSensorCfg.rewards):
         linear_tracking_sigma = 0.08
@@ -177,6 +183,10 @@ class WheelLeggedQuietStandCfg(WheelLeggedSensorCfg):
 
 
 class WheelLeggedQuietStandCfgPPO(WheelLeggedSensorCfgPPO):
+    class policy(WheelLeggedSensorCfgPPO.policy):
+        # 从无振荡的物理模型重新学习，先减少探索对静态平衡的干扰。
+        init_noise_std = [0.02, 0.02, 0.02, 0.02, 0.08, 0.08]
+
     class algorithm(WheelLeggedSensorCfgPPO.algorithm):
         entropy_coef = 0.0002
 

@@ -30,6 +30,10 @@ conda activate isaacgym
 
 `wheelleg_flat`、`wheelleg_stand`、`wheelleg_stairs`、`wheelleg_sensor` 及 `wheelleg_sensor_tracking` 均使用同一份新 CAD 资产。任务接口见[任务入口](docs/LEGGED_GYM.md)，传感器定义见[STM32传感器训练](docs/STM32_SENSORS.md)。
 
+闭环数值参数已按轻量模型对照修正为 K=50000 N/m、D=2 N·s/m；旧检查点中的 D=25 会被恢复，不应当作新物理配置的验证结果。详见[闭环数值诊断](docs/STM32_SENSORS.md#2026-11-26先修正闭环数值模型再训练)。
+
+新后置电池模型已有原地站立验收版本：32 环境短训练、两组随机种子共 8 个机器人各连续 60 秒零倒地，前后/横向位移峰值约 8.3/2.3 mm。它使用反馈初始化加 RL 微调，仅验证 8 cm 静止站立，查看[权重与播放命令](docs/STM32_SENSORS.md)。
+
 当前输出力矩限幅：**每轮 ±0.1 N·m；每髋峰值 ±0.68 N·m、连续 ±0.32 N·m**。髋关节按每回合累计超连续值 2 秒后降额，详见[资产与电机参数](assets/wheelleg/README.md#电机输出力矩)。新 CAD 质量尚需实测校准。
 
 ## 代码从哪里读

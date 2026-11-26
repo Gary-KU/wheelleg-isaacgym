@@ -20,6 +20,31 @@ from legged_gym.envs.wheelleg.observations.sensors import (
 
 
 class SensorWheelLegged(WheelLegged):
+    @staticmethod
+    def configure_execution(cfg, args, checkpoint_state):
+        WheelLegged.configure_execution(cfg, args, checkpoint_state)
+        if checkpoint_state is not None:
+            saved = checkpoint_state.get("legged_gym_env_config", {}).get("env", {})
+            if "balance_initial_com" not in saved:
+                cfg.env.balance_initial_com = False  # 旧检查点保持原始重置姿态
+
+    def _load_robot(self, stiffness, damping):
+        if self.cfg.env.balance_initial_com:
+            from legged_gym.envs.wheelleg.model.initial_pose import make_initial_pose
+            from legged_gym.envs.wheelleg.model.geometry import ASSET_ROOT
+
+            pose = make_initial_pose(
+                ASSET_ROOT / self.metadata["urdf"],
+                self.metadata,
+                self.initial_leg_length,
+                balance_initial_com=True,
+            )
+            self.metadata["default_root_pose"]["quat_xyzw"] = pose[
+                "root_quaternion_xyzw"
+            ]
+            self.initial_com_balance_diagnostics = pose["com_balance"]
+        super()._load_robot(stiffness, damping)
+
     def _compute_reward_terms(self, terminated):
         # The legacy reward helper indexes its own 31-column frame for four
         # terms. Reconstruct those terms from physical state, not sensor columns.
@@ -70,6 +95,12 @@ class SensorWheelLegged(WheelLegged):
         return quat_rotate_inverse(roots[:, 3:7], roots[:, 7:10])
 
     def _validate_observation_config(self, cfg):
+        if not isinstance(cfg.env.balance_initial_com, bool):
+            raise ValueError("balance_initial_com must be boolean")
+        if cfg.env.balance_initial_com and cfg.env.initial_leg_length is None:
+            raise ValueError(
+                "COM-balanced reset requires an explicit initial leg length"
+            )
         if (
             cfg.env.num_observations != OBSERVATION_SIZE
             or cfg.env.num_actions != 6

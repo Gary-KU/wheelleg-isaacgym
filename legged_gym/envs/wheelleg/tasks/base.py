@@ -14,7 +14,7 @@ from legged_gym.envs.wheelleg.rewards.stairs import stair_task_reward_terms
 
 # 嵌套任务配置到物理环境构造参数的唯一映射。
 CONFIG_SECTIONS = {
-    "env": ("num_envs", "initial_leg_length", "fix_base"),
+    "env": ("num_envs", "spacing", "initial_leg_length", "fix_base"),
     "sim": ("physics_solver", "physics_threads"),
     "control": (
         "leg_control",
@@ -78,6 +78,10 @@ class WheelLegged(WheelLegRobot):
     @staticmethod
     def configure_execution(cfg, args, checkpoint_state):
         """Wheelleg-only playback/CLI rules stay outside the generic registry."""
+        if checkpoint_state is not None:
+            saved = checkpoint_state.get("legged_gym_env_config", {}).get("env", {})
+            if "spacing" not in saved:
+                cfg.env.spacing = 1.5  # 历史检查点保留原网格布局
         if args.command is not None:
             cfg.commands.command = args.command
         if args.mode == "play":

@@ -70,12 +70,20 @@ class WheelLegRobot:
                  terrain="plane", observe_terrain=False, stair_level=0, stair_min_level=0,
                  stair_max_level=4, stair_curriculum=False, hip_target_scale=.2,
                  stair_episode_seconds=24.,
-                 allow_approximate_loop=False):
+                 allow_approximate_loop=False, spacing=1.5):
         if not allow_approximate_loop:
             raise ValueError("This port uses approximate spring/damper loop closure. "
                              "Set allow_approximate_loop=True to acknowledge it.")
         if num_envs < 1 or physics_dt <= 0 or control_dt < physics_dt:
             raise ValueError("Require num_envs >= 1 and 0 < physics_dt <= control_dt")
+        if not math.isfinite(spacing) or spacing < 0:
+            raise ValueError("Environment spacing must be finite and nonnegative")
+        if (spacing == 0.0 and terrain == "plane"
+                and str(sim_device).startswith("cuda") and num_envs > 32):
+            raise ValueError(
+                "Co-located flat GPU environments are validated up to 32; "
+                "use --num_envs 32 to avoid broadphase capacity overflow")
+        self.spacing = float(spacing)
         if not isinstance(physics_threads, int) or isinstance(physics_threads, bool) or physics_threads < 0:
             raise ValueError("physics_threads must be a nonnegative integer")
         for dimension in (viewer_width, viewer_height):
@@ -213,6 +221,7 @@ class WheelLegRobot:
         p.physx.rest_offset = 0.0
         p.physx.max_depenetration_velocity = 1.0
         p.physx.max_gpu_contact_pairs = max(1 << 18, self.num_envs * 1024)
+        self.gpu_buffer_size_multiplier = p.physx.default_buffer_size_multiplier
         dev_id = int(self.device.split(":")[-1]) if p.use_gpu_pipeline and ":" in self.device else 0
         self.sim = self.gym.create_sim(dev_id, -1 if self.headless else dev_id,
                                        gymapi.SIM_PHYSX, p)
@@ -288,10 +297,12 @@ class WheelLegRobot:
             pose.p.z = max(pose.p.z, self.metadata.get("default_root_pose", {}).get("pos", [0, 0, 0.25])[2])
         self.envs, self.actors = [], []
         side = int(math.ceil(math.sqrt(self.num_envs)))
+        half_spacing = self.spacing / 2
+        lower = gymapi.Vec3(-half_spacing, -half_spacing, 0.0)
+        upper = gymapi.Vec3(half_spacing, half_spacing, 1.5 if self.spacing else 0.0)
         for i in range(self.num_envs):
             if self.terrain_model is None:
-                env = self.gym.create_env(self.sim, gymapi.Vec3(-0.75, -0.75, 0.0),
-                                          gymapi.Vec3(0.75, 0.75, 1.5), side)
+                env = self.gym.create_env(self.sim, lower, upper, side)
             else:
                 # Static meshes use global coordinates. Zero-origin environments
                 # with explicit patch poses keep tensors and terrain consistent.

@@ -19,6 +19,7 @@ HIP_SPAN = sum(s["hip_span_m"] for s in SIDES.values()) / 2
 HIP_DOWN = sum(s["hip4_down_m"] for s in SIDES.values()) / 2
 WHEEL_RADIUS = CAD["tire_radius_m"]
 WHEEL_WIDTH = CAD["tire_width_m"]
+WHEEL_TRACK = CAD["wheel_track_m"]
 MIN_LENGTH, MAX_LENGTH = CAD["recommended_validation_command_range_m"]
 
 # 轮子重量直接由地面承担；髋部支撑前馈按其余刚体重量平分，随 URDF 自动更新。

@@ -5,7 +5,12 @@
 
 from legged_gym.envs.base.base_config import BaseConfig
 from legged_gym.envs.wheelleg.model.geometry import DEFAULT_SUPPORT_FORCE
-from legged_gym.envs.wheelleg.constants import FLAT_REWARD_SCALES, DEFAULT_LEG_KD
+from legged_gym.envs.wheelleg.constants import (
+    FLAT_REWARD_SCALES,
+    DEFAULT_LEG_KD,
+    DEFAULT_CLOSURE_STIFFNESS,
+    DEFAULT_CLOSURE_DAMPING,
+)
 
 
 class WheelLeggedCfg(BaseConfig):
@@ -13,6 +18,7 @@ class WheelLeggedCfg(BaseConfig):
 
     class env:
         num_envs = 64
+        spacing = 1.5  # m；0 为碰撞组隔离的同原点环境
         num_observations = 198  # 33 维 × 6 帧，训练器不能再堆叠一次
         num_privileged_obs = None
         num_actions = 6
@@ -30,7 +36,9 @@ class WheelLeggedCfg(BaseConfig):
         leg_control = "hip_pd"
         leg_kp = 80.0
         leg_kd = DEFAULT_LEG_KD
-        leg_feedforward_force = DEFAULT_SUPPORT_FORCE  # 每腿径向支撑力 N，经雅可比变成关节力矩
+        leg_feedforward_force = (
+            DEFAULT_SUPPORT_FORCE  # 每腿径向支撑力 N，经雅可比变成关节力矩
+        )
         hip_target_scale = 0.2
         wheel_control = "heading"
         heading_kp = 6.0
@@ -61,8 +69,8 @@ class WheelLeggedCfg(BaseConfig):
 
     class closure:
         allow_approximate_loop = True
-        closure_stiffness = 50000.0
-        closure_damping = 25.0
+        closure_stiffness = DEFAULT_CLOSURE_STIFFNESS
+        closure_damping = DEFAULT_CLOSURE_DAMPING
 
     class terrain:
         terrain = "plane"

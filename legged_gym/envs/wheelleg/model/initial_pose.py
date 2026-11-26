@@ -89,7 +89,9 @@ def _quaternion_rotation(values):
     )
 
 
-def make_initial_pose(urdf_path, metadata, length, clearance=0.001):
+def make_initial_pose(
+    urdf_path, metadata, length, clearance=0.001, balance_initial_com=False
+):
     """Compute closed-chain joint angles and root height from collision vertices.
 
     Returned rigid transforms are relative to root translation and include its
@@ -142,6 +144,53 @@ def make_initial_pose(urdf_path, metadata, length, clearance=0.001):
             progressed = True
         if not progressed:
             raise ValueError("URDF joint tree is disconnected")
+    balance_info = None
+    if balance_initial_com:
+        # 仅选择初始平衡姿态；后续自由动力学不施加固定姿态或额外支撑。
+        mass = 0.0
+        weighted_com = np.zeros(3)
+        for link in robot.findall("link"):
+            inertial = link.find("inertial")
+            value = float(inertial.find("mass").get("value"))
+            if not math.isfinite(value) or value <= 0:
+                raise ValueError(
+                    "COM-balanced reset requires positive finite link masses"
+                )
+            weighted_com += (
+                value
+                * (transforms[link.get("name")].dot(_origin(inertial.find("origin"))))[
+                    :3, 3
+                ]
+            )
+            mass += value
+        axle = 0.5 * (transforms["L_lun"][:3, 3] + transforms["R_lun"][:3, 3])
+        delta = weighted_com / mass - axle
+        yaw = math.atan2(root_transform[1, 0], root_transform[0, 0])
+        forward = np.array([math.cos(yaw), math.sin(yaw), 0.0])
+        left = np.array([-math.sin(yaw), math.cos(yaw), 0.0])
+        angle = -math.atan2(float(delta.dot(forward)), float(delta[2]))
+        if not math.isfinite(angle) or abs(angle) > 0.35:
+            raise ValueError("COM-balanced reset requires a near-upright initial pose")
+        correction = np.r_[left * math.sin(angle / 2), math.cos(angle / 2)]
+        original = np.asarray(quaternion, dtype=float)
+        original /= np.linalg.norm(original)
+        quaternion = np.r_[
+            correction[3] * original[:3]
+            + original[3] * correction[:3]
+            + np.cross(correction[:3], original[:3]),
+            correction[3] * original[3] - correction[:3].dot(original[:3]),
+        ]
+        rotation = np.eye(4)
+        rotation[:3, :3] = _quaternion_rotation(correction)
+        transforms = {name: rotation.dot(value) for name, value in transforms.items()}
+        corrected = rotation[:3, :3].dot(delta)
+        balance_info = dict(
+            total_mass_kg=mass,
+            pitch_correction_rad=angle,
+            com_relative_axle_before_m=delta.tolist(),
+            com_relative_axle_after_m=corrected.tolist(),
+            note="Initial pose only; no root locking or runtime support force",
+        )
     lowest = {}
     for link in robot.findall("link"):
         body = link.get("name")
@@ -200,9 +249,10 @@ def make_initial_pose(urdf_path, metadata, length, clearance=0.001):
     if max(gaps.values()) > 0.0001:
         raise ValueError("Initial closed-chain anchors disagree by more than 0.1mm")
     return {
+        "com_balance": balance_info,
         "joint_positions": joints,
         "root_position": root_position,
-        "root_quaternion_xyzw": list(quaternion),
+        "root_quaternion_xyzw": [float(value) for value in quaternion],
         "collision_clearance_m": clearance,
         "minimum_collision_height_m_by_body": world_lowest,
         "closure_axis_error_rad_by_constraint": axis_errors,
