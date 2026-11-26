@@ -20,7 +20,8 @@ def hip_targets(leg_lengths):
     return torch.stack((q1[:, 0], q4[:, 0], q4[:, 1], q1[:, 1]), dim=-1)
 
 
-def hip_pd_torques(positions, velocities, targets, kp=80.0, kd=DEFAULT_LEG_KD):
+def hip_pd_torques(positions, velocities, targets, kp=80.0, kd=DEFAULT_LEG_KD,
+                   differential_kd=0.0):
     """输出未限幅 PD 力矩（N·m）；与前馈和 RL 残差相加后，环境统一限幅。"""
     if positions.ndim != 2 or positions.shape[1] != 4:
         raise ValueError("Hip positions must have shape [N,4]")
@@ -30,7 +31,16 @@ def hip_pd_torques(positions, velocities, targets, kp=80.0, kd=DEFAULT_LEG_KD):
         )
     if not math.isfinite(kp) or kp <= 0 or not math.isfinite(kd) or kd < 0:
         raise ValueError("Require finite kp > 0 and kd >= 0")
-    return kp * (targets - positions) - kd * velocities
+    if not math.isfinite(differential_kd) or differential_kd < 0:
+        raise ValueError("Require finite differential_kd >= 0")
+    torques = kp * (targets - positions) - kd * velocities
+    if differential_kd:
+        # 四髋顺序 LF,LH,RF,RH；镜像对应为 LF↔RH、LH↔RF。
+        # 只阻尼左右反向的速度分量，共同前后运动不增加阻尼。
+        # 附加项的机械功率为 -kd/2 * Σ(左右速度差)^2 <= 0。
+        differential_velocity = (velocities - velocities.flip(-1)) * 0.5
+        torques -= differential_kd * differential_velocity
+    return torques
 
 
 def _radial_leg_jacobian(phi1, phi4):

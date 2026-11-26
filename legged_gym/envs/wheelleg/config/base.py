@@ -36,6 +36,7 @@ class WheelLeggedCfg(BaseConfig):
         leg_control = "hip_pd"
         leg_kp = 80.0
         leg_kd = DEFAULT_LEG_KD
+        leg_differential_kd = 0.0  # 左右腿反向运动的附加阻尼；旧权重默认关闭
         leg_feedforward_force = (
             DEFAULT_SUPPORT_FORCE  # 每腿径向支撑力 N，经雅可比变成关节力矩
         )

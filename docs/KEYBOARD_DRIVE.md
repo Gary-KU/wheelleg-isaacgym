@@ -226,3 +226,28 @@ conda activate isaacgym
 ```
 
 seed42四方向、组合运动各四台各27秒检查通过，倒地/超时均0；组合测试全程限制髋连续力矩0.32 N·m。四方向直行最大横向偏移约4.16 cm、俯仰峰值约0.207 rad。0.7 m/s候选虽未倒地，但反向后的直行横向偏移约6.22 cm，超过原5 cm门槛，因此未作为推荐版本。完整报告在该目录 `summary.json`，这只是上述短程仿真范围的验证。
+
+### 转向1.0 rad/s与左右腿差动阻尼
+
+推荐本机 `logs/turn_refine_20261126/keyboard_play.pt`：前后仍0.65 m/s，转向从0.8提高到1.0 rad/s（约25%）。线加速度0.8 m/s²、转向加速度2.5 rad/s²保持原值。原0.65版本保留。
+
+```bash
+./manage.sh play --task wheelleg_sensor_drive \
+  --checkpoint logs/turn_refine_20261126/keyboard_play.pt \
+  --sim_device cpu --keyboard --viewer-fps 60 --num_steps 300000
+```
+
+统一提高四髋阻尼虽然压低腿长波动，却加重边走边转时的yaw波动，因此没有采用。新版保持公共髋Kp=2、Kd=0.08，仅增加 `control.leg_differential_kd=0.08`，抑制左右腿反向运动。实现见 `control/leg_control.py`；每个物理步使用关节速度计算，再与RL、原PD和支撑前馈一起经过原电机限幅。该项默认0，已有检查点不会自动启用。
+
+网络第一层的yaw误差反馈乘2，并同时补偿同帧转向参考列；由 `tools/tune_turning.py` 生成，维持132维原始历史输入、6维输出和原网络结构，没有额外滤波或RL更新。这是反馈校准，不是重新训练；重新学习应使用Actor warm-start。可复现候选（输出后仍需评估）：
+
+```bash
+./manage.sh run tools/tune_turning.py \
+  --checkpoint logs/speed065_20261126/keyboard_play.pt \
+  --output logs/my_turn/candidate.pt \
+  --feedback-gain 2 --turn-speed 1 --differential-kd 0.08
+```
+
+seed42、四台机器人14秒时序对照，第5–11秒的原地转向腿长标准差下降约44–50%，横滚标准差下降约一半，转向角速度标准差下降约23%。边走边转腿长波动下降约9–21%，角速度标准差在提高25%转速后仍比原版高约3–6%，不能称为完全消除振荡。原始时序、各候选及 `selected_comparison.json` 保存在实验目录。
+
+四方向及组合运动各四台各27秒验收通过（含反向/松键停车），组合运动强制全程0.32 N·m髋连续限幅；轮子仍0.1 N·m、髋峰值仍0.68 N·m/2秒。四台各30000控制步，即连续60秒站立，倒地/超时均0；包含启动过程的最大前后位移约7.3 mm、横向约1.8 mm，静止轮速RMS约0.051–0.052 rad/s。float32回合年龄累加显示59.99秒是舍入误差；该次零重置，连续时长按步数乘dt计算。汇总见 `summary.json`。只验证上述CPU仿真条件，不代表实机或任意工况稳定。

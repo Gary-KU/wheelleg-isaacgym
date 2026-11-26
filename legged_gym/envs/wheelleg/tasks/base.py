@@ -20,6 +20,7 @@ CONFIG_SECTIONS = {
         "leg_control",
         "leg_kp",
         "leg_kd",
+        "leg_differential_kd",
         "leg_feedforward_force",
         "hip_target_scale",
         "wheel_control",

@@ -62,6 +62,7 @@ class WheelLegRobot:
                  zero_command_fraction=0.2,
                  initial_leg_length=None,
                  leg_control="torque", leg_kp=80.0, leg_kd=DEFAULT_LEG_KD,
+                 leg_differential_kd=0.0,
                  leg_feedforward_force=0.0,
                  heading_kp=0.0, heading_kd=0.0, wheel_control="policy", wheel_pitch_damping=0.,
                  wheel_balance_scale=1.,
@@ -118,6 +119,8 @@ class WheelLegRobot:
             raise ValueError("stair_episode_seconds must be positive and finite")
         if not math.isfinite(leg_kp) or leg_kp <= 0 or not math.isfinite(leg_kd) or leg_kd < 0:
             raise ValueError("Require finite leg_kp > 0 and leg_kd >= 0")
+        if not math.isfinite(leg_differential_kd) or leg_differential_kd < 0:
+            raise ValueError("Require finite leg_differential_kd >= 0")
         if not math.isfinite(leg_feedforward_force) or leg_feedforward_force < 0:
             raise ValueError("Require finite leg_feedforward_force >= 0")
         if leg_feedforward_force and leg_control not in ("hip_pd", "hip_target"):
@@ -188,6 +191,7 @@ class WheelLegRobot:
         self.zero_command_fraction = float(zero_command_fraction)
         self.initial_leg_length = None if initial_leg_length is None else float(initial_leg_length)
         self.leg_control, self.leg_kp, self.leg_kd = leg_control, float(leg_kp), float(leg_kd)
+        self.leg_differential_kd = float(leg_differential_kd)
         self.leg_feedforward_force = float(leg_feedforward_force)
         self.heading_kp, self.heading_kd = float(heading_kp), float(heading_kd)
         self.wheel_control, self.wheel_pitch_damping = wheel_control, float(wheel_pitch_damping)
@@ -584,7 +588,7 @@ class WheelLegRobot:
     def _hip_pd_torques(self, targets):
         return hip_pd_torques(self.dof_state[:, self.action_indices[:4], 0],
                               self.dof_state[:, self.action_indices[:4], 1],
-                              targets, self.leg_kp, self.leg_kd)
+                              targets, self.leg_kp, self.leg_kd, self.leg_differential_kd)
 
     def _extra_step_info(self):
         """Task diagnostics captured before automatic physical resets."""
