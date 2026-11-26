@@ -199,16 +199,19 @@ class WheelLeggedDriveCfg(WheelLeggedQuietStandCfg):
 
     class commands(WheelLeggedQuietStandCfg.commands):
         random_commands = True
-        forward_speed_range = (-0.2, 0.2)
-        yaw_speed_range = (-0.6, 0.6)
+        forward_speed_range = (-0.3, 0.3)
+        yaw_speed_range = (-0.8, 0.8)
         command_resample_seconds = 3.0
-        linear_acceleration = 0.3
-        yaw_acceleration = 1.5
+        linear_acceleration = 0.4
+        yaw_acceleration = 1.8
         zero_command_fraction = 0.3
 
+    class control(WheelLeggedQuietStandCfg.control):
+        decimation = 4  # 2 kHz 物理 / 500 Hz 策略，缩短转向反馈延迟
+
     class keyboard:
-        speed = 0.2
-        turn_speed = 0.6
+        speed = 0.3
+        turn_speed = 0.8
         adjust_leg_length = False  # 本轮固定 8 cm，只训练移动和停车
 
 
@@ -217,6 +220,9 @@ class WheelLeggedDriveCfgPPO(WheelLeggedQuietStandCfgPPO):
         init_noise_std = [0.005] * 4 + [0.015, 0.015]
 
     class algorithm(WheelLeggedQuietStandCfgPPO.algorithm):
+        # 200 → 500 Hz，保持折扣与 GAE 衰减对应的物理时长。
+        gamma = 0.995 ** (200.0 / 500.0)
+        lam = 0.95 ** (200.0 / 500.0)
         learning_rate = 0.000003
         max_learning_rate = 0.00001
         schedule = "fixed"
@@ -225,4 +231,4 @@ class WheelLeggedDriveCfgPPO(WheelLeggedQuietStandCfgPPO):
 
     class runner(WheelLeggedQuietStandCfgPPO.runner):
         experiment_name = "wheelleg_sensor_drive"
-        num_steps_per_env = 100  # 200 Hz 下每轮采样 0.5 s
+        num_steps_per_env = 250  # 500 Hz 下每轮仍采样 0.5 s

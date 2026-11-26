@@ -50,7 +50,7 @@ CONFIG_SECTIONS = {
         "stair_curriculum",
         "stair_episode_seconds",
     ),
-    "viewer": ("viewer_show_collisions", "viewer_width", "viewer_height"),
+    "viewer": ("viewer_show_collisions", "viewer_width", "viewer_height", "viewer_fps"),
     "rewards": ("tracking_penalties", "stability_rewards", "support_rewards"),
 }
 

@@ -66,7 +66,7 @@ class WheelLegRobot:
                  wheel_balance_scale=1.,
                  physics_solver="tgs", wheel_friction=1.,
                  physics_threads=4, viewer_show_collisions=False,
-                 viewer_width=None, viewer_height=None,
+                 viewer_width=None, viewer_height=None, viewer_fps=60.0,
                  terrain="plane", observe_terrain=False, stair_level=0, stair_min_level=0,
                  stair_max_level=4, stair_curriculum=False, hip_target_scale=.2,
                  stair_episode_seconds=24.,
@@ -86,6 +86,8 @@ class WheelLegRobot:
         self.spacing = float(spacing)
         if not isinstance(physics_threads, int) or isinstance(physics_threads, bool) or physics_threads < 0:
             raise ValueError("physics_threads must be a nonnegative integer")
+        if not math.isfinite(viewer_fps) or viewer_fps <= 0:
+            raise ValueError("viewer_fps must be positive and finite")
         for dimension in (viewer_width, viewer_height):
             if dimension is not None and (not isinstance(dimension, int) or isinstance(dimension, bool) or dimension < 1):
                 raise ValueError("Viewer dimensions must be positive integers or None")
@@ -143,6 +145,8 @@ class WheelLegRobot:
         self.physics_threads = physics_threads
         self.viewer_show_collisions = bool(viewer_show_collisions)
         self.viewer_width, self.viewer_height = viewer_width, viewer_height
+        self.viewer_frame_period = 1.0 / viewer_fps
+        self.viewer_elapsed = self.viewer_frame_period  # 第一控制拍立即绘图
         self.fix_base = fix_base
         self.dt = control_dt
         self.physics_dt = physics_dt
@@ -691,7 +695,10 @@ class WheelLegRobot:
             self.history[ids, -1] = self.slice_obs[ids]
         # 4. 最后准备下一拍指令；本拍奖励始终对应本拍实际使用的指令。
         info["command_resamples"] = self._advance_random_commands(dones)
-        if self.viewer is not None:
+        # 控制频率可高于绘图频率；按仿真时间绘图，避免每次推理都请求GPU渲染。
+        self.viewer_elapsed += self.dt
+        if self.viewer is not None and self.viewer_elapsed >= self.viewer_frame_period:
+            self.viewer_elapsed %= self.viewer_frame_period
             self.gym.step_graphics(self.sim)
             self.gym.draw_viewer(self.viewer, self.sim, self.viewer_show_collisions)
             self.gym.sync_frame_time(self.sim)
