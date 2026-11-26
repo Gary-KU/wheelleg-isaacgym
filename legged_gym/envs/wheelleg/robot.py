@@ -8,6 +8,7 @@ URDF 保存两条树形支链，model/constraints.py 用弹簧阻尼力近似闭
 
 import json
 import math
+import time
 
 # Isaac Gym must be imported before torch.
 from isaacgym import gymapi, gymtorch
@@ -66,7 +67,7 @@ class WheelLegRobot:
                  wheel_balance_scale=1.,
                  physics_solver="tgs", wheel_friction=1.,
                  physics_threads=4, viewer_show_collisions=False,
-                 viewer_width=None, viewer_height=None, viewer_fps=60.0,
+                 viewer_width=None, viewer_height=None, viewer_fps=60.0, viewer_wall_clock=True,
                  terrain="plane", observe_terrain=False, stair_level=0, stair_min_level=0,
                  stair_max_level=4, stair_curriculum=False, hip_target_scale=.2,
                  stair_episode_seconds=24.,
@@ -147,6 +148,9 @@ class WheelLegRobot:
         self.viewer_width, self.viewer_height = viewer_width, viewer_height
         self.viewer_frame_period = 1.0 / viewer_fps
         self.viewer_elapsed = self.viewer_frame_period  # 第一控制拍立即绘图
+        self.viewer_wall_clock = bool(viewer_wall_clock)
+        self.viewer_last_draw = -float("inf")
+        self.render_count = 0
         self.fix_base = fix_base
         self.dt = control_dt
         self.physics_dt = physics_dt
@@ -695,13 +699,21 @@ class WheelLegRobot:
             self.history[ids, -1] = self.slice_obs[ids]
         # 4. 最后准备下一拍指令；本拍奖励始终对应本拍实际使用的指令。
         info["command_resamples"] = self._advance_random_commands(dones)
-        # 控制频率可高于绘图频率；按仿真时间绘图，避免每次推理都请求GPU渲染。
-        self.viewer_elapsed += self.dt
-        if self.viewer is not None and self.viewer_elapsed >= self.viewer_frame_period:
-            self.viewer_elapsed %= self.viewer_frame_period
-            self.gym.step_graphics(self.sim)
-            self.gym.draw_viewer(self.viewer, self.sim, self.viewer_show_collisions)
-            self.gym.sync_frame_time(self.sim)
+        if self.viewer is not None:
+            # 慢于实时的仿真也按墙钟时间刷新画面，不把绘图FPS再次乘以仿真速度比。
+            self.viewer_elapsed += self.dt
+            frame_time = time.perf_counter()
+            due = (frame_time - self.viewer_last_draw >= self.viewer_frame_period
+                   if self.viewer_wall_clock else self.viewer_elapsed >= self.viewer_frame_period)
+            if due:
+                self.viewer_elapsed %= self.viewer_frame_period
+                self.gym.step_graphics(self.sim)
+                self.gym.draw_viewer(self.viewer, self.sim, self.viewer_show_collisions)
+                self.viewer_last_draw = frame_time
+                self.render_count += 1
+            # 控制仍逐步执行；快于实时才等待，绘图可以独立跳帧。
+            if self.viewer_wall_clock or due:
+                self.gym.sync_frame_time(self.sim)
         return self.obs_buf, None, rewards, dones, info
 
     def _prepare_control(self):

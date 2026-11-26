@@ -50,7 +50,7 @@ CONFIG_SECTIONS = {
         "stair_curriculum",
         "stair_episode_seconds",
     ),
-    "viewer": ("viewer_show_collisions", "viewer_width", "viewer_height", "viewer_fps"),
+    "viewer": ("viewer_show_collisions", "viewer_width", "viewer_height", "viewer_fps", "viewer_wall_clock"),
     "rewards": ("tracking_penalties", "stability_rewards", "support_rewards"),
 }
 
@@ -82,6 +82,8 @@ class WheelLegged(WheelLegRobot):
             saved = checkpoint_state.get("legged_gym_env_config", {}).get("env", {})
             if "spacing" not in saved:
                 cfg.env.spacing = 1.5  # 历史检查点保留原网格布局
+        if args.viewer_fps is not None:
+            cfg.viewer.viewer_fps = args.viewer_fps
         if args.command is not None:
             cfg.commands.command = args.command
         if args.mode == "play":

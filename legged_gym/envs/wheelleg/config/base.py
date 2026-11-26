@@ -84,7 +84,8 @@ class WheelLeggedCfg(BaseConfig):
         viewer_show_collisions = False
         viewer_width = 1280
         viewer_height = 720
-        viewer_fps = 60.0  # 渲染独立于物理/策略频率
+        viewer_fps = 60.0  # 每墙钟秒目标绘图次数，独立于物理/策略频率
+        viewer_wall_clock = True  # False保留历史的按仿真时间绘图方式
 
     class rewards:
         # 奖励按每个控制步计算，系数不再额外乘 dt。

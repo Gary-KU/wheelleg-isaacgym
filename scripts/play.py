@@ -48,6 +48,7 @@ def main():
         pitch = roll = loop = 0.0
         physical_failures = timeouts = successes = completed = 0
         motion = MotionEvaluation(env.root_states, env.dt)
+        initial_render_count = env.render_count
         started = time.perf_counter()
         with torch.inference_mode():
             for step in range(args.num_steps):
@@ -84,13 +85,20 @@ def main():
                 pitch = max(pitch, float(info["pre_reset_pitch"].abs().max()))
                 roll = max(roll, float(info["pre_reset_roll"].abs().max()))
                 loop = max(loop, float(info["loop_error_max"]))
+        wall_seconds = time.perf_counter() - started
+        rendered_frames = env.render_count - initial_render_count
         report = dict(
             motion=motion.report(),
             task=args.task,
             checkpoint=str(args.checkpoint_path),
             completed_steps=completed,
             environment_seconds=completed * env.dt,
-            wall_seconds=time.perf_counter() - started,
+            wall_seconds=wall_seconds,
+            rendered_frames=rendered_frames,
+            measured_viewer_fps=(rendered_frames / max(wall_seconds, 1e-9)
+                                 if env.viewer is not None else None),
+            simulation_speed_ratio=completed * env.dt / max(wall_seconds, 1e-9),
+            viewer_wall_clock=env.viewer_wall_clock,
             num_envs=env.num_envs,
             physical_failures=physical_failures,
             timeouts=timeouts,

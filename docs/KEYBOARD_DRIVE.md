@@ -170,3 +170,28 @@ conda activate isaacgym
 ```
 
 慢速版将权重改为同目录 `keyboard_03.pt`（0.3 m/s），两版左右转向均为0.8 rad/s，固定8 cm腿长。验收汇总为 `summary.json`。本次验证CPU平地仿真，旧0.3/0.6文件和1 m/s试用文件均未覆盖；1 m/s的整体稳定性仍未通过，不能因为阻尼修正就宣称已解决高速偏移。
+
+### 按实际时间刷新画面与 FPS 参数
+
+当前播放默认按墙钟时间安排绘图，`viewer.viewer_wall_clock=True`，目标 `viewer.viewer_fps=60`。旧版按仿真时间每秒画60帧，单机器人仿真慢于实时的时候，实际绘图帧率也跟着降低。现在控制和物理仍逐步计算，绘图按实际时间选取最新状态；不跳物理步、不改变策略频率、传感器时间、PD增益或电机限制。
+
+```bash
+./manage.sh play --task wheelleg_sensor_drive \
+  --checkpoint logs/turn_legs_20261126/keyboard_play.pt \
+  --sim_device cpu --keyboard --viewer-fps 60 --num_steps 300000
+# 可将 --viewer-fps 60 改为 --viewer-fps 120，画面更顺但仿真推进可能更慢。
+```
+
+本机单机器人、CPU、2000步（4秒仿真）顺序短测，启动/载入时间不计入：
+
+| 绘图方式 | 实测绘图调用/墙钟秒 | 仿真秒/墙钟秒 |
+|---|---:|---:|
+| 旧版：按仿真时间60帧 | 25.1 | 0.417 |
+| 新版：实际时间目标60帧 | 50.5 | 0.379 |
+| 新版：实际时间目标120帧 | 85.0 | 0.330 |
+
+因此默认建议60档。提高绘图帧率不代表物理仿真变快或已达到实时；实际显示还受显示器刷新率和机器负载影响。原物理2kHz、策略500Hz仍指仿真时间内的频率。本次另试单CPU线程，收益不明显，未修改原4线程配置。
+
+退出播放时的JSON报告新增 `rendered_frames`、`measured_viewer_fps`、`simulation_speed_ratio` 和 `viewer_wall_clock`。无窗口时绘图FPS为null。旧绘图方式可通过配置 `viewer_wall_clock=False` 保留。`--viewer-fps` 覆盖检查点的目标绘图频率，不需要修改或重新训练网络。
+
+基准保存在 `logs/fps_20261126/`；相同4秒运行的运动统计、姿态峰值、闭环误差及失败次数在两种绘图方式和120档间逐项完全一致。本次没有重新进行站立训练或改写权重。

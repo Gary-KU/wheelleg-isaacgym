@@ -81,6 +81,7 @@ def get_args(mode="train", argv=None):
     )
     p.add_argument("--rl_device", "--rl-device")
     p.add_argument("--headless", action="store_true")
+    p.add_argument("--viewer-fps", type=float, help="Target viewer FPS (wall clock by default)")
     p.add_argument("--resume", action="store_true")
     p.add_argument(
         "--warm_start",
