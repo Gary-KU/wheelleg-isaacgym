@@ -7,7 +7,8 @@
 | [check_model.py](check_model.py) | URDF、网格、质量惯量、关节力矩限制、初始闭环姿态检查 |
 | [benchmark_closure.py](benchmark_closure.py) | 固定机身下的闭环载荷/髋速度与步长收敛诊断，不代表平衡能力 |
 | [bootstrap_motion.py](bootstrap_motion.py) | 从已验收站立网络初始化速度指令与转向阻尼，再用 PPO 微调、重新验收 |
-| [evaluate_sensor_drive.py](evaluate_sensor_drive.py) | 四环境模拟前后/左右转向、松键停车及反向的实测验收 |
+| [configure_driving.py](configure_driving.py) | 保留原网络，复制并配置播放速度、Q/E 腿长范围及静止修正；生成后仍需验收 |
+| [evaluate_sensor_drive.py](evaluate_sensor_drive.py) | 四环境模拟前后/左右转向、松键停车及反向；`--leg-length` 按键盘速率升高后测试 |
 | [bootstrap_standing.py](bootstrap_standing.py) | 将传感器反馈写为网络初值，供 PPO 微调；不是已训练策略 |
 | [evaluate_sensor_balance.py](evaluate_sensor_balance.py) | 132 维策略的确定性连续站立、漂移、腿长及逐关节限幅评估 |
 | [evaluate_support.py](evaluate_support.py) | 198 维站立策略的支撑、力矩、接触与漂移测量 |

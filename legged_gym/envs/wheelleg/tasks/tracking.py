@@ -12,11 +12,47 @@ from legged_gym.envs.wheelleg.diagnostics.training_metrics import (
 
 
 class DrivingWheelLegged(SensorWheelLegged):
-    """训练采样与键盘请求共用同一加速度限制，不叠加额外轮子控制器。"""
+    """训练/键盘共用速度斜坡；可选伸腿站立修正，不覆盖网络力矩。"""
+
+    def _allocate_buffers(self):
+        super()._allocate_buffers()
+        self.height_standing_trim = None
+        if self.cfg.control.standing_height_trim_ki:
+            from legged_gym.envs.wheelleg.control.standing_trim import HeightStandingTrim
+            low, high = self.cfg.keyboard.leg_range
+            self.height_standing_trim = HeightStandingTrim(
+                self.num_envs, self.device, low, high-low,
+                self.cfg.control.standing_height_trim_ki,
+                self.cfg.control.standing_height_trim_limit)
 
     def _reset_idx(self, ids):
         super()._reset_idx(ids)
         self.commands[ids, :3] = 0.0
+        if self.height_standing_trim is not None:
+            self.height_standing_trim.reset(ids)
+
+    def _policy_commands(self):
+        if self.height_standing_trim is None:
+            return self.commands
+        reference = self.commands.clone()
+        reference[:, 0] += self.height_standing_trim.correction(self.commands)
+        return reference
+
+    def _observations(self, advance_history=True):
+        resetting = self.sensor_reset_pending.clone() if self.height_standing_trim is not None else None
+        obs = super()._observations(advance_history)
+        if self.height_standing_trim is not None and advance_history:
+            self.height_standing_trim.update(
+                self.sensor_sampler.sample, self.commands, ~resetting, self.dt)
+            self._refresh_command_observations()
+        return obs
+
+    def _extra_step_info(self):
+        info = super()._extra_step_info()
+        if self.height_standing_trim is not None:
+            info['pre_reset_policy_commands'] = self._policy_commands().clone()
+            info['pre_reset_standing_height_trim_m_s'] = self.height_standing_trim.correction(self.commands)
+        return info
 
     def _sample_command_targets(self, ids):
         # 对应方向键单按、组合按和松键；每个回合仍通过同一速度斜坡。

@@ -1,6 +1,7 @@
 """实机可获取状态的任务配置：观测/噪声 → 站立训练 → 速度课程。"""
 
 from legged_gym.envs.wheelleg.config.base import WheelLeggedCfg, WheelLeggedCfgPPO
+from legged_gym.envs.wheelleg.constants import MIN_LEG_LENGTH, MAX_LEG_LENGTH
 from legged_gym.envs.wheelleg.observations.sensors import (
     FRAME_FIELDS,
     HISTORY_FRAMES,
@@ -209,11 +210,15 @@ class WheelLeggedDriveCfg(WheelLeggedQuietStandCfg):
     class control(WheelLeggedQuietStandCfg.control):
         decimation = 4  # 2 kHz 物理 / 500 Hz 策略，缩短转向反馈延迟
         leg_kd = 0.08  # Nm·s/rad，增加左右腿横滚模态阻尼；刚度仍为2
+        standing_height_trim_ki = 0.0  # 伸腿静止修正默认关闭，旧权重行为不变
+        standing_height_trim_limit = 0.08  # m/s，策略速度参考修正上限
 
     class keyboard:
         speed = 0.3
         turn_speed = 0.8
         adjust_leg_length = False  # 本轮固定 8 cm，只训练移动和停车
+        leg_range = (MIN_LEG_LENGTH, MAX_LEG_LENGTH)
+        leg_speed = 0.02  # m/s，按仿真时间连续调整；检查点可保存较慢的速度
 
 
 class WheelLeggedDriveCfgPPO(WheelLeggedQuietStandCfgPPO):

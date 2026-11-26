@@ -2,6 +2,7 @@
 """四机器人模拟按键、松键和反向，检查实际运动；不向策略提供仿真真值。"""
 from pathlib import Path
 import argparse
+import hashlib
 import json
 import math
 import sys
@@ -30,6 +31,8 @@ def main():
                    help="Evaluate with the hip2s peak allowance exhausted")
     p.add_argument("--speed", type=float, default=0.2)
     p.add_argument("--turn-speed", type=float, default=0.6)
+    p.add_argument("--leg-length", type=float, default=0.08,
+                   help="Target length in metres; ramp from the initial height at the keyboard rate")
     p.add_argument("--motion-seconds", type=float, default=6.0)
     p.add_argument("--stop-seconds", type=float, default=5.0)
     args = p.parse_args()
@@ -39,6 +42,7 @@ def main():
             for x in (
                 args.speed,
                 args.turn_speed,
+                args.leg_length,
                 args.motion_seconds,
                 args.stop_seconds,
             )
@@ -65,6 +69,9 @@ def main():
         ],
     )
     cfg, train = task_registry.prepare_cfgs(execution.task, execution)
+    checkpoint_sha256 = hashlib.sha256(args.checkpoint.read_bytes()).hexdigest()
+    if not cfg.commands.leg_length_range[0]-1e-7 <= args.leg_length <= cfg.commands.leg_length_range[1]+1e-7:
+        p.error("Requested leg length exceeds the checkpoint command range")
     if args.speed > max(
         abs(x) for x in cfg.commands.forward_speed_range
     ) or args.turn_speed > max(abs(x) for x in cfg.commands.yaw_speed_range):
@@ -87,10 +94,10 @@ def main():
         env.max_episode_length = sum(round(s / env.dt) for _, s, _ in pattern) + 1
         commands = env.commands.new_tensor(
             [
-                [args.speed, 0, 0, 0.08],
-                [-args.speed, 0, 0, 0.08],
-                [0, 0, args.turn_speed, 0.08],
-                [0, 0, -args.turn_speed, 0.08],
+                [args.speed, 0, 0, args.leg_length],
+                [-args.speed, 0, 0, args.leg_length],
+                [0, 0, args.turn_speed, args.leg_length],
+                [0, 0, -args.turn_speed, args.leg_length],
             ]
         )
         if args.combined:
@@ -120,6 +127,9 @@ def main():
                     ramp_seconds = max(ramp_seconds, float(
                         change[:, 2].abs().max()
                     ) / env.yaw_acceleration)
+                height_rate = cfg.keyboard.leg_speed
+                height_change = float(change[:, 3].abs().max())
+                ramp_seconds = max(ramp_seconds, height_change / height_rate)
                 settle_seconds = max(2.0, ramp_seconds + 1.0)
                 if seconds < settle_seconds + 1.0:
                     raise ValueError("Phase too short: allow command ramp plus at least two seconds")
@@ -133,6 +143,12 @@ def main():
                 settled_measurements = None
                 samples = 0
                 for step in range(round(seconds / env.dt)):
+                    if height_change > 1e-7:
+                        # 与 Q/E 相同的每仿真秒腿长变化，不能把瞬时伸腿当成键盘测试。
+                        ramped = target.clone()
+                        ramped[:, 3] = env.commands[:, 3] + (
+                            target[:, 3]-env.commands[:, 3]).clamp(-height_rate*env.dt, height_rate*env.dt)
+                        env.set_commands(ramped)
                     if args.continuous_hip_limit:
                         # 每步设定，确保自动重置也不会恢复峰值额度而掩盖失败。
                         env.hip_overload_steps.fill_(env.hip_peak_steps)
@@ -239,9 +255,11 @@ def main():
                 )
         report = dict(
             checkpoint=str(args.checkpoint.resolve()),
+            checkpoint_sha256=checkpoint_sha256,
             seed=args.seed,
             command_mode="combined" if args.combined else "cardinal",
             continuous_hip_limit_only=args.continuous_hip_limit,
+            target_leg_length_m=args.leg_length,
             control_dt=env.dt,
             num_envs=4,
             seconds_per_environment=sum(s for _, s, _ in pattern),

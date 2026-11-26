@@ -183,7 +183,7 @@ class SensorWheelLegged(WheelLegged):
             if advance_history:
                 self.sensor_sampler.advance(truth)
         self.slice_obs = build_sensor_frame(
-            self.sensor_sampler.sample, self.commands, self.actions
+            self.sensor_sampler.sample, self._policy_commands(), self.actions
         )
         self.obs_buf = torch.cat(
             (self.history.reshape(self.num_envs, -1), self.slice_obs), -1
@@ -195,11 +195,15 @@ class SensorWheelLegged(WheelLegged):
 
     def _refresh_command_observations(self):
         # Commands are current; editing one never resamples sensors or shifts history.
-        self.slice_obs[:, COMMAND_SLICE] = self.commands[
+        self.slice_obs[:, COMMAND_SLICE] = self._policy_commands()[
             :, [0, 2, 3]
         ] * self.commands.new_tensor(COMMAND_SCALES)
         self.obs_buf[:, -FRAME_SIZE:] = self.slice_obs
         self.history[:, -1] = self.slice_obs
+
+    def _policy_commands(self):
+        """默认直接使用速度斜坡后的指令；任务可显式配置参考修正。"""
+        return self.commands
 
     def set_commands(self, commands):
         value = torch.as_tensor(commands, device=self.device)

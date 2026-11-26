@@ -30,6 +30,7 @@ def main():
         if env.terrain_model is None:
             env.max_episode_length = args.num_steps + 1
         keyboard = None
+        last_printed_length = None
         keyboard_cfg = getattr(env_cfg, "keyboard", None)
         adjust_leg_length = getattr(keyboard_cfg, "adjust_leg_length", True)
         if args.keyboard:
@@ -37,12 +38,16 @@ def main():
                 speed=getattr(keyboard_cfg, "speed", 0.6),
                 turn_speed=getattr(keyboard_cfg, "turn_speed", 2.0),
                 leg_length=env.commands[0, 3].item(),
-                leg_range=(MIN_LEG_LENGTH, MAX_LEG_LENGTH),
+                leg_range=getattr(keyboard_cfg, "leg_range", (MIN_LEG_LENGTH, MAX_LEG_LENGTH)),
+                leg_speed=getattr(keyboard_cfg, "leg_speed", 0.02),
             )
             keyboard.bind(env.gym, env.viewer, isaacgym.gymapi)
+            last_printed_length = keyboard.leg_length
             print(
                 "点击仿真窗口：方向键前后/转向，空格停止，R重置。"
-                + ("Q/E调腿长。" if adjust_leg_length else "本权重固定8 cm腿长。"),
+                + ("Q缩腿/E伸腿（{:.0f}–{:.0f} cm）。".format(
+                    keyboard.leg_range[0]*100, keyboard.leg_range[1]*100)
+                   if adjust_leg_length else "本权重固定8 cm腿长。"),
                 flush=True,
             )
         pitch = roll = loop = 0.0
@@ -68,6 +73,12 @@ def main():
                 obs, _ = env.get_observations()
                 action = policy(obs.to(args.rl_device)).to(env.device)
                 obs, _, reward, done, info, _ = env.step(action)
+                if (keyboard is not None and adjust_leg_length
+                        and abs(keyboard.leg_length - last_printed_length) >= 0.002 - 1e-7):
+                    left, right = info["pre_reset_leg_length"][0].tolist()
+                    print("腿长目标 {:.1f} cm，实际左/右 {:.1f}/{:.1f} cm".format(
+                        keyboard.leg_length * 100, left * 100, right * 100), flush=True)
+                    last_printed_length = keyboard.leg_length
                 if not bool(torch.isfinite(obs).all() and torch.isfinite(reward).all()):
                     raise RuntimeError("Non-finite playback")
                 motion.update(
