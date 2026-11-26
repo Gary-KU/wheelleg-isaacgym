@@ -220,6 +220,7 @@ class WheelLeggedDriveCfg(WheelLeggedQuietStandCfg):
         encoder_hold = False  # 可选轮角里程外环；与轮速积分修正互斥
         encoder_hold_position_kp = .5  # s^-1，停车位置误差→速度参考
         encoder_hold_heading_kp = 1.0  # s^-1，直行相对航向误差→转速参考
+        encoder_hold_turn_reference_scale = 1.0  # 转向参考标定，默认保持旧策略
         encoder_hold_speed_limit = .08  # m/s，含高度标定的总参考修正限幅
         encoder_hold_yaw_limit = .2  # rad/s，转向指令非零时不叠加航向修正
         encoder_hold_height_slope = 0.0  # s^-1，离线标定的高度速度参考初值

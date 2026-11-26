@@ -31,13 +31,18 @@ def main():
     p.add_argument("--hold-heading-kp", type=float, default=1.)
     p.add_argument("--linear-acceleration", type=float,
                    help="Optional command ramp acceleration m/s^2; retains the speed cap")
+    p.add_argument("--physics-solver", choices=("tgs", "pgs"),
+                   help="Optional numerical solver selection; does not change physical limits")
+    p.add_argument("--turn-reference-scale", type=float, default=1.,
+                   help="Encoder-hold turn reference calibration; original yaw target remains unchanged")
     args = p.parse_args()
     if args.output.suffix != ".pt" or args.output.resolve() == args.checkpoint.resolve():
         p.error("Save to a different .pt path; keep the original checkpoint")
     values = (args.speed, args.leg_speed, args.standing_trim_ki, args.standing_trim_slope,
-              args.hold_position_kp, args.hold_heading_kp, *args.leg_range)
+              args.hold_position_kp, args.hold_heading_kp, args.turn_reference_scale, *args.leg_range)
     if (not all(math.isfinite(x) for x in values)
-            or min(args.speed, args.leg_speed, args.hold_position_kp, args.hold_heading_kp) <= 0
+            or min(args.speed, args.leg_speed, args.hold_position_kp,
+                   args.hold_heading_kp, args.turn_reference_scale) <= 0
             or args.standing_trim_ki < 0
             or not MIN_LEG_LENGTH <= args.leg_range[0] < args.leg_range[1] <= MAX_LEG_LENGTH):
         p.error("Use positive finite speeds, nonnegative gain and a leg range within the CAD limits")
@@ -45,6 +50,8 @@ def main():
         p.error("standing-trim-slope exceeds the0.08m/s correction limit")
     if args.standing_trim_slope and not args.standing_trim_ki and not args.encoder_hold:
         p.error("A calibrated trim slope requires standing-trim-ki >0")
+    if args.turn_reference_scale != 1. and not args.encoder_hold:
+        p.error("turn-reference-scale requires --encoder-hold")
     if args.linear_acceleration is not None and (
             not math.isfinite(args.linear_acceleration) or args.linear_acceleration <= 0):
         p.error("linear-acceleration must be finite and positive")
@@ -55,6 +62,9 @@ def main():
         p.error("Use a wheelleg_sensor_drive checkpoint")
     # 修正的零点是原来的站立高度；修改下限会改变控制契约，因此必须匹配。
     initial_length = cfg["commands"]["command"][3]
+    yaw_cap = max(abs(x) for x in cfg['commands']['yaw_speed_range'])
+    if abs(args.turn_reference_scale - 1.) * yaw_cap > .2 + 1e-7:
+        p.error("Turn calibration exceeds the existing0.2rad/s reference correction limit")
     if abs(args.leg_range[0] - initial_length) > 1e-7:
         p.error("The lower length must match the checkpoint's initial standing length")
     cfg["keyboard"].update(
@@ -71,6 +81,7 @@ def main():
         encoder_hold=args.encoder_hold,
         encoder_hold_position_kp=args.hold_position_kp,
         encoder_hold_heading_kp=args.hold_heading_kp,
+        encoder_hold_turn_reference_scale=args.turn_reference_scale,
         encoder_hold_speed_limit=.08, encoder_hold_yaw_limit=.2,
         encoder_hold_height_slope=args.standing_trim_slope)
     if args.encoder_hold:
@@ -83,6 +94,9 @@ def main():
     if args.linear_acceleration is not None:
         cfg['commands']['linear_acceleration'] = args.linear_acceleration
         state['environment_config']['linear_acceleration'] = args.linear_acceleration
+    if args.physics_solver is not None:
+        cfg['sim']['physics_solver'] = args.physics_solver
+        state['environment_config']['physics_solver'] = args.physics_solver
     provenance = dict(
         source_checkpoint=str(args.checkpoint.resolve()),
         source_sha256=hashlib.sha256(args.checkpoint.read_bytes()).hexdigest(),
@@ -95,6 +109,8 @@ def main():
         encoder_hold_heading_kp=args.hold_heading_kp,
         height_speed_slope_s_inv=args.standing_trim_slope,
         linear_acceleration_m_s2=cfg['commands']['linear_acceleration'],
+        physics_solver=cfg['sim']['physics_solver'],
+        turn_reference_scale=args.turn_reference_scale,
         network_unchanged=True, extra_training=False,
         status="candidate_requires_evaluation",
         note="MCU must port the command ramp, hip control/limits and enabled standing trim as well as the network.",

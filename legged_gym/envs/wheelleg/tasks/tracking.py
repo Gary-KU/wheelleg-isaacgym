@@ -52,7 +52,8 @@ class DrivingWheelLegged(SensorWheelLegged):
             self.encoder_hold = EncoderHold(
                 self.num_envs, self.device, self.cfg.keyboard.leg_range[0],
                 c.encoder_hold_position_kp, c.encoder_hold_heading_kp,
-                c.encoder_hold_speed_limit, c.encoder_hold_yaw_limit, c.encoder_hold_height_slope)
+                c.encoder_hold_speed_limit, c.encoder_hold_yaw_limit, c.encoder_hold_height_slope,
+                c.encoder_hold_turn_reference_scale)
             self.wheel_position_sampler = EncoderPositionSampler(
                 self.num_envs, self.device, s.delay_steps,
                 s.wheel_angle_noise_std, s.wheel_angle_bias_std, self.cfg.seed)
@@ -237,6 +238,8 @@ class DrivingWheelLegged(SensorWheelLegged):
             measurement_delay_seconds=s.delay_steps * self.dt,
             position_kp_s_inv=c.encoder_hold_position_kp if c.encoder_hold else None,
             heading_kp_s_inv=c.encoder_hold_heading_kp if c.encoder_hold else None,
+            turn_reference_scale=c.encoder_hold_turn_reference_scale if c.encoder_hold else None,
+            physics_solver=self.physics_solver,
             height_speed_slope_s_inv=c.encoder_hold_height_slope if c.encoder_hold else None,
             odometry_assumption='Planar rolling; carrier rotation and leg translation compensated',
             world_pose_or_velocity_feedback=False,

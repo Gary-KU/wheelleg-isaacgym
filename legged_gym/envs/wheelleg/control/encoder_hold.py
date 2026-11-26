@@ -9,15 +9,17 @@ from legged_gym.envs.wheelleg.observations.odometry import PlanarWheelOdometry
 
 class EncoderHold:
     def __init__(self, n, device, baseline, position_kp, heading_kp,
-                 speed_limit, yaw_limit, height_slope):
+                 speed_limit, yaw_limit, height_slope, turn_reference_scale=1.):
         if (not all(math.isfinite(v) for v in
-                    (baseline, position_kp, heading_kp, speed_limit, yaw_limit, height_slope))
-                or min(position_kp, heading_kp, speed_limit, yaw_limit) <= 0):
+                    (baseline, position_kp, heading_kp, speed_limit, yaw_limit,
+                     height_slope, turn_reference_scale))
+                or min(position_kp, heading_kp, speed_limit, yaw_limit, turn_reference_scale) <= 0):
             raise ValueError("Encoder hold requires finite parameters and positive gains/limits")
         self.odometry = PlanarWheelOdometry(n, device)
         self.baseline, self.height_slope = baseline, height_slope
         self.position_kp, self.heading_kp = position_kp, heading_kp
         self.speed_limit, self.yaw_limit = speed_limit, yaw_limit
+        self.turn_reference_scale = turn_reference_scale
         self.position_reference = torch.zeros(n, device=device)
         self.heading_reference = torch.zeros_like(self.position_reference)
         self.previous_forward_target = torch.zeros_like(self.position_reference)
@@ -56,6 +58,8 @@ class EncoderHold:
         heading_error = self.odometry.yaw - self.heading_reference
         forward = self.height_slope * (commands[:, 3] - self.baseline).clamp_min(0.)
         forward -= self.position_kp * position_error * stopped
-        yaw = -self.heading_kp * heading_error * straight
+        # 转向参考标定仍走原斜坡和总修正限幅；验收始终对比用户原始目标。
+        yaw = ((self.turn_reference_scale - 1.) * commands[:, 2]
+               - self.heading_kp * heading_error * straight)
         return (torch.where(self.available, forward.clamp(-self.speed_limit, self.speed_limit), 0.),
                 torch.where(self.available, yaw.clamp(-self.yaw_limit, self.yaw_limit), 0.))
