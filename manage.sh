@@ -29,7 +29,7 @@ usage() {
   ./manage.sh preview --length 0.10 --steps 15000
   ./manage.sh train --task wheelleg_sensor_tracking --num_envs 128 --headless
   ./manage.sh play --task wheelleg_sensor_tracking --checkpoint <新权重路径>
-  ./manage.sh run tools/check_model.py --report validation/model_check.json
+  ./manage.sh run tools/diagnostics/check_model.py --report validation/model_check.json
 
 命令后加 --help 查看参数。先激活 isaacgym 环境，或设置 PYTHON_BIN。
 HELP
@@ -41,7 +41,7 @@ runner="$ROOT/scripts/run.sh"
 case "$command" in
   help|-h|--help) usage ;;
   preview) exec "$runner" scripts/preview_model.py "$@" ;;
-  check) exec "$runner" tools/check_model.py "$@" ;;
+  check) exec "$runner" tools/diagnostics/check_model.py "$@" ;;
   tasks) exec "$runner" scripts/list_tasks.py "$@" ;;
   train|play|stand) exec "$runner" "scripts/$command.py" "$@" ;;
   train-stairs) exec "$runner" scripts/train.py --task wheelleg_stairs --sim_device cuda:0 --num_envs 128 --headless "$@" ;;

@@ -170,7 +170,7 @@ conda activate isaacgym
 **修改奖励和控制参数后使用 `--task wheelleg_sensor_quiet --warm-start` 开新实验**，保留 Actor 初始化并重新训练 Critic/优化器；`--checkpoint`/`--resume` 会恢复旧配置。原始权重和诊断报告保存在对应实验的 `diagnosis/` 下。新结果需要重新做连续站立、漂移、腿长、轮速和逐关节限幅检查：
 
 ```bash
-./manage.sh run tools/evaluate_sensor_balance.py --task wheelleg_sensor \
+./manage.sh run tools/evaluation/evaluate_sensor_balance.py --task wheelleg_sensor \
   --checkpoint <新权重> --headless --sim_device cpu --num_steps 3000 \
   --report logs/quiet_stand_result.json
 ```
@@ -191,7 +191,7 @@ conda activate isaacgym
 可复现的受载对照：
 
 ```bash
-./manage.sh run tools/benchmark_closure.py \
+./manage.sh run tools/diagnostics/benchmark_closure.py \
   --case 50000,25,0.0005 --case 50000,2,0.0005 --case 50000,2,0.00025 \
   --report logs/closure_damping_comparison.json
 ```
@@ -204,7 +204,7 @@ conda activate isaacgym
 `bootstrap_standing.py` 可把只读取 IMU/轮编码器的简单反馈写为现有 ELU 网络的初值：髋动作零，由原 PD/质量前馈支撑；轮子使用俯仰、俯仰角速度和偏航角速度反馈。网络推理没有额外教师控制器，也不读取位置或仿真线速度。**初始化文件不是 RL 训练成果**，元数据记录 `rl_updates_at_initialization=0`；随后才能用统一 PPO 入口微调。
 
 ```bash
-./manage.sh run tools/bootstrap_standing.py --output logs/my_standing/init.pt
+./manage.sh run tools/policy/bootstrap_standing.py --output logs/my_standing/init.pt
 # 此处恢复的是刚生成的新模型配置，不是旧 D=25 的检查点。
 ./manage.sh train --task wheelleg_sensor_quiet \
   --checkpoint logs/my_standing/init.pt --num_envs 32 --headless \
@@ -232,7 +232,7 @@ conda activate isaacgym
 ./manage.sh play --task wheelleg_sensor_quiet \
   --checkpoint logs/closure_fix_20261126_105745/standing_verified.pt --sim_device cpu
 # 当前 5 ms 周期，12000 步是每个机器人 60 秒。
-./manage.sh run tools/evaluate_sensor_balance.py --task wheelleg_sensor_quiet \
+./manage.sh run tools/evaluation/evaluate_sensor_balance.py --task wheelleg_sensor_quiet \
   --checkpoint logs/closure_fix_20261126_105745/standing_verified.pt \
   --sim_device cpu --headless --seed 17 --num_envs 4 --num_steps 12000 \
   --report logs/my_standing/verified_60s.json

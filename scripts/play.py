@@ -27,8 +27,15 @@ def main():
             env, name=args.task, args=args, train_cfg=train_cfg, log_root=None
         )
         policy = runner.get_inference_policy(device=args.rl_device)
-        if env.terrain_model is None:
+        if getattr(env, "terrain_model", None) is None and hasattr(env, "set_commands"):
             env.max_episode_length = args.num_steps + 1
+        if not args.task.startswith("wheelleg"):
+            with torch.inference_mode():
+                for _ in range(args.num_steps):
+                    obs, _ = env.get_observations()
+                    env.step(policy(obs))
+            print("Playback completed", flush=True)
+            return
         keyboard = None
         last_printed_length = None
         keyboard_cfg = getattr(env_cfg, "keyboard", None)

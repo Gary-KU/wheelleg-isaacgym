@@ -10,7 +10,7 @@ import xml.etree.ElementTree as ET
 
 import numpy as np
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from legged_gym.envs.wheelleg.model.geometry import (
     ASSET_ROOT,
     MIN_LENGTH,

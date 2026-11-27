@@ -22,7 +22,7 @@ def main():
             env, name=args.task, args=args, train_cfg=train_cfg
         )
         print(
-            "Training task={} log_dir={}; closure remains spring/damper approximate".format(
+            "Training task={} log_dir={}".format(
                 args.task, runner.log_dir
             ),
             flush=True,

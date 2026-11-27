@@ -5,7 +5,7 @@
 | 命令 | 实现 | 用途 |
 | --- | --- | --- |
 | `preview` | `preview_model.py` | 无策略模型预览 |
-| `check` | `../tools/check_model.py` | 静态模型检查 |
+| `check` | `../tools/diagnostics/check_model.py` | 静态模型检查 |
 | `tasks` | `list_tasks.py` | 列出任务 |
 | `train` / `train-stairs` | `train.py` | 注册任务训练 |
 | `play` / `stairs` / `evaluate` | `play.py` | 注册任务播放或无窗口评估 |

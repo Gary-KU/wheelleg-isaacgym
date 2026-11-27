@@ -15,7 +15,7 @@ for name in task_registry.task_classes:
             name,
             cfg.env.num_observations,
             cfg.env.num_actions,
-            cfg.terrain.terrain,
+            getattr(getattr(cfg, "terrain", None), "terrain", "custom"),
             train.runner.experiment_name,
         )
     )

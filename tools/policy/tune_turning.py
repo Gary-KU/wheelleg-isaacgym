@@ -7,7 +7,7 @@ import json
 import math
 import sys
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 import torch
 from legged_gym.envs.wheelleg.observations.sensors import (
     SENSOR_SCHEMA, SENSOR_FIELDS, SENSOR_SCALES, COMMAND_SCALES,

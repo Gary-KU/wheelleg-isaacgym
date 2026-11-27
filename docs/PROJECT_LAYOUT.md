@@ -36,7 +36,11 @@ legged_gym/
   utils/                     注册器、配置、检查点校验
   compat/                    抬轮和专项评估仍在使用的参数解析/恢复
 assets/wheelleg/              当前 CAD URDF、网格、闭环和电机参数
-tools/                       模型检查、闭环诊断、专项评估
+tools/
+  diagnostics/             模型检查和闭环诊断
+  evaluation/              策略验收
+  policy/                  策略初始化、配置和校准
+  deployment/              网络导出
 third_party/rsl_rl/           策略网络、PPO 和轨迹存储
 ```
 
@@ -47,3 +51,9 @@ third_party/rsl_rl/           策略网络、PPO 和轨迹存储
 `compat/` 仍被抬轮、物理检查和专项评估调用，所以保留；它已不包含旧训练预设。旧训练/播放链路、权重转换、旧 USD 导出和历史一键实验已删除，历史内容从 Git 追溯。
 
 阅读顺序见[代码导读](CODE_GUIDE.md)，运行命令见[USAGE.md](USAGE.md)，扩展方法见[EXTENDING.md](EXTENDING.md)。
+
+## 命名和新增文件
+
+Python 包与文件使用 `snake_case`；配置类用 `CamelCase`，任务 ID 用 `<robot>_<behavior>`。资产文件保留 CAD 名称以避免破坏网格引用。第三方目录保持上游名称。
+
+工具按职责分组：`diagnostics/` 检查模型，`evaluation/` 验收策略，`policy/` 初始化和配置策略，`deployment/` 导出网络。新增工具放入相应目录。`scripts/` 仅保留日常入口，`logs/`、`exports/` 保存生成结果。

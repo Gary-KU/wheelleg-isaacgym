@@ -94,3 +94,5 @@ class WheelLeggedSlowCfg(WheelLeggedStandCfg):
 新机器人的 `register(registry)` 使用同样的 `registry.register(name, task_class, env_cfg, train_cfg)`。最后在 [envs/__init__.py](../legged_gym/envs/__init__.py) 的 `register_tasks()` 中追加它的注册调用。导入和任务加载保持显式，Gym 必须在 Torch 前导入。
 
 满足这些接口后可复用现有 PPO 训练循环，无需把机器人常量或诊断写进 `learning/`。当前只实现并验证了轮腿机器人，训练适配支持同设备、无特权观测的前馈 `ActorCritic/PPO`。现有播放键盘、评估报告和任务列表展示仍有轮腿字段假设；接新机器人时需一起检查展示入口、资产、动作/观测布局、重置、超时估值和检查点恢复，再建立该机器人的物理与控制验证。
+
+也可以使用 `LEGGED_TASK_MODULES` 加载外部机器人模块，无需修改内置注册入口，见 ROBOT_REGISTRATION.md。

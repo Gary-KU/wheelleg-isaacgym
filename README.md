@@ -14,7 +14,7 @@
 
 ```bash
 conda activate isaacgym
-./manage.sh run tools/check_model.py --report validation/cad_model_check.json
+./manage.sh run tools/diagnostics/check_model.py --report validation/cad_model_check.json
 ./manage.sh preview --length 0.10
 ```
 

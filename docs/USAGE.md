@@ -40,7 +40,7 @@ conda activate isaacgym
 ./manage.sh train-stairs --max_iterations 3
 ./manage.sh stairs --checkpoint <匹配权重>
 ./manage.sh lift --checkpoint <匹配的198维权重>
-./manage.sh run tools/check_model.py --report validation/model_check.json
+./manage.sh run tools/diagnostics/check_model.py --report validation/model_check.json
 ```
 
 `train-stairs` 会启动训练，其他命令的参数可用 `--help` 查看。`evaluate` 与 `play` 使用同一注册任务实现，默认无窗口并输出运动报告。

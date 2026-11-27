@@ -9,7 +9,7 @@
 ```bash
 conda activate isaacgym
 # 用已验收的站立网络初始化新任务：调整转向阻尼与速度指令参考。
-./manage.sh run tools/bootstrap_motion.py \
+./manage.sh run tools/policy/bootstrap_motion.py \
   --standing-checkpoint logs/closure_fix_20261126_105745/standing_verified.pt \
   --output logs/my_drive/motion_init.pt
 ./manage.sh train --task wheelleg_sensor_drive \
@@ -23,11 +23,11 @@ conda activate isaacgym
 
 ```bash
 # 四环境分别执行前进、后退、左转、右转，再松键、反向、松键。
-./manage.sh run tools/evaluate_sensor_drive.py \
+./manage.sh run tools/evaluation/evaluate_sensor_drive.py \
   --checkpoint <本任务权重> --report logs/my_drive/motion.json
 # 加 --combined 可检查前进/后退与转向同时按下的四种组合。
 # 另做连续60秒零速检查，不能把运动序列中的停车片段当作完整站立验收。
-./manage.sh run tools/evaluate_sensor_balance.py --task wheelleg_sensor_drive \
+./manage.sh run tools/evaluation/evaluate_sensor_balance.py --task wheelleg_sensor_drive \
   --checkpoint <本任务权重> --headless --sim_device cpu \
   --num_envs 4 --num_steps 30000 --report logs/my_drive/standing_60s.json
 ```
@@ -51,7 +51,7 @@ conda activate isaacgym
 | `legged_gym/envs/wheelleg/tasks/tracking.py` | `DrivingWheelLegged` 的方向组合采样与播放斜坡 |
 | `scripts/play.py` | 读取任务键盘配置，连接窗口事件与目标速度 |
 | `legged_gym/envs/wheelleg/control/keyboard.py` | 按下、松开、停车和重置事件 |
-| `tools/bootstrap_motion.py` | 新网络的指令参考与转向阻尼初始化 |
+| `tools/policy/bootstrap_motion.py` | 新网络的指令参考与转向阻尼初始化 |
 
 当前仍使用近似闭环与同原点环境；同原点 GPU 训练最多使用已验证的 32 个并行环境。实验和权重留在本机，源码与说明同步 GitHub。
 
@@ -70,10 +70,10 @@ conda activate isaacgym
 
 ## 传感器噪声与高频抖动
 
-`tools/filter_sensor_policy.py` 可把最新传感器帧的短窗口均值滤波折叠进 Actor 第一层（默认保留原转向反馈延迟），利用已有历史帧减小噪声驱动的力矩跳变。它生成新权重，不改电机限幅、噪声配置、指令输入或网络尺寸；原网络已有的其他历史通道保持不变。偏航陀螺仪和两轮差速反馈直接透传，只平滑两轮共同速度分量，避免滤波延迟削弱转向阻尼。
+`tools/policy/filter_sensor_policy.py` 可把最新传感器帧的短窗口均值滤波折叠进 Actor 第一层（默认保留原转向反馈延迟），利用已有历史帧减小噪声驱动的力矩跳变。它生成新权重，不改电机限幅、噪声配置、指令输入或网络尺寸；原网络已有的其他历史通道保持不变。偏航陀螺仪和两轮差速反馈直接透传，只平滑两轮共同速度分量，避免滤波延迟削弱转向阻尼。
 
 ```bash
-./manage.sh run tools/filter_sensor_policy.py \
+./manage.sh run tools/policy/filter_sensor_policy.py \
   --checkpoint <原权重> --output logs/my_drive/filtered.pt --frames 3
 ```
 
@@ -98,7 +98,7 @@ conda activate isaacgym
 重建此修复需从未滤波的旧权重导出：
 
 ```bash
-./manage.sh run tools/filter_sensor_policy.py \
+./manage.sh run tools/policy/filter_sensor_policy.py \
   --checkpoint logs/keyboard_drive_20261126_120433/keyboard_play.pt \
   --output logs/my_drive/smooth.pt --frames 3 --yaw-command-scale 0.98
 ```
@@ -152,7 +152,7 @@ conda activate isaacgym
 长期操作还应检查峰值额度耗尽的情况：
 
 ```bash
-./manage.sh run tools/evaluate_sensor_drive.py \
+./manage.sh run tools/evaluation/evaluate_sensor_drive.py \
   --checkpoint <权重> --speed 0.6 --turn-speed 0.8 --combined \
   --continuous-hip-limit --report logs/my_drive/continuous_limit.json
 ```
@@ -239,10 +239,10 @@ seed42四方向、组合运动各四台各27秒检查通过，倒地/超时均0�
 
 统一提高四髋阻尼虽然压低腿长波动，却加重边走边转时的yaw波动，因此没有采用。新版保持公共髋Kp=2、Kd=0.08，仅增加 `control.leg_differential_kd=0.08`，抑制左右腿反向运动。实现见 `control/leg_control.py`；每个物理步使用关节速度计算，再与RL、原PD和支撑前馈一起经过原电机限幅。该项默认0，已有检查点不会自动启用。
 
-网络第一层的yaw误差反馈乘2，并同时补偿同帧转向参考列；由 `tools/tune_turning.py` 生成，维持132维原始历史输入、6维输出和原网络结构，没有额外滤波或RL更新。这是反馈校准，不是重新训练；重新学习应使用Actor warm-start。可复现候选（输出后仍需评估）：
+网络第一层的yaw误差反馈乘2，并同时补偿同帧转向参考列；由 `tools/policy/tune_turning.py` 生成，维持132维原始历史输入、6维输出和原网络结构，没有额外滤波或RL更新。这是反馈校准，不是重新训练；重新学习应使用Actor warm-start。可复现候选（输出后仍需评估）：
 
 ```bash
-./manage.sh run tools/tune_turning.py \
+./manage.sh run tools/policy/tune_turning.py \
   --checkpoint logs/speed065_20261126/keyboard_play.pt \
   --output logs/my_turn/candidate.pt \
   --feedback-gain 2 --turn-speed 1 --differential-kd 0.08
@@ -276,11 +276,11 @@ seed42、四台机器人14秒时序对照，第5–11秒的原地转向腿长标
 自己生成配置副本时，不需要改网络或散落的启动脚本：
 
 ```bash
-./manage.sh run tools/configure_driving.py \
+./manage.sh run tools/policy/configure_driving.py \
   --checkpoint logs/turn_refine_20261126/keyboard_play.pt \
   --output logs/my_height/candidate.pt \
   --speed 0.65 --leg-range 0.08 0.10 --leg-speed 0.01 --standing-trim-ki 0.4
-./manage.sh run tools/evaluate_sensor_drive.py \
+./manage.sh run tools/evaluation/evaluate_sensor_drive.py \
   --checkpoint logs/my_height/candidate.pt --report logs/my_height/drive_height10.json \
   --speed 0.65 --turn-speed 1 --leg-length 0.10 --stop-seconds 8 --combined --continuous-hip-limit
 ```
@@ -297,7 +297,7 @@ seed42、四台机器人14秒时序对照，第5–11秒的原地转向腿长标
 ./manage.sh train --task wheelleg_sensor_telescopic \
   --warm-start logs/turn_refine_20261126/keyboard_play.pt \
   --num-envs 32 --max-iterations 100 --headless --sim-device cuda:0
-./manage.sh run tools/evaluate_sensor_drive.py \
+./manage.sh run tools/evaluation/evaluate_sensor_drive.py \
   --task wheelleg_sensor_telescopic --checkpoint <候选权重> \
   --report logs/my_height/drive.json --speed 0.7 --turn-speed 1 \
   --leg-length 0.10 --stop-seconds 8
@@ -309,10 +309,10 @@ seed42、四台机器人14秒时序对照，第5–11秒的原地转向腿长标
 
 上一轮100次微调完成后，10cm仍有持续漂移，未被接受为稳定版本。恢复实验保存在本机 `logs/height_rescue_20261126/`，仍保留0.7m/s、8–10cm和原电机限幅。
 
-`tools/normalize_height_policy.py` 可从固定高度策略生成待验收的初始化：把腿长观测和目标转换为相对8cm的变化量，并补偿CAD模型随高度变化的名义重心平衡俯仰。参照取最新有效目标，因此8cm启动时的空历史也保留原语义。变换折叠进网络第一层权重和偏置，输入仍是原132维传感器历史，MCU不要重复做同样处理。这是输入校准，不能称为新增RL训练；径向支撑前馈仍是原近似，未被替换成完整重力补偿。
+`tools/policy/normalize_height_policy.py` 可从固定高度策略生成待验收的初始化：把腿长观测和目标转换为相对8cm的变化量，并补偿CAD模型随高度变化的名义重心平衡俯仰。参照取最新有效目标，因此8cm启动时的空历史也保留原语义。变换折叠进网络第一层权重和偏置，输入仍是原132维传感器历史，MCU不要重复做同样处理。这是输入校准，不能称为新增RL训练；径向支撑前馈仍是原近似，未被替换成完整重力补偿。
 
 ```bash
-./manage.sh run tools/normalize_height_policy.py \
+./manage.sh run tools/policy/normalize_height_policy.py \
   --checkpoint logs/turn_refine_20261126/keyboard_play.pt \
   --output logs/my_height/normalized.pt --speed 0.7 --leg-range 0.08 0.10
 ./manage.sh train --task wheelleg_sensor_telescopic \
@@ -330,7 +330,7 @@ seed42、四台机器人14秒时序对照，第5–11秒的原地转向腿长标
 
 先用该任务学习停车，通过多种子长时间检查后，再用Actor warm-start进入 `wheelleg_sensor_telescopic` 的0.7m/s完整运动课程。站立中间权重不能直接称为驾驶版。旧检查点缺少新字段时保留原16秒回合和奖励；只有新训练使用上述设置。恢复流程和验收参数保存在本机实验目录 `pipeline_plan.json`。
 
-`tools/evaluate_sensor_balance.py` 同时保留全过程 `motion` 与排除高度斜坡/稳定等待后的 `standing_window`。连续站立时长按每台机器人单独统计，倒地或超时不能累加；安静站立门槛为前后/横向漂移各不超过5cm、航向变化不超过0.1rad、至少60秒连续站立，并检查速度、姿态、腿长和闭环误差。当前恢复流程另外要求至少70秒。报告还列出各髋关节超连续力矩累计时间和最小峰值额度。训练结束、零倒地以及短时间检查通过，都不等于长时间站稳。
+`tools/evaluation/evaluate_sensor_balance.py` 同时保留全过程 `motion` 与排除高度斜坡/稳定等待后的 `standing_window`。连续站立时长按每台机器人单独统计，倒地或超时不能累加；安静站立门槛为前后/横向漂移各不超过5cm、航向变化不超过0.1rad、至少60秒连续站立，并检查速度、姿态、腿长和闭环误差。当前恢复流程另外要求至少70秒。报告还列出各髋关节超连续力矩累计时间和最小峰值额度。训练结束、零倒地以及短时间检查通过，都不等于长时间站稳。
 
 Actor的输入校准信息保存在检查点 `actor_metadata`，warm-start时跟随Actor写入新检查点，避免把高度校准误加两遍。该元数据不参与推理。
 
@@ -338,7 +338,7 @@ Actor的输入校准信息保存在检查点 `actor_metadata`，warm-start时跟
 
 80秒回合加累计位移奖励的200轮候选没有通过验收，不能替代原播放权重。进一步配对诊断中，同样去掉全部传感器零偏和白噪声，10cm仍在20秒内漂移约11.6cm，8cm约0.15mm；因此不能只靠降低噪声或增加训练轮数解决。诊断原始记录在本机 `logs/drift_diagnosis_20261126/ablation.json`。
 
-继续修正从原较好的驾驶Actor出发。停车积分增益0.2的短时配对检查优于0.4，但升高初期从零积分会先滑动，随后才收敛。`tools/configure_driving.py` 新增可选 `--standing-trim-slope`，把离线标定的“每米伸腿对应多少速度参考偏置”作为积分初值，单位s⁻¹。参考修正仍是 `coefficient * (leg_length - baseline)`，受±0.08m/s限幅；基准8cm严格为零。R重置恢复标定初值，停车时继续用IMU/编码器修正，行驶或伸缩时冻结学习系数。它不改变Actor或髋部重力支撑前馈，不使用仿真位置反馈。MCU部署需要移植这个初值参数及同样的重置逻辑。
+继续修正从原较好的驾驶Actor出发。停车积分增益0.2的短时配对检查优于0.4，但升高初期从零积分会先滑动，随后才收敛。`tools/policy/configure_driving.py` 新增可选 `--standing-trim-slope`，把离线标定的“每米伸腿对应多少速度参考偏置”作为积分初值，单位s⁻¹。参考修正仍是 `coefficient * (leg_length - baseline)`，受±0.08m/s限幅；基准8cm严格为零。R重置恢复标定初值，停车时继续用IMU/编码器修正，行驶或伸缩时冻结学习系数。它不改变Actor或髋部重力支撑前馈，不使用仿真位置反馈。MCU部署需要移植这个初值参数及同样的重置逻辑。
 
 该参数默认0，旧检查点沿用旧行为。新生成的伸缩档同时保存 `commands.leg_length_rate` 和 `keyboard.leg_speed`，使API设置高度与键盘使用同一斜坡。参数标定仍需跨高度、种子和运动/松键测试；短时改善不能当作长时间站稳。
 
@@ -349,7 +349,7 @@ Actor的输入校准信息保存在检查点 `actor_metadata`，warm-start时跟
 停车时，相对路程误差修正策略的前进速度参考；直行时，相对航向误差修正转速参考。用户开始驾驶/转向时释放对应外环，指令斜坡结束后重新捕获参考点。高度标定和停车的总速度修正限制为±0.08m/s，航向修正限制为±0.2rad/s；髋PD、支撑前馈和电机限幅仍由原环境执行。网络仍132维、无需额外网络推理，但**整套控制器额外需要两个轮角输入和里程状态**，不能只烧录网络文件。
 
 ```bash
-./manage.sh run tools/configure_driving.py \
+./manage.sh run tools/policy/configure_driving.py \
   --checkpoint <原驾驶权重> --output <新的候选文件.pt> \
   --speed 0.7 --leg-range 0.08 0.10 --leg-speed 0.01 \
   --encoder-hold --height-speed-slope=-0.67
@@ -357,11 +357,11 @@ Actor的输入校准信息保存在检查点 `actor_metadata`，warm-start时跟
 
 `-0.67s⁻¹`是本模型的试验标定值，不是其他机器人的通用参数。可分别使用 `--hold-position-kp` 和 `--hold-heading-kp` 调整外环，默认0.5和1.0s⁻¹。轮角采样与原传感器使用相同延迟，另加假设的0.001rad白噪声和每回合0.01rad固定角度零偏；这些不是实测编码器规格，部署前应按实机数据核对。原轮速通道的噪声/零偏仍保留，不能通过关掉它们美化结果。旧检查点默认关闭轮角外环。
 
-运动中伸缩腿的专项检查可在 `tools/evaluate_sensor_drive.py` 加 `--height-cycle --leg-length 0.10`：从检查点下限出发，分别在前进/后退/转向阶段伸至10cm并缩回，再松键停车。它仍检查原用户速度目标，计入高度斜坡预算，不改变速度、横偏或停车位移门槛。
+运动中伸缩腿的专项检查可在 `tools/evaluation/evaluate_sensor_drive.py` 加 `--height-cycle --leg-length 0.10`：从检查点下限出发，分别在前进/后退/转向阶段伸至10cm并缩回，再松键停车。它仍检查原用户速度目标，计入高度斜坡预算，不改变速度、横偏或停车位移门槛。
 
 ### 接触求解与转向参考的诊断选项
 
-`tools/configure_driving.py --physics-solver pgs` 可在新候选中选择PGS数值求解器，省略时保留来源检查点的选择。它不修改质量、摩擦、URDF、电机限幅或时间步。当前CPU/TGS配置的配对检查中，仅把初始位置平移4m，8cm机器人就出现持续位移而轮角里程几乎不变；同模型的PGS对照把高速松键后的位移降至约4.6mm，但转速约0.89rad/s，尚未通过完整运动验收。这是本模型和配置的诊断证据，不能推广为所有TGS仿真都有问题，也不能把更换求解器当成实机稳定证明。
+`tools/policy/configure_driving.py --physics-solver pgs` 可在新候选中选择PGS数值求解器，省略时保留来源检查点的选择。它不修改质量、摩擦、URDF、电机限幅或时间步。当前CPU/TGS配置的配对检查中，仅把初始位置平移4m，8cm机器人就出现持续位移而轮角里程几乎不变；同模型的PGS对照把高速松键后的位移降至约4.6mm，但转速约0.89rad/s，尚未通过完整运动验收。这是本模型和配置的诊断证据，不能推广为所有TGS仿真都有问题，也不能把更换求解器当成实机稳定证明。
 
 启用轮角外环时可另设 `--turn-reference-scale`（默认1）：将经过原斜坡的转向指令乘该系数作为策略参考，额外修正仍受原±0.2rad/s限制；直行零转向指令不变。原用户目标、评价标准和Actor权重保持不变。该标定属于网络外的控制契约，MCU若采用对应候选也要移植。任何求解器或参考系数变化都需要重新完成各高度站立和运动验收，不能沿用不同求解器的通过报告。
 
