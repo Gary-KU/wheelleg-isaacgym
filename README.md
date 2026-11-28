@@ -2,7 +2,25 @@
 
 五连杆轮腿机器人的 Isaac Gym 项目，包含独立运行所需的 URDF、网格、闭环近似与 PPO 训练。运行需要 NVIDIA Isaac Gym Preview 4 与 Python 3.8；安装和换电脑使用见[环境指南](docs/COMPANY_SETUP.md)。
 
-所有运行命令统一从 **`./manage.sh`** 启动，脚本集中在 [scripts/](scripts/README.md)。根目录旧的 `.sh` 和训练/播放 `.py` 入口已移除；运行 `./manage.sh --help` 查看命令。
+Isaac Gym 运行命令统一从 **`./manage.sh`** 启动，脚本集中在 [scripts/](scripts/README.md)。根目录旧的 `.sh` 和训练/播放 `.py` 入口已移除；运行 `./manage.sh --help` 查看命令。
+
+## MuJoCo 与 H723 小网络
+
+独立的 MuJoCo 环境支持物理检查、微调和键盘遥控，不需要 Isaac Gym。
+已发布的 H723 小网络为132输入/6输出、128/64隐藏层，原始FP32权重约100KiB。
+四种子1cm正向跳台和平地站立、行驶短回归通过；不代表实机或更高跳台通过。
+
+- [MuJoCo安装与运行](sim2sim/README.md)
+- [H723 / STM32Cube.AI部署说明](docs/STM32_SMALL_POLICY.md)
+- [完整部署包](exports/h723_small_fp32.zip)：ONNX、配套控制参数、验证报告及仿真检查点
+
+网络输出是动作残差，需要配套髋PD、支撑前馈、俯仰保护及航向外环。
+本版航向增益为6；包内有参数和说明，尚不包含完整STM32控制器实现。
+
+```bash
+conda activate wheelleg_mujoco
+python sim2sim/run.py --viewer --terrain ramp --ramp-height .01 --seconds 300
+```
 
 ## 当前模型：2026-11-25 CAD URDF
 

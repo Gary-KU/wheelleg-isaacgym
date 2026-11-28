@@ -1,0 +1,274 @@
+{
+  "checkpoint": "exports/h723_small/checkpoint.pt",
+  "sha256": "c278223cd93bcd8c8465f30c2edd865229946f0b202afdae401dfc1a58888b69",
+  "input_size": 132,
+  "output_size": 6,
+  "torchscript_verified": true,
+  "environment": {
+    "asset": {
+      "file": "urdf/Robot_Model.urdf",
+      "root": "{LEGGED_GYM_ROOT_DIR}/assets/wheelleg",
+      "wheel_friction": 1.0
+    },
+    "closure": {
+      "allow_approximate_loop": true,
+      "closure_damping": 2.0,
+      "closure_stiffness": 50000.0
+    },
+    "commands": {
+      "command": [
+        0.0,
+        0.0,
+        0.0,
+        0.08
+      ],
+      "command_resample_seconds": 3.0,
+      "forward_speed_range": [
+        -1.0,
+        1.0
+      ],
+      "leg_length_range": [
+        0.08,
+        0.1
+      ],
+      "leg_length_rate": 0.01,
+      "linear_acceleration": 0.8,
+      "random_commands": true,
+      "yaw_acceleration": 2.5,
+      "yaw_speed_range": [
+        -1.0,
+        1.0
+      ],
+      "zero_command_fraction": 0.3
+    },
+    "control": {
+      "decimation": 4,
+      "encoder_hold": true,
+      "encoder_hold_gyro_heading": true,
+      "encoder_hold_heading_kp": 6.0,
+      "encoder_hold_height_slope": -0.67,
+      "encoder_hold_position_kp": 0.8,
+      "encoder_hold_speed_limit": 0.08,
+      "encoder_hold_turn_reference_scale": 1.12,
+      "encoder_hold_yaw_limit": 0.2,
+      "heading_kd": 0.0,
+      "heading_kp": 0.0,
+      "hip_target_scale": 0.2,
+      "leg_control": "hip_pd",
+      "leg_differential_kd": 0.08,
+      "leg_feedforward_force": 6.482961259305951,
+      "leg_kd": 0.08,
+      "leg_kp": 2.0,
+      "sensor_pitch_guard_angle": 0.16,
+      "sensor_pitch_guard_kp": 0.4,
+      "sensor_pitch_rate_kd": 0.05,
+      "standing_height_trim_initial_coefficient": -0.67,
+      "standing_height_trim_ki": 0.0,
+      "standing_height_trim_limit": 0.08,
+      "wheel_balance_scale": 1.0,
+      "wheel_control": "policy",
+      "wheel_pitch_damping": 0.0
+    },
+    "env": {
+      "balance_initial_com": true,
+      "episode_length_s": null,
+      "fix_base": false,
+      "initial_leg_length": 0.09,
+      "num_actions": 6,
+      "num_envs": 32,
+      "num_observations": 132,
+      "num_privileged_obs": null,
+      "obs_history_length": 1,
+      "spacing": 0.0
+    },
+    "keyboard": {
+      "adjust_leg_length": true,
+      "leg_range": [
+        0.08,
+        0.1
+      ],
+      "leg_speed": 0.01,
+      "speed": 1.0,
+      "turn_speed": 1.0
+    },
+    "observations": {
+      "observe_leg_lengths": true,
+      "observe_terrain": false
+    },
+    "rewards": {
+      "linear_tracking_sigma": 0.08,
+      "only_positive_rewards": false,
+      "scales": {
+        "action_rate": -0.003,
+        "angular_motion": -0.02,
+        "direction": 1.0,
+        "effort": -0.0001,
+        "heading": 0.0,
+        "hip_pose": -0.1,
+        "hip_symmetry": 0.0,
+        "leg_angle": 0.0,
+        "leg_asymmetry": -0.5,
+        "leg_error": -0.5,
+        "leg_tracking": 2.0,
+        "lin_vel_z": -0.2,
+        "passive_limit": -4.0,
+        "stability": 1.0,
+        "standstill_heading": 0.0,
+        "standstill_position": 0.0,
+        "stopped_wheel_speed": -0.02,
+        "termination": -25.0,
+        "tracking_ang_vel": 1.0,
+        "tracking_error": 4.0,
+        "tracking_lin_vel": 2.0,
+        "upright": 2.0,
+        "yaw_error": -2.0
+      },
+      "stability_rewards": true,
+      "standstill_heading_sigma": 0.1,
+      "standstill_position_sigma": 0.05,
+      "standstill_settle_seconds": 2.0,
+      "support_rewards": true,
+      "tracking_penalties": true,
+      "upright_about_com": false,
+      "upright_sigma": 0.1,
+      "yaw_tracking_sigma": 0.12
+    },
+    "seed": 42,
+    "sensors": {
+      "bias_std": [
+        0.002,
+        0.005,
+        0.005,
+        0.002,
+        0.002,
+        0.0003,
+        0.0003,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.02,
+        0.02
+      ],
+      "delay_steps": 1,
+      "frame_fields": [
+        "pitch",
+        "pitch_rate",
+        "yaw_rate",
+        "leg_angle_left",
+        "leg_angle_right",
+        "leg_length_left",
+        "leg_length_right",
+        "leg_angle_rate_left",
+        "leg_angle_rate_right",
+        "leg_length_rate_left",
+        "leg_length_rate_right",
+        "wheel_forward_rate_left",
+        "wheel_forward_rate_right",
+        "command_vx",
+        "command_yaw_rate",
+        "command_leg_length",
+        "previous_action_lf",
+        "previous_action_lh",
+        "previous_action_rf",
+        "previous_action_rh",
+        "previous_action_lwheel",
+        "previous_action_rwheel"
+      ],
+      "history_frames": 6,
+      "noise_std": [
+        0.002,
+        0.01,
+        0.01,
+        0.002,
+        0.002,
+        0.0005,
+        0.0005,
+        0.02,
+        0.02,
+        0.005,
+        0.005,
+        0.05,
+        0.05
+      ],
+      "schema": "mylegwheel_planar_v1",
+      "sensor_scales": [
+        1.0,
+        0.5,
+        0.5,
+        1.0,
+        1.0,
+        5.0,
+        5.0,
+        0.05,
+        0.05,
+        5.0,
+        5.0,
+        0.05,
+        0.05
+      ],
+      "wheel_angle_bias_std": 0.01,
+      "wheel_angle_noise_std": 0.001
+    },
+    "sim": {
+      "dt": 0.0005,
+      "physics_solver": "pgs",
+      "physics_threads": 4
+    },
+    "terrain": {
+      "stair_curriculum": false,
+      "stair_episode_seconds": 24.0,
+      "stair_level": 0,
+      "stair_max_level": 4,
+      "stair_min_level": 0,
+      "terrain": "plane"
+    },
+    "viewer": {
+      "viewer_fps": 60.0,
+      "viewer_height": 720,
+      "viewer_show_collisions": false,
+      "viewer_wall_clock": true,
+      "viewer_width": 1280
+    }
+  },
+  "input_shape": [
+    1,
+    132
+  ],
+  "output_shape": [
+    1,
+    6
+  ],
+  "dtype": "float32",
+  "activation": "ELU",
+  "parameters": 25670,
+  "weight_bytes_fp32": 102680,
+  "macs_per_inference": 25472,
+  "stm32cube_ai_analyzed": false,
+  "board_latency_measured": false,
+  "onnx_verified": true,
+  "onnx_max_abs_error": 1.7583370208740234e-06,
+  "onnx_opset": 11,
+  "onnx_operators": [
+    "Elu",
+    "Gemm"
+  ],
+  "simulation_stage_passed": true,
+  "simulation_ramp_height_m": 0.01,
+  "simulation_seeds": [
+    17,
+    42,
+    7,
+    123
+  ],
+  "artifacts_sha256": {
+    "DEPLOYMENT.md": "be34668f6e6f6915ac6539176c366a631c22a8639178e28c79eacf289c91ea3a",
+    "actor.onnx": "145d67342cfb4d4afba09a34f9e570a7da169912bbb800ae8af9b065ace0c6bc",
+    "actor.pt": "be25872d6887df194c22bec47b8a2dfc01c16c8229713d5e81da9893713a06e0",
+    "checkpoint.pt": "c278223cd93bcd8c8465f30c2edd865229946f0b202afdae401dfc1a58888b69",
+    "controller_config.json": "a3c91fd9c434f753f9ca726f638078eb433c8ecd4c035085fbf7014f5c7f3b18",
+    "validation.json": "e63052a9f733c98cdc0a81692e858d8b5d52e99d1251b150f0b39b9a5f7755ef"
+  },
+  "source_checkpoint": "/home/gary/wheelleg_work/WheelLeg_RL_IsaacLab-main/IsaacGym/logs/mujoco/h723_heading_fixed/model_0.pt",
+  "bundled_checkpoint": "checkpoint.pt"
+}

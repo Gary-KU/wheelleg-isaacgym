@@ -1,0 +1,8 @@
+# Install in a separate Python 3.10 environment.
+--extra-index-url https://download.pytorch.org/whl/cpu
+mujoco==3.17.0
+numpy==2.2.6
+torch==2.14.1+cpu
+tensorboard==2.21.0
+onnx==1.23.2
+onnxruntime==1.23.2

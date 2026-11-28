@@ -65,3 +65,11 @@ dist/
 !/validation/sensor_tracking_work.json
 
 !/validation/sensor_tracking_v2_work.json
+
+# Regenerated MuJoCo assets contain absolute local mesh paths.
+/assets/wheelleg/mujoco/
+
+# Publish selected policies; keep experimental export candidates local.
+/exports/*
+!/exports/h723_small/
+!/exports/h723_small_fp32.zip
